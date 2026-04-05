@@ -1,0 +1,101 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Всего пользователей</div>
+        <div class="stat-value">{{ users_count }}</div>
+        <div class="stat-change positive">
+            <span>👥 {{ entrepreneurs_count }} предпринимателей, {{ clients_count }} клиентов</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-label">Категории услуг</div>
+        <div class="stat-value">{{ categories_count }}</div>
+        <div class="stat-change">
+            <span>📁 {{ subcategories_count }} подкатегорий</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-label">Компании</div>
+        <div class="stat-value">{{ companies_count }}</div>
+        <div class="stat-change">
+            <span>🏢 Зарегистрировано компаний</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-label">Неактивные пользователи</div>
+        <div class="stat-value" style="color: #ef4444;">{{ inactive_users }}</div>
+        <div class="stat-change negative">
+            <span>⚠️ Заблокированные аккаунты</span>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Users -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Последние пользователи</h3>
+        <a href="{% url 'dashboard:user_list' %}" class="btn btn-secondary btn-sm">Все пользователи →</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Роль</th>
+                        <th>Email</th>
+                        <th>Дата регистрации</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in recent_users %}
+                    <tr>
+                        <td>
+                            <strong>{{ user.username }}</strong>
+                            {% if user.first_name or user.last_name %}
+                            <br><small style="color: #64748b;">{{ user.first_name }} {{ user.last_name }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.role == 'admin' %}
+                            <span class="badge badge-info">Администратор</span>
+                            {% elif user.role == 'entrepreneur' %}
+                            <span class="badge badge-success">Предприниматель</span>
+                            {% else %}
+                            <span class="badge badge-info">Клиент</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            {% if user.is_active %}
+                            <span class="badge badge-success">Активен</span>
+                            {% else %}
+                            <span class="badge badge-danger">Заблокирован</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'dashboard:user_detail' user.pk %}" class="action-btn edit">Просмотр</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <p>Нет зарегистрированных пользователей</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

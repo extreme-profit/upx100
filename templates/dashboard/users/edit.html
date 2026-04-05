@@ -1,0 +1,49 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 600px;">
+    <div class="card-header">
+        <h3 class="card-title">{{ title }}</h3>
+        <a href="{% url 'dashboard:user_list' %}" class="btn btn-secondary">← Назад</a>
+    </div>
+    
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding: 16px; background: #f8fafc; border-radius: 8px;">
+                <div class="user-avatar" style="width: 56px; height: 56px; font-size: 20px;">{{ user_obj.username|first|upper }}</div>
+                <div>
+                    <h4 style="margin-bottom: 4px;">{{ user_obj.username }}</h4>
+                    <p style="color: #64748b; font-size: 13px;">{{ user_obj.email }}</p>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Роль *</label>
+                <select name="role" class="form-control" required>
+                    {% for value, label in user_obj.ROLE_CHOICES %}
+                    <option value="{{ value }}" {% if user_obj.role == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <small style="color: #64748b; margin-top: 4px; display: block;">Изменение роли может повлиять на доступ пользователя к функциям системы</small>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" name="is_active" {% if user_obj.is_active %}checked{% endif %} style="width: auto;">
+                    Активный аккаунт
+                </label>
+                <small style="color: #64748b; margin-top: 4px; display: block; margin-left: 24px;">
+                    Если снять галочку, пользователь не сможет войти в систему (заблокирован)
+                </small>
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                <a href="{% url 'dashboard:user_list' %}" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

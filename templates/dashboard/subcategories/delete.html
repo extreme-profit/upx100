@@ -1,0 +1,26 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 500px;">
+    <div class="card-header">
+        <h3 class="card-title">{{ title }}</h3>
+        <a href="{% url 'dashboard:subcategory_list' %}" class="btn btn-secondary">← Назад</a>
+    </div>
+    
+    <div class="card-body">
+        <div style="text-align: center; padding: 20px 0;">
+            <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+            <h4 style="margin-bottom: 12px;">Вы уверены?</h4>
+            <p style="color: #64748b; margin-bottom: 24px;">
+                Подкатегория <strong>"{{ subcategory.name }}"</strong> ({{ subcategory.category.name }}) будет удалена без возможности восстановления.
+            </p>
+            
+            <form method="post" style="display: flex; gap: 12px; justify-content: center;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Да, удалить</button>
+                <a href="{% url 'dashboard:subcategory_list' %}" class="btn btn-secondary">Отмена</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

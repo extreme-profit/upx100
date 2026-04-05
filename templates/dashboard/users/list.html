@@ -1,0 +1,115 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Пользователи</h3>
+    </div>
+    
+    <div class="card-body">
+        <!-- Filters -->
+        <form class="filters" method="get">
+            <div class="filter-item">
+                <label>Роль:</label>
+                <select name="role" class="form-control">
+                    <option value="">Все роли</option>
+                    <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Администратор</option>
+                    <option value="entrepreneur" {% if role_filter == 'entrepreneur' %}selected{% endif %}>Предприниматель</option>
+                    <option value="client" {% if role_filter == 'client' %}selected{% endif %}>Клиент</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>Статус:</label>
+                <select name="status" class="form-control">
+                    <option value="">Все</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Активные</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Заблокированные</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <input type="text" name="q" value="{{ query }}" placeholder="Поиск (email, имя, телефон)..." class="form-control" style="width: 250px;">
+            </div>
+            <button type="submit" class="btn btn-secondary">Найти</button>
+            {% if query or role_filter or status_filter %}
+            <a href="{% url 'dashboard:user_list' %}" class="btn btn-secondary">Сбросить</a>
+            {% endif %}
+        </form>
+        
+        <!-- Table -->
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Пользователь</th>
+                        <th>Email</th>
+                        <th>Телефон</th>
+                        <th>Роль</th>
+                        <th>Компания</th>
+                        <th>Дата регистрации</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.pk }}</td>
+                        <td>
+                            <strong>{{ user.username }}</strong>
+                            {% if user.first_name or user.last_name %}
+                            <br><small style="color: #64748b;">{{ user.first_name }} {{ user.last_name }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.phone|default:"—" }}</td>
+                        <td>
+                            {% if user.role == 'admin' %}
+                            <span class="badge badge-info">Администратор</span>
+                            {% elif user.role == 'entrepreneur' %}
+                            <span class="badge badge-success">Предприниматель</span>
+                            {% else %}
+                            <span class="badge badge-info">Клиент</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.company %}
+                            <span style="color: #475569;">{{ user.company.name }}</span>
+                            {% else %}
+                            <span style="color: #94a3b8;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            {% if user.is_active %}
+                            <span class="badge badge-success">✓ Активен</span>
+                            {% else %}
+                            <span class="badge badge-danger">✗ Заблокирован</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell">
+                            <a href="{% url 'dashboard:user_detail' user.pk %}" class="action-btn edit">👁️</a>
+                            <a href="{% url 'dashboard:user_edit' user.pk %}" class="action-btn edit">✏️</a>
+                            <form method="post" action="{% url 'dashboard:user_toggle_active' user.pk %}" style="display: inline;" onsubmit="return confirm('Вы уверены?');">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn toggle">
+                                    {% if user.is_active %}🚫{% else %}✅{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="empty-state">
+                            <div class="empty-state-icon">👥</div>
+                            <h3>Нет пользователей</h3>
+                            <p>По вашему запросу ничего не найдено</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
