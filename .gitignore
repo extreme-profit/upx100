@@ -4,34 +4,48 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Logs and temp files
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
 *.log
+.DS_Store
+Thumbs.db
+
+# Django
+*.pot
+*.py[co]
+*.mo
+*.pot
+*.po
+*~
+.pytest_cache/
+htmlcov/
+.coverage*
+django_migrations/
+
+# Database
+*.sqlite3
+*.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 *.tmp
 
 # Environment
 .env
 .env.local
-*.env.*
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Dependencies
-.venv/
-venv/
-node_modules/
-
-# Build artifacts
-dist/
-build/
-*.o
-*.obj
-*.so
-*.a
-*.dll
-*.exe
+.env.*
 ```

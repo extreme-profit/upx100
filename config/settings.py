@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     
     # Local apps
     'accounts',
+    'business',
     'companies',
     'services',
     'bookings',
