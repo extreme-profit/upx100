@@ -1,0 +1,125 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="12">
+            <item index="0" class="java.lang.String" itemvalue="gunicorn" />
+            <item index="1" class="java.lang.String" itemvalue="python-magic" />
+            <item index="2" class="java.lang.String" itemvalue="pytz" />
+            <item index="3" class="java.lang.String" itemvalue="quart" />
+            <item index="4" class="java.lang.String" itemvalue="Flask-SQLAlchemy" />
+            <item index="5" class="java.lang.String" itemvalue="psycopg2-binary" />
+            <item index="6" class="java.lang.String" itemvalue="numpy" />
+            <item index="7" class="java.lang.String" itemvalue="python-dotenv" />
+            <item index="8" class="java.lang.String" itemvalue="grpcio" />
+            <item index="9" class="java.lang.String" itemvalue="requests" />
+            <item index="10" class="java.lang.String" itemvalue="grpcio-tools" />
+            <item index="11" class="java.lang.String" itemvalue="Flask" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N806" />
+          <option value="N803" />
+          <option value="N802" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="online_school.school.main.models.History.objects" />
+          <option value="online_school.school.main.models.UserMinutes.objects" />
+          <option value="online_school.school.main.models.UserRole.objects" />
+          <option value="online_school.school.main.models.UserBalance.objects" />
+          <option value="online_school.school.main.models.UserClass.objects" />
+          <option value="online_school.school.main.models.Subjects.objects" />
+          <option value="online_school.school.main.models.Lesson.objects" />
+          <option value="online_school.school.main.models.Teacher.objects" />
+          <option value="online_school.school.main.models.Message.objects" />
+          <option value="online_school.school.main.models.ClassMinuteCost.objects" />
+          <option value="online_school.school.main.models.Classes.objects" />
+          <option value="online_school.school.main.models.MyChildren.objects" />
+          <option value="online_school.school.main.models.TeacherAccountConfirmation.objects" />
+          <option value="online_school.school.main.models.Alert.objects" />
+          <option value="online_school.school.main.models.UserPhotoModel.objects" />
+          <option value="online_school.school.main.models.AdditionalInformationTeacher.objects" />
+          <option value="online_school.school.main.models.PermissionToEmail.objects" />
+          <option value="online_school.school.main.models.Review.objects" />
+          <option value="online_school.school.main.models.TeacherRating.objects" />
+          <option value="profdesign.main.models.UserRole.objects" />
+          <option value="profdesign.main.models.UserPhoto.objects" />
+          <option value="profdesign.main.models.Chat.objects" />
+          <option value="profdesign.main.models.Message.objects" />
+          <option value="profdesign.main.models.UserInfo.objects" />
+          <option value="profdesign.main.models.Order.objects" />
+          <option value="profdesign.main.models.HiddenOrder.objects" />
+          <option value="profdesign.main.models.Reviews.objects" />
+          <option value="profdesign.main.models.UserPortfolio.objects" />
+          <option value="profdesign.main.models.Balance.objects" />
+          <option value="web_app.main.models.Translation.objects" />
+          <option value="web_app.main.models.VehicleType.objects" />
+          <option value="web_app.main.models.Language.objects" />
+          <option value="web_app.main.models.Vehicle.objects" />
+          <option value="web_app.main.models.VehicleTypeAttribute.objects" />
+          <option value="web_app.main.models.ModelAttribute.objects" />
+          <option value="web_app.main.models.Favorite.objects" />
+          <option value="web_app.main.models.User.objects" />
+          <option value="web_app.main.models.VehiclePhoto.objects" />
+          <option value="web_app.main.models.Price.objects" />
+          <option value="web_app.main.models.SeasonType.objects" />
+          <option value="web_app.main.models.Rating.object" />
+          <option value="web_app.main.models.Rating.objects" />
+          <option value="web_app.main.models.CompanyContact.objects" />
+          <option value="web_app.main.models.Rental.objects" />
+          <option value="web_app.main.models.Company.objects" />
+          <option value="web_app.main.models.Notification.objects" />
+          <option value="web_app.main.models.Geo.objects" />
+          <option value="web_app.main.models.UserPlan.objects" />
+          <option value="web_app.main.models.Plan.objects" />
+          <option value="web_app.main.models.CompanySocialMedia.objects" />
+          <option value="django.db.models.fields.related.ForeignKey.username" />
+          <option value="django.db.models.fields.related.ForeignKey.ru_name" />
+          <option value="django.db.models.fields.related.ForeignKey.en_name" />
+          <option value="django.db.models.fields.related.ForeignKey.id" />
+          <option value="web_app.main.models.Model.objects" />
+          <option value="web_app.main.models.Admin.objects" />
+          <option value="web_app.main.models.VehicleAttribute.objects" />
+          <option value="web_app.main.models.Attribute.objects" />
+          <option value="web_app.main.models.AttributeFixedValue.objects" />
+          <option value="django.db.models.fields.related.ForeignKey.name_ru" />
+          <option value="web_app.main.models.SeasonPeriods.objects" />
+          <option value="web_app.main.models.ModelAuto.objects" />
+          <option value="web_app.main.models.SocialMediaType.objects" />
+          <option value="web_app.main.models.ModelMoto.objects" />
+          <option value="web_app.main.models.ModelVelo.objects" />
+          <option value="web_app.main.models.ModelWater.objects" />
+          <option value="web_app.main.models.Country.objects" />
+          <option value="siam.main.models.Blog.objects" />
+          <option value="siam.main.models.Location.objects" />
+          <option value="siam.main.models.DynamicFieldOption.objects" />
+          <option value="siam.main.models.LanguageCurrency.objects" />
+          <option value="siam.main.models.Messages.objects" />
+          <option value="siam.main.models.Prompt.objects" />
+          <option value="siam.main.models.FaqQuestion.objects" />
+          <option value="siam.main.models.Object.objects" />
+          <option value="siam.main.models.ObjectTag.objects" />
+          <option value="siam.main.models.ObjectDynamicValue.objects" />
+          <option value="siam.main.models.DynamicField.objects" />
+          <option value="siam.main.models.DynamicFieldCategory.objects" />
+          <option value="siam.main.models.ParentLocation.objects" />
+          <option value="siam.main.models.Favorites.objects" />
+          <option value="siam.main.models.BlogContent.objects" />
+          <option value="siam.main.models.TemporaryUser.objects" />
+          <option value="siam.main.models.Trigger.objects" />
+          <option value="siam.main.models.Contacts.objects" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
