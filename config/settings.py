@@ -136,9 +136,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 AUTH_USER_MODEL = 'accounts.User'
 
 # Login URLs
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'home'
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'dashboard:dashboard_home'
+LOGOUT_REDIRECT_URL = 'accounts:login'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
