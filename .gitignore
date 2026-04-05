@@ -1,4 +1,4 @@
-```gitignore
+```
 # Python
 __pycache__/
 *.pyc
@@ -8,28 +8,10 @@ __pycache__/
 # Logs and temp files
 *.log
 *.tmp
+*.swp
 
 # Environment
 .env
 .env.local
-*.env.*
-
-# Editors
-.vscode/
-.idea/
-
-# Dependencies
-.venv/
-venv/
-node_modules/
-
-# Coverage
-.coverage
-coverage/
-htmlcov/
-
-# Build artifacts
-dist/
-build/
-target/
+.env.*
 ```

@@ -5,7 +5,7 @@ app_name = 'dashboard'
 
 urlpatterns = [
     # Главная
-    path('', views.dashboard_home, name='home'),
+    path('', views.dashboard_home, name='dashboard_home'),
     
     # Категории
     path('categories/', views.category_list, name='category_list'),
