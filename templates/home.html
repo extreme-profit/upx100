@@ -43,7 +43,7 @@
             <div class="card__content">
                 <h3 class="card__title">{{ service.name }}</h3>
                 <p class="card__price">{{ service.price }} ₽</p>
-                <p>{{ service.company.name }}</p>
+                <p>{{ service.provider.company_name|default:service.provider.email }}</p>
                 <a href="{% url 'services:service_detail' service.pk %}" class="btn btn--blue" style="margin-top: 15px; width: 100%;">Записаться</a>
             </div>
         </div>
