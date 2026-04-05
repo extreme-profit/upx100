@@ -3,9 +3,9 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Пользователи</h3>
+        <h3 class="card-title">Пользователи / Компании</h3>
     </div>
-    
+
     <div class="card-body">
         <!-- Filters -->
         <form class="filters" method="get">
@@ -15,7 +15,6 @@
                     <option value="">Все роли</option>
                     <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Администратор</option>
                     <option value="entrepreneur" {% if role_filter == 'entrepreneur' %}selected{% endif %}>Предприниматель</option>
-                    <option value="client" {% if role_filter == 'client' %}selected{% endif %}>Клиент</option>
                 </select>
             </div>
             <div class="filter-item">
@@ -27,27 +26,26 @@
                 </select>
             </div>
             <div class="filter-item">
-                <input type="text" name="q" value="{{ query }}" placeholder="Поиск (email, имя, телефон)..." class="form-control" style="width: 250px;">
+                <input type="text" name="q" value="{{ query }}" placeholder="Поиск (email, компания)..." class="form-control" style="width: 250px;">
             </div>
             <button type="submit" class="btn btn-secondary">Найти</button>
             {% if query or role_filter or status_filter %}
             <a href="{% url 'dashboard:user_list' %}" class="btn btn-secondary">Сбросить</a>
             {% endif %}
         </form>
-        
+
         <!-- Table -->
         <div class="table-responsive">
             <table>
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Пользователь</th>
                         <th>Email</th>
-                        <th>Телефон</th>
-                        <th>Роль</th>
                         <th>Компания</th>
+                        <th>Роль</th>
                         <th>Дата регистрации</th>
                         <th>Статус</th>
+                        <th>Верификация</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -56,35 +54,38 @@
                     <tr>
                         <td>{{ user.pk }}</td>
                         <td>
-                            <strong>{{ user.username }}</strong>
+                            <strong>{{ user.email }}</strong>
                             {% if user.first_name or user.last_name %}
                             <br><small style="color: #64748b;">{{ user.first_name }} {{ user.last_name }}</small>
                             {% endif %}
                         </td>
-                        <td>{{ user.email }}</td>
-                        <td>{{ user.phone|default:"—" }}</td>
+                        <td>
+                            {% if user.company_name %}
+                            <span style="color: #475569;">{{ user.company_name }}</span>
+                            {% else %}
+                            <span style="color: #94a3b8;">—</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if user.role == 'admin' %}
                             <span class="badge badge-info">Администратор</span>
                             {% elif user.role == 'entrepreneur' %}
                             <span class="badge badge-success">Предприниматель</span>
-                            {% else %}
-                            <span class="badge badge-info">Клиент</span>
                             {% endif %}
                         </td>
-                        <td>
-                            {% if user.company %}
-                            <span style="color: #475569;">{{ user.company.name }}</span>
-                            {% else %}
-                            <span style="color: #94a3b8;">—</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ user.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>{{ user.date_joined|date:"d.m.Y H:i" }}</td>
                         <td>
                             {% if user.is_active %}
                             <span class="badge badge-success">✓ Активен</span>
                             {% else %}
                             <span class="badge badge-danger">✗ Заблокирован</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_verified %}
+                            <span class="badge badge-success">✓ Проверен</span>
+                            {% else %}
+                            <span class="badge badge-warning">○ Не проверен</span>
                             {% endif %}
                         </td>
                         <td class="actions-cell">
@@ -100,10 +101,8 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" class="empty-state">
-                            <div class="empty-state-icon">👥</div>
-                            <h3>Нет пользователей</h3>
-                            <p>По вашему запросу ничего не найдено</p>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #64748b;">
+                            Пользователи не найдены
                         </td>
                     </tr>
                     {% endfor %}
