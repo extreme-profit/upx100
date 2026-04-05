@@ -19,12 +19,11 @@
                 <a href="#">О нас</a>
                 {% if user.is_authenticated %}
                     {% if user.is_entrepreneur %}
-                        <a href="#">Кабинет</a>
+                        <a href="{% url 'dashboard:home' %}">Кабинет</a>
                     {% endif %}
-                    <a href="{% url 'logout' %}">Выход ({{ user.username }})</a>
+                    <a href="{% url 'accounts:logout' %}">Выход ({{ user.username }})</a>
                 {% else %}
-                    <a href="{% url 'login' %}">Вход</a>
-                    <a href="{% url 'register' %}">Регистрация</a>
+                    <a href="{% url 'accounts:login' %}">Вход</a>
                 {% endif %}
             </nav>
         </div>
