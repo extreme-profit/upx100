@@ -10,16 +10,16 @@ from .models import Service, TimeSlot
 class ServiceAdmin(admin.ModelAdmin):
     """Админка для управления услугами с расширенным функционалом"""
     
-    list_display = ('name', 'company', 'employee_link', 'price', 'duration_display', 'status_badge', 'is_active_status', 'paid_until_date', 'services_count')
-    list_filter = ('status', 'is_active', 'subcategory', 'company', 'employee')
-    search_fields = ('name', 'description', 'company__name', 'employee__name')
+    list_display = ('name', 'provider_link', 'employee_name_display', 'price', 'duration_display', 'status_badge', 'is_active_status', 'paid_until_date', 'slots_count')
+    list_filter = ('status', 'is_active', 'subcategory', 'provider')
+    search_fields = ('name', 'description', 'provider__email', 'provider__company_name', 'employee_name')
     readonly_fields = ('created_at', 'updated_at', 'embedding_preview')
     ordering = ('-created_at',)
     date_hierarchy = 'created_at'
     
     fieldsets = (
         ('Основное', {
-            'fields': ('company', 'employee', 'subcategory', 'name', 'description')
+            'fields': ('provider', 'employee_name', 'subcategory', 'name', 'description')
         }),
         ('Параметры', {
             'fields': ('price', 'duration_minutes')
@@ -50,15 +50,21 @@ class ServiceAdmin(admin.ModelAdmin):
         'mark_as_pending_payment'
     ]
     
-    def employee_link(self, obj):
-        """Ссылка на сотрудника"""
-        if obj.employee:
-            return format_html('<a href="{}">{}</a>', 
-                f'/admin/companies/employee/{obj.employee.id}/change/', 
-                obj.employee.name
-            )
+    def provider_link(self, obj):
+        """Ссылка на предпринимателя"""
+        company_name = obj.provider.company_name or obj.provider.email
+        return format_html('<a href="{}">{}</a>', 
+            f'/admin/accounts/user/{obj.provider.id}/change/', 
+            company_name
+        )
+    provider_link.short_description = _('Предприниматель')
+    
+    def employee_name_display(self, obj):
+        """Отображение имени сотрудника"""
+        if obj.employee_name:
+            return format_html('<span>{}</span>', obj.employee_name)
         return format_html('<span style="color: gray;">Не указан</span>')
-    employee_link.short_description = _('Сотрудник')
+    employee_name_display.short_description = _('Сотрудник')
     
     def duration_display(self, obj):
         """Отображение длительности услуги"""
@@ -108,12 +114,12 @@ class ServiceAdmin(admin.ModelAdmin):
         return format_html('<span style="color: gray;">Не оплачено</span>')
     paid_until_date.short_description = _('Оплачено до')
     
-    def services_count(self, obj):
+    def slots_count(self, obj):
         """Количество временных слотов"""
         count = obj.time_slots.count()
         booked = obj.time_slots.filter(is_booked=True).count()
         return format_html('<b>{}</b> / {}', booked, count)
-    services_count.short_description = _('Слоты')
+    slots_count.short_description = _('Слоты')
     
     def embedding_preview(self, obj):
         """Предпросмотр векторного представления"""
@@ -174,8 +180,8 @@ class TimeSlotAdmin(admin.ModelAdmin):
     """Админка для управления временными слотами"""
     
     list_display = ('service_link', 'date', 'start_time', 'end_time', 'is_booked_status', 'is_active_status')
-    list_filter = ('date', 'is_booked', 'is_active', 'service', 'service__company')
-    search_fields = ('service__name', 'service__company__name')
+    list_filter = ('date', 'is_booked', 'is_active', 'service')
+    search_fields = ('service__name', 'service__provider__email', 'service__provider__company_name')
     readonly_fields = ('created_at',)
     ordering = ('date', 'start_time')
     date_hierarchy = 'date'
@@ -197,9 +203,10 @@ class TimeSlotAdmin(admin.ModelAdmin):
     
     def service_link(self, obj):
         """Ссылка на услугу"""
+        company_name = obj.service.provider.company_name or obj.service.provider.email
         return format_html('<a href="{}">{}</a>', 
             f'/admin/services/service/{obj.service.id}/change/', 
-            f"{obj.service.name} ({obj.service.company.name})"
+            f"{obj.service.name} ({company_name})"
         )
     service_link.short_description = _('Услуга')
     
@@ -240,3 +247,4 @@ class TimeSlotAdmin(admin.ModelAdmin):
         """Деактивация слотов"""
         updated = queryset.update(is_active=False)
         self.message_user(request, f'Деактивировано слотов: {updated}')
+

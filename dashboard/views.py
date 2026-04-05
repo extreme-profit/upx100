@@ -3,7 +3,6 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models import Count, Q
 from accounts.models import User
-from companies.models import Category, Subcategory, Company, Employee
 
 
 def is_admin(user):
@@ -22,13 +21,15 @@ def dashboard_home(request):
     # Статистика
     users_count = User.objects.count()
     entrepreneurs_count = User.objects.filter(role='entrepreneur').count()
-    clients_count = User.objects.filter(role='client').count()
+    admins_count = User.objects.filter(role='admin').count()
+    
+    # Категории и подкатегории (импортируем здесь, чтобы избежать циклического импорта)
+    from companies.models import Category, Subcategory
     categories_count = Category.objects.count()
     subcategories_count = Subcategory.objects.count()
-    companies_count = Company.objects.count()
     
     # Последние пользователи
-    recent_users = User.objects.select_related('company').order_by('-created_at')[:10]
+    recent_users = User.objects.order_by('-date_joined')[:10]
     
     # Неактивные/заблокированные пользователи
     inactive_users = User.objects.filter(is_active=False).count()
@@ -36,10 +37,9 @@ def dashboard_home(request):
     context = {
         'users_count': users_count,
         'entrepreneurs_count': entrepreneurs_count,
-        'clients_count': clients_count,
+        'admins_count': admins_count,
         'categories_count': categories_count,
         'subcategories_count': subcategories_count,
-        'companies_count': companies_count,
         'recent_users': recent_users,
         'inactive_users': inactive_users,
         'title': 'Админ-панель',
@@ -52,9 +52,9 @@ def dashboard_home(request):
 @admin_required
 def category_list(request):
     """Список категорий"""
+    from companies.models import Category
     categories = Category.objects.annotate(
         subcategories_count=Count('subcategories'),
-        services_count=Count('subcategories__services')
     ).order_by('name')
     
     query = request.GET.get('q', '')
@@ -72,6 +72,8 @@ def category_list(request):
 @admin_required
 def category_create(request):
     """Создание категории"""
+    from companies.models import Category
+    
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         slug = request.POST.get('slug', '').strip()
@@ -104,6 +106,7 @@ def category_create(request):
 @admin_required
 def category_edit(request, pk):
     """Редактирование категории"""
+    from companies.models import Category
     category = get_object_or_404(Category, pk=pk)
     
     if request.method == 'POST':
@@ -145,6 +148,7 @@ def category_edit(request, pk):
 @admin_required
 def category_delete(request, pk):
     """Удаление категории"""
+    from companies.models import Category
     category = get_object_or_404(Category, pk=pk)
     
     if request.method == 'POST':
@@ -165,6 +169,7 @@ def category_delete(request, pk):
 @admin_required
 def subcategory_list(request):
     """Список подкатегорий"""
+    from companies.models import Category, Subcategory
     subcategories = Subcategory.objects.select_related('category').order_by('category__name', 'name')
     
     category_filter = request.GET.get('category', '')
@@ -192,6 +197,8 @@ def subcategory_list(request):
 @admin_required
 def subcategory_create(request):
     """Создание подкатегории"""
+    from companies.models import Category, Subcategory
+    
     if request.method == 'POST':
         category_id = request.POST.get('category')
         name = request.POST.get('name', '').strip()
@@ -234,6 +241,7 @@ def subcategory_create(request):
 @admin_required
 def subcategory_edit(request, pk):
     """Редактирование подкатегории"""
+    from companies.models import Category, Subcategory
     subcategory = get_object_or_404(Subcategory, pk=pk)
     
     if request.method == 'POST':
@@ -279,6 +287,7 @@ def subcategory_edit(request, pk):
 @admin_required
 def subcategory_delete(request, pk):
     """Удаление подкатегории"""
+    from companies.models import Subcategory
     subcategory = get_object_or_404(Subcategory, pk=pk)
     
     if request.method == 'POST':
@@ -299,7 +308,7 @@ def subcategory_delete(request, pk):
 @admin_required
 def user_list(request):
     """Список пользователей"""
-    users = User.objects.select_related('company').order_by('-created_at')
+    users = User.objects.order_by('-date_joined')
     
     # Фильтры
     role_filter = request.GET.get('role', '')
@@ -316,11 +325,11 @@ def user_list(request):
     
     if query:
         users = users.filter(
-            Q(username__icontains=query) |
             Q(email__icontains=query) |
             Q(first_name__icontains=query) |
             Q(last_name__icontains=query) |
-            Q(phone__icontains=query)
+            Q(phone__icontains=query) |
+            Q(company_name__icontains=query)
         )
     
     context = {
@@ -328,7 +337,7 @@ def user_list(request):
         'role_filter': role_filter,
         'status_filter': status_filter,
         'query': query,
-        'title': 'Пользователи',
+        'title': 'Пользователи / Компании',
     }
     return render(request, 'dashboard/users/list.html', context)
 
@@ -340,7 +349,7 @@ def user_detail(request, pk):
     
     context = {
         'user_obj': user,
-        'title': f'Пользователь: {user.username}',
+        'title': f'{user.email} ({user.company_name or "Без названия"})',
     }
     return render(request, 'dashboard/users/detail.html', context)
 
@@ -360,12 +369,13 @@ def user_edit(request, pk):
         user.is_active = is_active
         user.save()
         
-        messages.success(request, f'Пользователь "{user.username}" успешно обновлён')
+        display_name = user.company_name or user.email
+        messages.success(request, f'Пользователь "{display_name}" успешно обновлён')
         return redirect('dashboard:user_list')
     
     context = {
         'user_obj': user,
-        'title': f'Редактирование: {user.username}',
+        'title': f'Редактирование: {user.email}',
     }
     return render(request, 'dashboard/users/edit.html', context)
 
@@ -379,8 +389,9 @@ def user_toggle_active(request, pk):
         user.is_active = not user.is_active
         user.save()
         
+        display_name = user.company_name or user.email
         status = 'разбанен' if user.is_active else 'забанен'
-        messages.success(request, f'Пользователь "{user.username}" успешно {status}')
+        messages.success(request, f'Пользователь "{display_name}" успешно {status}')
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             from django.http import JsonResponse
@@ -404,7 +415,8 @@ def user_change_role(request, pk):
             user.role = new_role
             user.save()
             
-            messages.success(request, f'Роль пользователя "{user.username}" изменена с "{old_role}" на "{user.get_role_display()}"')
+            display_name = user.company_name or user.email
+            messages.success(request, f'Роль пользователя "{display_name}" изменена с "{old_role}" на "{user.get_role_display()}"')
             
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 from django.http import JsonResponse
@@ -413,3 +425,4 @@ def user_change_role(request, pk):
         return redirect('dashboard:user_list')
     
     return redirect('dashboard:user_list')
+

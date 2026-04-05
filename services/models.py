@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from companies.models import Company, Employee, Subcategory
+from companies.models import Subcategory
 
 
 class Service(models.Model):
@@ -13,19 +13,18 @@ class Service(models.Model):
         ('expired', 'Истекла'),
     )
     
-    company = models.ForeignKey(
-        Company,
+    # Предприниматель == пользователь с ролью entrepreneur
+    provider = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='services',
-        verbose_name='Компания'
+        limit_choices_to={'role': 'entrepreneur'},
+        verbose_name='Предприниматель'
     )
-    employee = models.ForeignKey(
-        Employee,
-        on_delete=models.SET_NULL,
+    employee_name = models.CharField(
+        max_length=150,
         blank=True,
-        null=True,
-        related_name='services',
-        verbose_name='Сотрудник'
+        verbose_name='Имя сотрудника (опционально)'
     )
     subcategory = models.ForeignKey(
         Subcategory,
@@ -96,11 +95,12 @@ class Service(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['status', 'is_active']),
-            models.Index(fields=['company', 'status']),
+            models.Index(fields=['provider', 'status']),
         ]
     
     def __str__(self):
-        return f"{self.name} ({self.company.name})"
+        company_name = self.provider.company_name if self.provider.company_name else self.provider.email
+        return f"{self.name} ({company_name})"
     
     @property
     def is_paid(self):
@@ -154,3 +154,4 @@ class TimeSlot(models.Model):
     
     def __str__(self):
         return f"{self.service.name} - {self.date} {self.start_time}"
+
