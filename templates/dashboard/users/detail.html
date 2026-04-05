@@ -1,0 +1,102 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- User Info -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Информация о пользователе</h3>
+            <a href="{% url 'dashboard:user_list' %}" class="btn btn-secondary">← Назад</a>
+        </div>
+        <div class="card-body">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+                <div class="user-avatar" style="width: 64px; height: 64px; font-size: 24px;">{{ user_obj.username|first|upper }}</div>
+                <div>
+                    <h4 style="margin-bottom: 4px;">{{ user_obj.username }}</h4>
+                    <p style="color: #64748b; font-size: 14px;">ID: {{ user_obj.pk }}</p>
+                </div>
+            </div>
+            
+            <table style="width: 100%;">
+                <tr>
+                    <td style="padding: 12px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;"><strong>Email:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">{{ user_obj.email }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;"><strong>Имя:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">{{ user_obj.first_name|default:"—" }} {{ user_obj.last_name|default:"" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;"><strong>Телефон:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">{{ user_obj.phone|default:"—" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;"><strong>Роль:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                        {% if user_obj.role == 'admin' %}
+                        <span class="badge badge-info">Администратор</span>
+                        {% elif user_obj.role == 'entrepreneur' %}
+                        <span class="badge badge-success">Предприниматель</span>
+                        {% else %}
+                        <span class="badge badge-info">Клиент</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;"><strong>Статус:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                        {% if user_obj.is_active %}
+                        <span class="badge badge-success">✓ Активен</span>
+                        {% else %}
+                        <span class="badge badge-danger">✗ Заблокирован</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 0; color: #64748b;"><strong>Дата регистрации:</strong></td>
+                    <td style="padding: 12px 0;">{{ user_obj.created_at|date:"d.m.Y H:i" }}</td>
+                </tr>
+            </table>
+            
+            <div style="margin-top: 24px; display: flex; gap: 12px;">
+                <a href="{% url 'dashboard:user_edit' user_obj.pk %}" class="btn btn-primary">✏️ Редактировать</a>
+                <form method="post" action="{% url 'dashboard:user_toggle_active' user_obj.pk %}" style="display: inline;" onsubmit="return confirm('Вы уверены?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn {% if user_obj.is_active %}btn-danger{% else %}btn-success{% endif %}">
+                        {% if user_obj.is_active %}🚫 Заблокировать{% else %}✅ Разблокировать{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Company Info (if exists) -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Компания</h3>
+        </div>
+        <div class="card-body">
+            {% if user_obj.company %}
+            <div style="text-align: center; padding: 20px 0;">
+                {% if user_obj.company.logo %}
+                <img src="{{ user_obj.company.logo.url }}" alt="{{ user_obj.company.name }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; margin-bottom: 16px;">
+                {% endif %}
+                <h4 style="margin-bottom: 8px;">{{ user_obj.company.name }}</h4>
+                <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">{{ user_obj.company.address }}</p>
+                <div style="display: flex; gap: 8px; justify-content: center;">
+                    <span class="badge {% if user_obj.company.is_verified %}badge-success{% else %}badge-warning{% endif %}">
+                        {% if user_obj.company.is_verified %}✓ Проверена{% else %}⏳ Не проверена{% endif %}
+                    </span>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">🏢</div>
+                <h3>Нет компании</h3>
+                <p>Пользователь не владеет компанией</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
