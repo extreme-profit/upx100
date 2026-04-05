@@ -4,36 +4,34 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
 
-# Django
-*.mo
-*.pot
-*.po
-*.db
+# Logs and temp files
 *.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+*.tmp
 
-# Build and distribution artifacts
-dist/
-build/
-*.egg-info/
-
-# Environment variables
+# Environment
 .env
 .env.local
-*.env*
+*.env.*
 
-# IDE specific
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
-*.tmp
 
-# OS generated files
-.DS_Store
-Thumbs.db
+# Dependencies
+.venv/
+venv/
+node_modules/
+
+# Build artifacts
+dist/
+build/
+*.o
+*.obj
+*.so
+*.a
+*.dll
+*.exe
 ```

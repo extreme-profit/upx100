@@ -5,10 +5,21 @@ from django.contrib import messages
 from .models import User
 
 
+def get_login_redirect_url(user):
+    """Определяет URL для перенаправления после входа в зависимости от роли"""
+    if user.is_superuser or user.role == 'admin':
+        return 'dashboard:home'
+    elif user.role == 'entrepreneur':
+        # Для предпринимателей можно создать отдельную страницу или перенаправлять на главную
+        return 'home'  # или можно создать 'dashboard:entrepreneur_home' в будущем
+    else:
+        return 'home'
+
+
 def login_view(request):
     """Страница входа"""
     if request.user.is_authenticated:
-        return redirect('dashboard:home')
+        return redirect(get_login_redirect_url(request.user))
     
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
@@ -23,7 +34,7 @@ def login_view(request):
         if user is not None:
             login(request, user)
             messages.success(request, f'Добро пожаловать, {user.email}!')
-            return redirect('dashboard:home')
+            return redirect(get_login_redirect_url(user))
         else:
             messages.error(request, 'Неверный email или пароль')
     
