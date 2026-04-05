@@ -1,0 +1,38 @@
+# Core Django
+Django==5.0.6
+
+# Django REST Framework (for future API development)
+djangorestframework==3.15.1
+
+# Database
+# psycopg2-binary==2.9.9  # Uncomment for PostgreSQL in production
+
+# Redis (for caching and Celery)
+redis==5.0.4
+
+# Celery (for background tasks)
+celery==5.3.6
+
+# Image processing
+Pillow==10.3.0
+
+# FAISS for vector search (optional, requires compilation)
+# faiss-cpu==1.8.0  # Uncomment if needed
+
+# Environment variables management
+python-decouple==3.8
+
+# For geolocation calculations
+geopy==2.4.1
+
+# HTTP requests (for payment gateway integration)
+requests==2.31.0
+
+# Development & Debugging
+django-debug-toolbar==4.3.0
+
+# Production server (optional, for development without Nginx)
+gunicorn==22.0.0
+
+# Static files handling in production
+whitenoise==6.6.0
