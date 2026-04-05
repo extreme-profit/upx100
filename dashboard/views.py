@@ -3,6 +3,20 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models import Count, Q
 from accounts.models import User
+from companies.models import Category
+from services.models import Service
+
+
+def home_view(request):
+    """Главная страница сайта"""
+    categories = Category.objects.all()[:6]
+    services = Service.objects.select_related('provider').filter(is_active=True).order_by('-created_at')[:6]
+    
+    context = {
+        'categories': categories,
+        'services': services,
+    }
+    return render(request, 'home.html', context)
 
 
 def is_admin(user):

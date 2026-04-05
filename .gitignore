@@ -1,21 +1,46 @@
 ```
-# Python
+# Python cache files
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Logs and temp files
+# Django specific
+*.sqlite3
 *.log
-*.tmp
-*.swp
 
-# Editors
+# Dependencies
+venv/
+.venv/
+env/
+.ENV/
+
+# IDE and editor files
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Environment
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Environment variables
 .env
 .env.local
-.env.*
+*.env.*
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
 ```
