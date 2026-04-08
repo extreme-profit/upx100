@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_create %}Новая услуга{% else %}Редактирование услуги{% endif %} | Панель предпринимателя{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{% if is_create %}Новая услуга{% else %}Редактирование: {{ service.name }}{% endif %}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.price.id_for_label }}" class="form-label">{{ form.price.label }}</label>
+                                {{ form.price }}
+                                {% if form.price.errors %}
+                                    <div class="text-danger">{{ form.price.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.duration.id_for_label }}" class="form-label">{{ form.duration.label }}</label>
+                                {{ form.duration }}
+                                {% if form.duration.errors %}
+                                    <div class="text-danger">{{ form.duration.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.photo.id_for_label }}" class="form-label">{{ form.photo.label }}</label>
+                            {{ form.photo }}
+                            {% if form.photo.errors %}
+                                <div class="text-danger">{{ form.photo.errors }}</div>
+                            {% endif %}
+                            {% if service and service.photo %}
+                                <div class="mt-2">
+                                    <img src="{{ service.photo.url }}" alt="Текущее фото" style="max-height: 100px;" class="rounded">
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.category.id_for_label }}" class="form-label">Подкатегория</label>
+                                <select name="category" id="{{ form.category.id_for_label }}" class="form-control">
+                                    <option value="">Выберите подкатегорию</option>
+                                    {% for cat in categories %}
+                                        <option value="{{ cat.pk }}" {% if service and service.category.pk == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.category.errors %}
+                                    <div class="text-danger">{{ form.category.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.employee.id_for_label }}" class="form-label">{{ form.employee.label }}</label>
+                                {{ form.employee }}
+                                {% if form.employee.errors %}
+                                    <div class="text-danger">{{ form.employee.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.payment_amount.id_for_label }}" class="form-label">{{ form.payment_amount.label }}</label>
+                            {{ form.payment_amount }}
+                            <small class="form-text text-muted">Сумма оплаты за размещение услуги в месяц (руб)</small>
+                            {% if form.payment_amount.errors %}
+                                <div class="text-danger">{{ form.payment_amount.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Сохранить</button>
+                            <a href="{% url 'business:service_list' %}" class="btn btn-secondary">Отмена</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
