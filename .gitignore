@@ -1,13 +1,7 @@
-```
-# Database
-db.sqlite3
-
-# Python
-__pycache__/
+```python
+# Compiled Python files
 *.pyc
-*.pyo
-*.pyd
-*.py~
+__pycache__/
 
 # Dependencies
 venv/
@@ -19,23 +13,26 @@ venv/
 # Logs
 *.log
 
-# OS generated files
-.DS_Store
-Thumbs.db
-
 # Coverage reports
 .coverage
-htmlcov/
 coverage/
+htmlcov/
 
-# IDE
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # Build artifacts
 dist/
 build/
-*.egg-info/
+target/
+.mypy_cache/
+.pytest_cache/
 ```

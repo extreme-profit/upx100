@@ -82,16 +82,21 @@
                             const categoryField = document.getElementById('{{ form.category.id_for_label }}');
                             const subcategoryField = document.getElementById('{{ form.subcategory.id_for_label }}');
                             
-                            // Сохраняем начальное значение подкатегории (если есть, например при редактировании)
-                            const initialSubcategoryValue = subcategoryField.value;
+                            // Получаем начальное значение подкатегории из Django (если редактируем)
+                            // Для новой формы это будет пустая строка
+                            const djangoInitialSubcategory = subcategoryField.value;
                             
                             // Функция загрузки подкатегорий
                             function loadSubcategories(categoryId) {
                                 if (!categoryId) {
                                     subcategoryField.innerHTML = '<option value="">Сначала выберите категорию</option>';
+                                    subcategoryField.disabled = true;
                                     subcategoryField.value = '';
                                     return;
                                 }
+                                
+                                // Включаем поле подкатегории
+                                subcategoryField.disabled = false;
                                 
                                 fetch("{% url 'business:subcategories_api' %}?category=" + categoryId)
                                     .then(response => response.json())
@@ -103,9 +108,10 @@
                                             option.textContent = subcat.name;
                                             subcategoryField.appendChild(option);
                                         });
-                                        // Восстанавливаем сохраненное значение при редактировании
-                                        if (initialSubcategoryValue) {
-                                            subcategoryField.value = initialSubcategoryValue;
+                                        // Восстанавливаем значение только если оно было установлено Django (при редактировании)
+                                        // И только если такая подкатегория есть в загруженном списке
+                                        if (djangoInitialSubcategory && data.some(s => String(s.pk) === String(djangoInitialSubcategory))) {
+                                            subcategoryField.value = djangoInitialSubcategory;
                                         }
                                     })
                                     .catch(error => console.error('Ошибка загрузки подкатегорий:', error));
@@ -113,12 +119,34 @@
                             
                             // Загружаем подкатегории при изменении категории
                             categoryField.addEventListener('change', function() {
+                                // Сбрасываем подкатегорию при смене категории
+                                subcategoryField.value = '';
                                 loadSubcategories(this.value);
                             });
                             
-                            // Если есть сохраненная категория (при редактировании), загружаем подкатегории
+                            // Если есть сохраненная категория (при редактировании или после ошибки валидации), загружаем подкатегории
                             if (categoryField.value) {
                                 loadSubcategories(categoryField.value);
+                            } else {
+                                // Если категории нет, отключаем подкатегорию
+                                subcategoryField.disabled = true;
+                            }
+                            
+                            // Проверка перед отправкой формы
+                            const form = document.querySelector('form[method="post"]');
+                            if (form) {
+                                form.addEventListener('submit', function(e) {
+                                    if (!categoryField.value) {
+                                        alert('Пожалуйста, выберите категорию');
+                                        e.preventDefault();
+                                        return false;
+                                    }
+                                    if (!subcategoryField.value) {
+                                        alert('Пожалуйста, выберите подкатегорию');
+                                        e.preventDefault();
+                                        return false;
+                                    }
+                                });
                             }
                         });
                         </script>

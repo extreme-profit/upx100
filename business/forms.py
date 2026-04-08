@@ -66,7 +66,15 @@ class ServiceForm(forms.ModelForm):
         # Получаем категорию из данных формы (при POST) или из начальных значений
         category_id = None
         if kwargs.get('data'):
+            # Для POST-запроса извлекаем category_id из данных
+            # Используем .get() для QueryDict и dict
             category_id = kwargs['data'].get('category')
+            # Преобразуем в int если это строка
+            if category_id and isinstance(category_id, str):
+                try:
+                    category_id = int(category_id)
+                except (ValueError, TypeError):
+                    pass
         elif self.instance and self.instance.pk and self.instance.category:
             category_id = self.instance.category_id
         
