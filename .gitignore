@@ -1,38 +1,67 @@
-```python
-# Compiled Python files
-*.pyc
+```gitignore
+# Python
 __pycache__/
-
-# Dependencies
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
 venv/
 .venv/
-.env
-.env.local
-*.env.*
-
-# Logs
-*.log
-
-# Coverage reports
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.mypy_cache/
 .coverage
 coverage/
 htmlcov/
 
-# IDE files
+# Web
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local configuration
+.env
+.env.local
+*.env.*
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*.tmp
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Build artifacts
+# Build/dist
 dist/
 build/
+*.egg-info/
 target/
-.mypy_cache/
-.pytest_cache/
+.gradle/
+
+# Compression
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```

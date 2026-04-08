@@ -65,29 +65,41 @@ class ServiceForm(forms.ModelForm):
         
         # Получаем категорию из данных формы (при POST) или из начальных значений
         category_id = None
+        
+        # Сначала пробуем получить из POST/GT данных
         if kwargs.get('data'):
-            # Для POST-запроса извлекаем category_id из данных
-            # Используем .get() для QueryDict и dict
             category_id = kwargs['data'].get('category')
-            # Преобразуем в int если это строка
-            if category_id and isinstance(category_id, str):
-                try:
-                    category_id = int(category_id)
-                except (ValueError, TypeError):
-                    pass
-        elif self.instance and self.instance.pk and self.instance.category:
+        # Если нет в data, пробуем initial
+        elif kwargs.get('initial') and kwargs['initial'].get('category'):
+            cat = kwargs['initial']['category']
+            category_id = cat.pk if hasattr(cat, 'pk') else cat
+        # Если редактируем существующий объект
+        elif self.instance and self.instance.pk and self.instance.category_id:
             category_id = self.instance.category_id
+        
+        # Преобразуем в int если это строка
+        if category_id and isinstance(category_id, str):
+            try:
+                category_id = int(category_id)
+            except (ValueError, TypeError):
+                category_id = None
         
         # Устанавливаем queryset подкатегорий на основе категории
         if category_id:
             self.fields['subcategory'].queryset = Subcategory.objects.filter(category_id=category_id)
             self.fields['subcategory'].empty_label = 'Выберите подкатегорию'
-            if self.instance and self.instance.pk and self.instance.subcategory:
-                self.fields['subcategory'].initial = self.instance.subcategory
+            # Если есть начальное значение подкатегории, убеждаемся что оно в queryset
+            if self.instance and self.instance.pk and self.instance.subcategory_id:
+                self.fields['subcategory'].initial = self.instance.subcategory_id
+            elif kwargs.get('data') and kwargs['data'].get('subcategory'):
+                # Сохраняем выбранную подкатегорию из POST данных
+                self.fields['subcategory'].initial = kwargs['data'].get('subcategory')
         
         # Если редактируем существующую услугу, устанавливаем начальные значения
-        if self.instance and self.instance.pk and self.instance.category:
-            self.fields['category'].initial = self.instance.category
+        if self.instance and self.instance.pk and self.instance.category_id:
+            self.fields['category'].initial = self.instance.category_id
+        elif kwargs.get('data') and kwargs['data'].get('category'):
+            self.fields['category'].initial = kwargs['data'].get('category')
     
     def clean_subcategory(self):
         """Проверка подкатегории: должна принадлежать выбранной категории"""
