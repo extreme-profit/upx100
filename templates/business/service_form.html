@@ -91,7 +91,7 @@
                                     return;
                                 }
                                 
-                                fetch(`/api/subcategories/?category=${categoryId}`)
+                                fetch("{% url 'business:subcategories_api' %}?category=" + categoryId)
                                     .then(response => response.json())
                                     .then(data => {
                                         subcategoryField.innerHTML = '<option value="">Выберите подкатегорию</option>';
