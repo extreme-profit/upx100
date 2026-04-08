@@ -1,80 +1,96 @@
-{% extends 'base.html' %}
+{% extends 'business/base.html' %}
+{% load static %}
 
 {% block title %}{{ title|default:"Редактирование профиля компании" }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h3>{% if is_create %}Создание профиля компании{% else %}Редактирование профиля компании{% endif %}</h3>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0"><i class="fas fa-building me-2"></i>{% if is_create %}Создание профиля компании{% else %}Редактирование профиля компании{% endif %}</h4>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         
-                        <div class="mb-3">
-                            <label for="{{ form.name.id_for_label }}" class="form-label">Название компании *</label>
-                            {{ form.name }}
-                            {% if form.name.errors %}
-                                <div class="text-danger">{{ form.name.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">Описание</label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                                <div class="text-danger">{{ form.description.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.logo.id_for_label }}" class="form-label">Логотип</label>
+                        <div class="row g-4">
+                            <!-- Логотип -->
+                            <div class="col-md-12 text-center mb-3">
+                                <div class="mb-3">
+                                    {% if company.logo %}
+                                        <img src="{{ company.logo.url }}" alt="Логотип" class="rounded-circle shadow-sm" style="width: 150px; height: 150px; object-fit: cover; border: 4px solid #f8f9fa;">
+                                    {% elif form.instance.logo %}
+                                        <img src="{{ form.instance.logo.url }}" alt="Логотип" class="rounded-circle shadow-sm" style="width: 150px; height: 150px; object-fit: cover; border: 4px solid #f8f9fa;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 150px; height: 150px; border: 4px solid #f8f9fa;">
+                                            <i class="fas fa-building fa-4x text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <label for="id_logo" class="form-label fw-bold">Логотип компании</label>
                                 {{ form.logo }}
+                                <div class="form-text">Рекомендуемый размер: 300x300 px. Форматы: JPG, PNG.</div>
                                 {% if form.logo.errors %}
-                                    <div class="text-danger">{{ form.logo.errors }}</div>
+                                    <div class="text-danger mt-2">{{ form.logo.errors }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.photo.id_for_label }}" class="form-label">Фото компании</label>
-                                {{ form.photo }}
-                                {% if form.photo.errors %}
-                                    <div class="text-danger">{{ form.photo.errors }}</div>
+
+                            <!-- Название -->
+                            <div class="col-md-6">
+                                <label for="id_name" class="form-label fw-bold"><i class="fas fa-signature me-1 text-primary"></i>Название компании *</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger mt-1">{{ form.name.errors }}</div>
                                 {% endif %}
                             </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.address.id_for_label }}" class="form-label">Адрес *</label>
-                            {{ form.address }}
-                            {% if form.address.errors %}
-                                <div class="text-danger">{{ form.address.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.latitude.id_for_label }}" class="form-label">Широта</label>
+
+                            <!-- Описание -->
+                            <div class="col-12">
+                                <label for="id_description" class="form-label fw-bold"><i class="fas fa-align-left me-1 text-primary"></i>Описание</label>
+                                {{ form.description }}
+                                <div class="form-text">Расскажите клиентам о ваших преимуществах.</div>
+                                {% if form.description.errors %}
+                                    <div class="text-danger mt-1">{{ form.description.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Адрес -->
+                            <div class="col-12">
+                                <label for="id_address" class="form-label fw-bold"><i class="fas fa-map-marker-alt me-1 text-primary"></i>Адрес *</label>
+                                {{ form.address }}
+                                {% if form.address.errors %}
+                                    <div class="text-danger mt-1">{{ form.address.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Координаты -->
+                            <div class="col-md-6">
+                                <label for="id_latitude" class="form-label fw-bold"><i class="fas fa-location-arrow me-1 text-primary"></i>Широта</label>
                                 {{ form.latitude }}
                                 {% if form.latitude.errors %}
-                                    <div class="text-danger">{{ form.latitude.errors }}</div>
+                                    <div class="text-danger mt-1">{{ form.latitude.errors }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.longitude.id_for_label }}" class="form-label">Долгота</label>
+                            <div class="col-md-6">
+                                <label for="id_longitude" class="form-label fw-bold"><i class="fas fa-location-arrow me-1 text-primary"></i>Долгота</label>
                                 {{ form.longitude }}
                                 {% if form.longitude.errors %}
-                                    <div class="text-danger">{{ form.longitude.errors }}</div>
+                                    <div class="text-danger mt-1">{{ form.longitude.errors }}</div>
                                 {% endif %}
                             </div>
                         </div>
-                        
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'business:company_profile' %}" class="btn btn-secondary">Отмена</a>
-                            <button type="submit" class="btn btn-primary">Сохранить</button>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'business:company_profile' %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save me-2"></i>Сохранить изменения
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -82,4 +98,24 @@
         </div>
     </div>
 </div>
+
+<style>
+    .form-control, .form-select {
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    }
+    
+    .card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    
+    .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
 {% endblock %}
