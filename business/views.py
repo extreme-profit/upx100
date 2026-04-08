@@ -175,7 +175,6 @@ def service_create_view(request):
             # Устанавливаем категорию и подкатегорию из формы
             service.category = form.cleaned_data.get('category')
             service.subcategory = form.cleaned_data.get('subcategory')
-            service.payment_amount = service.price  # Пример: оплата равна цене услуги
             service.status = 'pending_payment'
             service.save()
             messages.success(request, 'Услуга создана! Теперь оплатите её для публикации.')
