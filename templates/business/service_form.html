@@ -69,22 +69,22 @@
                                 {% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="{{ form.subcategory.id_for_label }}" class="form-label">Подкатегория</label>
-                                {{ form.subcategory }}
-                                {% if form.subcategory.errors %}
-                                    <div class="text-danger">{{ form.subcategory.errors }}</div>
+                                <label for="{{ form.subcategory_id.id_for_label }}" class="form-label">Подкатегория</label>
+                                {{ form.subcategory_id }}
+                                {% if form.subcategory_id.errors %}
+                                    <div class="text-danger">{{ form.subcategory_id.errors }}</div>
                                 {% endif %}
                             </div>
                         </div>
                         
                         {# Передаем начальные значения для JavaScript #}
                         <input type="hidden" id="initial-category-id" value="{% if form.category.value %}{{ form.category.value }}{% endif %}">
-                        <input type="hidden" id="initial-subcategory-id" value="{% if form.subcategory.value %}{{ form.subcategory.value }}{% endif %}">
+                        <input type="hidden" id="initial-subcategory-id" value="{% if form.subcategory_id.value %}{{ form.subcategory_id.value }}{% endif %}">
                         
                         <script>
                         document.addEventListener('DOMContentLoaded', function() {
                             const categoryField = document.getElementById('{{ form.category.id_for_label }}');
-                            const subcategoryField = document.getElementById('{{ form.subcategory.id_for_label }}');
+                            const subcategoryField = document.getElementById('{{ form.subcategory_id.id_for_label }}');
                             
                             // Получаем начальные значения из скрытых полей (после POST с ошибкой валидации)
                             const initialCategoryId = document.getElementById('initial-category-id').value;

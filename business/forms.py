@@ -39,8 +39,7 @@ class ServiceForm(forms.ModelForm):
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
-    subcategory = forms.ModelChoiceField(
-        queryset=Subcategory.objects.none(),
+    subcategory_id = forms.IntegerField(
         label='Подкатегория',
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'})
@@ -61,7 +60,7 @@ class ServiceForm(forms.ModelForm):
         self.fields['employee'].empty_label = 'Выберите сотрудника'
         self.fields['employee'].queryset = Employee.objects.none()  # Будет переопределено в view
         self.fields['category'].empty_label = 'Выберите категорию'
-        self.fields['subcategory'].empty_label = 'Сначала выберите категорию'
+        self.fields['subcategory_id'].empty_label = 'Сначала выберите категорию'
         
         # Получаем категорию из данных формы (при POST) или из начальных значений
         category_id = None
@@ -84,16 +83,16 @@ class ServiceForm(forms.ModelForm):
             except (ValueError, TypeError):
                 category_id = None
         
-        # Устанавливаем queryset подкатегорий на основе категории
+        # Устанавливаем choices для подкатегорий на основе категории
         if category_id:
-            self.fields['subcategory'].queryset = Subcategory.objects.filter(category_id=category_id)
-            self.fields['subcategory'].empty_label = 'Выберите подкатегорию'
-            # Если есть начальное значение подкатегории, убеждаемся что оно в queryset
+            subcategories = Subcategory.objects.filter(category_id=category_id)
+            self.fields['subcategory_id'].choices = [('', 'Выберите подкатегорию')] + [(sub.id, sub.name) for sub in subcategories]
+            # Если есть начальное значение подкатегории, устанавливаем его
             if self.instance and self.instance.pk and self.instance.subcategory_id:
-                self.fields['subcategory'].initial = self.instance.subcategory_id
-            elif kwargs.get('data') and kwargs['data'].get('subcategory'):
+                self.fields['subcategory_id'].initial = self.instance.subcategory_id
+            elif kwargs.get('data') and kwargs['data'].get('subcategory_id'):
                 # Сохраняем выбранную подкатегорию из POST данных
-                self.fields['subcategory'].initial = kwargs['data'].get('subcategory')
+                self.fields['subcategory_id'].initial = kwargs['data'].get('subcategory_id')
         
         # Если редактируем существующую услугу, устанавливаем начальные значения
         if self.instance and self.instance.pk and self.instance.category_id:
@@ -101,25 +100,34 @@ class ServiceForm(forms.ModelForm):
         elif kwargs.get('data') and kwargs['data'].get('category'):
             self.fields['category'].initial = kwargs['data'].get('category')
     
-    def clean_subcategory(self):
+    def clean_subcategory_id(self):
         """Проверка подкатегории: должна принадлежать выбранной категории"""
-        subcategory = self.cleaned_data.get('subcategory')
+        subcategory_id = self.cleaned_data.get('subcategory_id')
         category = self.cleaned_data.get('category')
         
-        # Если подкатегория не выбрана, но должна быть
-        if not subcategory and self.data.get('subcategory'):
-            # Пытаемся получить подкатегорию напрямую из data
-            subcat_id = self.data.get('subcategory')
-            if category:
-                try:
-                    subcategory = Subcategory.objects.get(pk=subcat_id, category_id=category)
-                except Subcategory.DoesNotExist:
-                    raise forms.ValidationError('Выберите корректный вариант. Вашего варианта нет среди допустимых значений.')
+        if not subcategory_id:
+            raise forms.ValidationError('Выберите подкатегорию')
         
-        if subcategory and category:
-            if subcategory.category != category:
-                raise forms.ValidationError('Подкатегория должна принадлежать выбранной категории')
-        return subcategory
+        if not category:
+            raise forms.ValidationError('Сначала выберите категорию')
+        
+        # Проверяем что подкатегория существует и принадлежит категории
+        try:
+            subcategory = Subcategory.objects.get(id=subcategory_id, category_id=category.id)
+        except Subcategory.DoesNotExist:
+            raise forms.ValidationError('Выберите корректный вариант. Вашего варианта нет среди допустимых значений.')
+        
+        return subcategory_id
+    
+    def save(self, commit=True):
+        """Сохранение услуги с правильной подкатегорией"""
+        service = super().save(commit=False)
+        subcategory_id = self.cleaned_data.get('subcategory_id')
+        if subcategory_id:
+            service.subcategory_id = subcategory_id
+        if commit:
+            service.save()
+        return service
 
 
 class PaymentForm(forms.ModelForm):
