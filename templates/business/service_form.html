@@ -77,17 +77,21 @@
                             </div>
                         </div>
                         
+                        {# Передаем начальные значения для JavaScript #}
+                        <input type="hidden" id="initial-category-id" value="{% if form.category.value %}{{ form.category.value }}{% endif %}">
+                        <input type="hidden" id="initial-subcategory-id" value="{% if form.subcategory.value %}{{ form.subcategory.value }}{% endif %}">
+                        
                         <script>
                         document.addEventListener('DOMContentLoaded', function() {
                             const categoryField = document.getElementById('{{ form.category.id_for_label }}');
                             const subcategoryField = document.getElementById('{{ form.subcategory.id_for_label }}');
                             
-                            // Получаем начальное значение подкатегории из Django (если редактируем)
-                            // Для новой формы это будет пустая строка
-                            const djangoInitialSubcategory = subcategoryField.value;
+                            // Получаем начальные значения из скрытых полей (после POST с ошибкой валидации)
+                            const initialCategoryId = document.getElementById('initial-category-id').value;
+                            const initialSubcategoryId = document.getElementById('initial-subcategory-id').value;
                             
                             // Функция загрузки подкатегорий
-                            function loadSubcategories(categoryId) {
+                            function loadSubcategories(categoryId, selectedSubcategoryId) {
                                 if (!categoryId) {
                                     subcategoryField.innerHTML = '<option value="">Сначала выберите категорию</option>';
                                     subcategoryField.disabled = true;
@@ -108,10 +112,9 @@
                                             option.textContent = subcat.name;
                                             subcategoryField.appendChild(option);
                                         });
-                                        // Восстанавливаем значение только если оно было установлено Django (при редактировании)
-                                        // И только если такая подкатегория есть в загруженном списке
-                                        if (djangoInitialSubcategory && data.some(s => String(s.pk) === String(djangoInitialSubcategory))) {
-                                            subcategoryField.value = djangoInitialSubcategory;
+                                        // Восстанавливаем значение подкатегории если оно было выбрано
+                                        if (selectedSubcategoryId && data.some(s => String(s.pk) === String(selectedSubcategoryId))) {
+                                            subcategoryField.value = selectedSubcategoryId;
                                         }
                                     })
                                     .catch(error => console.error('Ошибка загрузки подкатегорий:', error));
@@ -121,12 +124,12 @@
                             categoryField.addEventListener('change', function() {
                                 // Сбрасываем подкатегорию при смене категории
                                 subcategoryField.value = '';
-                                loadSubcategories(this.value);
+                                loadSubcategories(this.value, null);
                             });
                             
                             // Если есть сохраненная категория (при редактировании или после ошибки валидации), загружаем подкатегории
-                            if (categoryField.value) {
-                                loadSubcategories(categoryField.value);
+                            if (initialCategoryId) {
+                                loadSubcategories(initialCategoryId, initialSubcategoryId);
                             } else {
                                 // Если категории нет, отключаем подкатегорию
                                 subcategoryField.disabled = true;
