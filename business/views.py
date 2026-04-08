@@ -18,6 +18,7 @@ def company_profile_view(request):
     employees = company.employees.all()
     services = company.services.all()
     bookings = Booking.objects.filter(service__company=company).order_by('-created_at')[:10]
+    pending_bookings_count = Booking.objects.filter(service__company=company, status='pending').count()
     services_pending_count = company.services.filter(status='pending_payment').count()
     
     context = {
@@ -25,6 +26,7 @@ def company_profile_view(request):
         'employees': employees,
         'services': services,
         'bookings': bookings,
+        'pending_bookings_count': pending_bookings_count,
         'services_pending_count': services_pending_count,
     }
     return render(request, 'business/company_profile.html', context)

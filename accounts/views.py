@@ -10,8 +10,8 @@ def get_login_redirect_url(user):
     if user.is_superuser or user.role == 'admin':
         return 'dashboard:home'
     elif user.role == 'entrepreneur':
-        # Для предпринимателей можно создать отдельную страницу или перенаправлять на главную
-        return 'home'  # или можно создать 'dashboard:entrepreneur_home' в будущем
+        # Для предпринимателей - переход в личный кабинет компании
+        return 'business:company_profile'
     else:
         return 'home'
 
