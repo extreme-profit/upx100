@@ -48,13 +48,12 @@ class ServiceForm(forms.ModelForm):
     
     class Meta:
         model = Service
-        fields = ['name', 'description', 'price', 'duration', 'photo', 'employee', 'payment_amount']
+        fields = ['name', 'description', 'price', 'duration', 'photo', 'employee']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название услуги'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Описание услуги'}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'duration': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'В минутах'}),
-            'payment_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Сумма оплаты в месяц'}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -64,13 +63,32 @@ class ServiceForm(forms.ModelForm):
         self.fields['category'].empty_label = 'Выберите категорию'
         self.fields['subcategory'].empty_label = 'Сначала выберите категорию'
         
+        # Получаем категорию из данных формы (при POST) или из начальных значений
+        category_id = None
+        if kwargs.get('data'):
+            category_id = kwargs['data'].get('category')
+        elif self.instance and self.instance.pk and self.instance.category:
+            category_id = self.instance.category_id
+        
+        # Устанавливаем queryset подкатегорий на основе категории
+        if category_id:
+            self.fields['subcategory'].queryset = Subcategory.objects.filter(category_id=category_id)
+            self.fields['subcategory'].empty_label = 'Выберите подкатегорию'
+            if self.instance and self.instance.pk and self.instance.subcategory:
+                self.fields['subcategory'].initial = self.instance.subcategory
+        
         # Если редактируем существующую услугу, устанавливаем начальные значения
         if self.instance and self.instance.pk and self.instance.category:
             self.fields['category'].initial = self.instance.category
-            self.fields['subcategory'].queryset = Subcategory.objects.filter(category=self.instance.category)
-            self.fields['subcategory'].empty_label = 'Выберите подкатегорию'
-            if self.instance.subcategory:
-                self.fields['subcategory'].initial = self.instance.subcategory
+    
+    def clean_subcategory(self):
+        """Проверка подкатегории: должна принадлежать выбранной категории"""
+        subcategory = self.cleaned_data.get('subcategory')
+        category = self.cleaned_data.get('category')
+        if subcategory and category:
+            if subcategory.category != category:
+                raise forms.ValidationError('Подкатегория должна принадлежать выбранной категории')
+        return subcategory
 
 
 class PaymentForm(forms.ModelForm):
