@@ -1,89 +1,148 @@
-{% extends 'base.html' %}
+{% extends 'business/base.html' %}
+{% load static %}
 
 {% block title %}{{ service.name }} | Панель предпринимателя{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{{ service.name }}</h1>
-        <div>
-            <a href="{% url 'business:service_edit' service.pk %}" class="btn btn-primary">✏ Редактировать</a>
-            <a href="{% url 'business:slot_generate' service.pk %}" class="btn btn-success">📅 Создать слоты</a>
-            <a href="{% url 'business:service_list' %}" class="btn btn-secondary">← Назад</a>
+<div class="content-area">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0 text-primary"><i class="fas fa-concierge-bell me-2"></i>{{ service.name }}</h2>
+                <div>
+                    <a href="{% url 'business:service_edit' service.pk %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-edit me-2"></i>Редактировать
+                    </a>
+                    <a href="{% url 'business:slot_manage' service.pk %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-calendar-alt me-2"></i>Управление слотами
+                    </a>
+                    <a href="{% url 'business:service_list' %}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>Назад
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
     
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                <i class="fas fa-info-circle me-2"></i>{{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         {% endfor %}
     {% endif %}
     
-    <div class="row">
+    <div class="row g-4">
         <!-- Информация об услуге -->
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Информация об услуге</h5>
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Информация об услуге</h5>
                 </div>
                 <div class="card-body">
                     {% if service.photo %}
-                        <img src="{{ service.photo.url }}" alt="{{ service.name }}" class="img-fluid rounded mb-3" style="max-height: 200px;">
+                        <div class="text-center mb-3">
+                            <img src="{{ service.photo.url }}" alt="{{ service.name }}" class="img-fluid rounded shadow-sm" style="max-height: 250px; max-width: 100%;">
+                        </div>
                     {% endif %}
-                    <p><strong>Название:</strong> {{ service.name }}</p>
-                    <p><strong>Описание:</strong> {{ service.description|default:"Не указано"|linebreaks }}</p>
-                    <p><strong>Цена:</strong> {{ service.price }} ₽</p>
-                    <p><strong>Длительность:</strong> {{ service.duration }} мин</p>
-                    <p><strong>Категория:</strong> {{ service.category.name|default:"—" }}</p>
-                    <p><strong>Сотрудник:</strong> {{ service.employee.name|default:"Не назначен" }}</p>
-                    <p><strong>Статус:</strong> 
-                        <span class="badge bg-{% if service.status == 'active' %}success{% elif service.status == 'pending_payment' %}warning{% elif service.status == 'inactive' %}danger{% else %}secondary{% endif %}">
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted"><i class="fas fa-tag me-2"></i>Название:</label>
+                        <p class="fs-5">{{ service.name }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted"><i class="fas fa-align-left me-2"></i>Описание:</label>
+                        <p>{{ service.description|default:"Не указано"|linebreaks }}</p>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="fw-bold text-muted"><i class="fas fa-ruble-sign me-2"></i>Цена:</label>
+                            <p class="fs-4 text-success fw-bold">{{ service.price }} ₽</p>
+                        </div>
+                        <div class="col-6">
+                            <label class="fw-bold text-muted"><i class="fas fa-clock me-2"></i>Длительность:</label>
+                            <p class="fs-5">{{ service.duration }} мин</p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted"><i class="fas fa-folder me-2"></i>Категория:</label>
+                        <p>{{ service.category.name|default:"—" }}</p>
+                    </div>
+                    {% if service.subcategory %}
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted"><i class="fas fa-folder-open me-2"></i>Подкатегория:</label>
+                        <p>{{ service.subcategory.name }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted"><i class="fas fa-user-tie me-2"></i>Сотрудник:</label>
+                        <p>{{ service.employee.name|default:"Не назначен" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted"><i class="fas fa-flag me-2"></i>Статус:</label>
+                        <span class="badge bg-{% if service.status == 'active' %}success{% elif service.status == 'pending_payment' %}warning{% elif service.status == 'inactive' %}danger{% else %}secondary{% endif %} px-3 py-2 fs-6">
+                            <i class="fas fa-{% if service.status == 'active' %}check-circle{% elif service.status == 'pending_payment' %}clock{% elif service.status == 'inactive' %}times-circle{% else %}info-circle{% endif %} me-1"></i>
                             {{ service.get_status_display }}
                         </span>
-                    </p>
-                    <p><strong>Оплата до:</strong> 
-                        {% if service.payment_due_date %}
-                            {{ service.payment_due_date|date:"d.m.Y" }}
-                            {% if not service.is_paid %}
-                                <span class="text-danger">(ИСТЕКЛО)</span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted"><i class="fas fa-calendar-check me-2"></i>Оплата до:</label>
+                        <p>
+                            {% if service.payment_due_date %}
+                                {{ service.payment_due_date|date:"d.m.Y" }}
+                                {% if not service.is_paid %}
+                                    <span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i>ИСТЕКЛО</span>
+                                {% else %}
+                                    <span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Оплачено</span>
+                                {% endif %}
+                            {% else %}
+                                —
                             {% endif %}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </p>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
         
         <!-- Временные слоты -->
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5>Временные слоты</h5>
-                    <a href="{% url 'business:slot_manage' service.pk %}" class="btn btn-sm btn-outline-primary">Управление слотами</a>
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-success text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Временные слоты</h5>
+                    <a href="{% url 'business:slot_manage' service.pk %}" class="btn btn-sm btn-light">
+                        <i class="fas fa-cog me-1"></i>Управление
+                    </a>
                 </div>
                 <div class="card-body">
                     {% if time_slots %}
-                        <p class="text-muted">Ближайшие доступные слоты ({{ time_slots.count }}):</p>
-                        <ul class="list-group">
+                        <p class="text-muted mb-3"><i class="fas fa-info-circle me-1"></i>Ближайшие доступные слоты ({{ time_slots.count }}):</p>
+                        <div class="list-group shadow-sm">
                             {% for slot in time_slots|slice:":10" %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    {{ slot.date|date:"d.m.Y" }} {{ slot.start_time|date:"H:i" }} - {{ slot.end_time|date:"H:i" }}
-                                    <span class="badge bg-{% if slot.is_booked %}danger{% else %}success{% endif %}">
+                                <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                                    <div>
+                                        <i class="fas fa-calendar-day text-primary me-2"></i>
+                                        <strong>{{ slot.date|date:"d.m.Y" }}</strong>
+                                        <span class="ms-2 text-muted">{{ slot.start_time|date:"H:i" }} - {{ slot.end_time|date:"H:i" }}</span>
+                                    </div>
+                                    <span class="badge bg-{% if slot.is_booked %}danger{% else %}success{% endif %} px-3 py-2">
+                                        <i class="fas fa-{% if slot.is_booked %}lock{% else %}unlock{% endif %} me-1"></i>
                                         {% if slot.is_booked %}Занят{% else %}Свободен{% endif %}
                                     </span>
-                                </li>
+                                </div>
                             {% endfor %}
-                        </ul>
+                        </div>
                         {% if time_slots.count > 10 %}
-                            <p class="text-muted mt-2">... и еще {{ time_slots.count|add:"-10" }} слотов</p>
+                            <p class="text-muted mt-3"><i class="fas fa-ellipsis-h me-1"></i>... и еще {{ time_slots.count|add:"-10" }} слотов</p>
                         {% endif %}
                     {% else %}
-                        <p class="text-muted">Временные слоты еще не созданы.</p>
-                        <a href="{% url 'business:slot_generate' service.pk %}" class="btn btn-primary">Создать слоты</a>
+                        <div class="text-center py-5">
+                            <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                            <h5 class="text-muted">Временные слоты еще не созданы</h5>
+                            <p class="text-muted">Создайте слоты для записи клиентов</p>
+                            <a href="{% url 'business:slot_generate' service.pk %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus me-2"></i>Создать слоты
+                            </a>
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -91,46 +150,75 @@
     </div>
     
     <!-- Бронирования -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Бронирования</h5>
+    <div class="card shadow-sm border-0 mt-4">
+        <div class="card-header bg-info text-white py-3">
+            <h5 class="mb-0"><i class="fas fa-bookings me-2"></i>Бронирования</h5>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             {% if bookings %}
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Клиент</th>
-                        <th>Телефон</th>
-                        <th>Статус</th>
-                        <th>Дата создания</th>
-                        <th>Комментарий</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for booking in bookings %}
-                    <tr>
-                        <td>{{ booking.client_name }}</td>
-                        <td>{{ booking.client_phone }}</td>
-                        <td>
-                            <span class="badge bg-{% if booking.status == 'confirmed' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}info{% endif %}">
-                                {{ booking.get_status_display }}
-                            </span>
-                        </td>
-                        <td>{{ booking.created_at|date:"d.m.Y H:i" }}</td>
-                        <td>{{ booking.notes|default:"—" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="py-3"><i class="fas fa-user me-1"></i>Клиент</th>
+                            <th class="py-3"><i class="fas fa-phone me-1"></i>Телефон</th>
+                            <th class="py-3"><i class="fas fa-flag me-1"></i>Статус</th>
+                            <th class="py-3"><i class="fas fa-clock me-1"></i>Дата создания</th>
+                            <th class="py-3"><i class="fas fa-sticky-note me-1"></i>Комментарий</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                        <tr class="align-middle">
+                            <td class="py-3 fw-bold">{{ booking.client_name }}</td>
+                            <td class="py-3">
+                                <a href="tel:{{ booking.client_phone }}" class="text-decoration-none">
+                                    <i class="fas fa-phone-alt text-success me-1"></i>{{ booking.client_phone }}
+                                </a>
+                            </td>
+                            <td class="py-3">
+                                <span class="badge bg-{% if booking.status == 'confirmed' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}info{% endif %} px-3 py-2">
+                                    <i class="fas fa-{% if booking.status == 'confirmed' %}check-circle{% elif booking.status == 'pending' %}clock{% elif booking.status == 'cancelled' %}times-circle{% else %}info-circle{% endif %} me-1"></i>
+                                    {{ booking.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="py-3">{{ booking.created_at|date:"d.m.Y H:i" }}</td>
+                            <td class="py-3">{{ booking.notes|truncatechars:40|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% else %}
-            <p class="text-muted">Пока нет бронирований</p>
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Пока нет бронирований</h5>
+                <p class="text-muted">Как только клиенты начнут записываться, они появятся здесь</p>
+            </div>
             {% endif %}
         </div>
     </div>
-    
-    <div class="mt-3">
-        <a href="{% url 'business:service_list' %}" class="btn btn-secondary">← К списку услуг</a>
-    </div>
 </div>
+
+<style>
+    .card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    
+    .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .badge {
+        font-weight: 500;
+    }
+    
+    .list-group-item {
+        transition: background-color 0.2s ease;
+    }
+    
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+</style>
 {% endblock %}
