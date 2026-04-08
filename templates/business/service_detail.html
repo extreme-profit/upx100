@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ service.name }} | Панель предпринимателя{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ service.name }}</h1>
+        <div>
+            <a href="{% url 'business:service_edit' service.pk %}" class="btn btn-primary">✏ Редактировать</a>
+            <a href="{% url 'business:slot_generate' service.pk %}" class="btn btn-success">📅 Создать слоты</a>
+            <a href="{% url 'business:service_list' %}" class="btn btn-secondary">← Назад</a>
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="row">
+        <!-- Информация об услуге -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Информация об услуге</h5>
+                </div>
+                <div class="card-body">
+                    {% if service.photo %}
+                        <img src="{{ service.photo.url }}" alt="{{ service.name }}" class="img-fluid rounded mb-3" style="max-height: 200px;">
+                    {% endif %}
+                    <p><strong>Название:</strong> {{ service.name }}</p>
+                    <p><strong>Описание:</strong> {{ service.description|default:"Не указано"|linebreaks }}</p>
+                    <p><strong>Цена:</strong> {{ service.price }} ₽</p>
+                    <p><strong>Длительность:</strong> {{ service.duration }} мин</p>
+                    <p><strong>Категория:</strong> {{ service.category.name|default:"—" }}</p>
+                    <p><strong>Сотрудник:</strong> {{ service.employee.name|default:"Не назначен" }}</p>
+                    <p><strong>Статус:</strong> 
+                        <span class="badge bg-{% if service.status == 'active' %}success{% elif service.status == 'pending_payment' %}warning{% elif service.status == 'inactive' %}danger{% else %}secondary{% endif %}">
+                            {{ service.get_status_display }}
+                        </span>
+                    </p>
+                    <p><strong>Оплата до:</strong> 
+                        {% if service.payment_due_date %}
+                            {{ service.payment_due_date|date:"d.m.Y" }}
+                            {% if not service.is_paid %}
+                                <span class="text-danger">(ИСТЕКЛО)</span>
+                            {% endif %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Временные слоты -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Временные слоты</h5>
+                    <a href="{% url 'business:slot_manage' service.pk %}" class="btn btn-sm btn-outline-primary">Управление слотами</a>
+                </div>
+                <div class="card-body">
+                    {% if time_slots %}
+                        <p class="text-muted">Ближайшие доступные слоты ({{ time_slots.count }}):</p>
+                        <ul class="list-group">
+                            {% for slot in time_slots|slice:":10" %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ slot.date|date:"d.m.Y" }} {{ slot.start_time|date:"H:i" }} - {{ slot.end_time|date:"H:i" }}
+                                    <span class="badge bg-{% if slot.is_booked %}danger{% else %}success{% endif %}">
+                                        {% if slot.is_booked %}Занят{% else %}Свободен{% endif %}
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        {% if time_slots.count > 10 %}
+                            <p class="text-muted mt-2">... и еще {{ time_slots.count|add:"-10" }} слотов</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted">Временные слоты еще не созданы.</p>
+                        <a href="{% url 'business:slot_generate' service.pk %}" class="btn btn-primary">Создать слоты</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Бронирования -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Бронирования</h5>
+        </div>
+        <div class="card-body">
+            {% if bookings %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Клиент</th>
+                        <th>Телефон</th>
+                        <th>Статус</th>
+                        <th>Дата создания</th>
+                        <th>Комментарий</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.client_name }}</td>
+                        <td>{{ booking.client_phone }}</td>
+                        <td>
+                            <span class="badge bg-{% if booking.status == 'confirmed' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}info{% endif %}">
+                                {{ booking.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ booking.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>{{ booking.notes|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">Пока нет бронирований</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="mt-3">
+        <a href="{% url 'business:service_list' %}" class="btn btn-secondary">← К списку услуг</a>
+    </div>
+</div>
+{% endblock %}

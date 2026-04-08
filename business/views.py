@@ -303,7 +303,12 @@ def slot_generate_view(request, service_id):
             messages.success(request, f'Временные слоты созданы с {start_date} по {end_date}')
             return redirect('business:slot_manage', service_id=service_id)
     
-    return render(request, 'business/slot_generate.html', {'service': service})
+    context = {
+        'service': service,
+        'today': timezone.now(),
+        'week_later': timezone.now() + timedelta(days=7),
+    }
+    return render(request, 'business/slot_generate.html', context)
 
 
 @login_required
