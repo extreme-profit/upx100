@@ -4,6 +4,9 @@ from . import views
 app_name = 'business'
 
 urlpatterns = [
+    # API для подкатегорий
+    path('api/subcategories/', views.subcategories_api_view, name='subcategories_api'),
+    
     # Профиль компании
     path('profile/', views.company_profile_view, name='company_profile'),
     path('profile/edit/', views.company_edit_view, name='company_edit'),

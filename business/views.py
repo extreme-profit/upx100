@@ -3,8 +3,20 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta, datetime, time
+from django.http import JsonResponse
 from .models import Company, Employee, Service, ServiceCategory, ServiceTimeSlot, Booking, Payment
 from .forms import CompanyForm, EmployeeForm, ServiceForm, PaymentForm
+from companies.models import Category, Subcategory
+
+
+@login_required
+def subcategories_api_view(request):
+    """API для получения подкатегорий по категории"""
+    category_id = request.GET.get('category')
+    if category_id:
+        subcategories = Subcategory.objects.filter(category_id=category_id).values('pk', 'name')
+        return JsonResponse(list(subcategories), safe=False)
+    return JsonResponse([], safe=False)
 
 
 @login_required
@@ -160,6 +172,9 @@ def service_create_view(request):
         if form.is_valid():
             service = form.save(commit=False)
             service.company = company
+            # Устанавливаем категорию и подкатегорию из формы
+            service.category = form.cleaned_data.get('category')
+            service.subcategory = form.cleaned_data.get('subcategory')
             service.payment_amount = service.price  # Пример: оплата равна цене услуги
             service.status = 'pending_payment'
             service.save()
@@ -169,11 +184,9 @@ def service_create_view(request):
         form = ServiceForm()
         form.fields['employee'].queryset = company.employees.filter(is_active=True)
     
-    categories = ServiceCategory.objects.all()
     return render(request, 'business/service_form.html', {
         'form': form, 
         'company': company,
-        'categories': categories
     })
 
 
@@ -191,6 +204,9 @@ def service_edit_view(request, pk):
         form = ServiceForm(request.POST, request.FILES, instance=service)
         if form.is_valid():
             service = form.save(commit=False)
+            # Устанавливаем категорию и подкатегорию из формы
+            service.category = form.cleaned_data.get('category')
+            service.subcategory = form.cleaned_data.get('subcategory')
             if service.status == 'inactive':
                 service.status = 'pending_payment'
             service.save()

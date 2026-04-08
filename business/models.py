@@ -68,8 +68,10 @@ class Service(models.Model):
     ]
     
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='services', verbose_name="Компания")
-    category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, null=True, blank=True, 
-                                  related_name='services', verbose_name="Подкатегория")
+    category = models.ForeignKey('companies.Category', on_delete=models.SET_NULL, null=True, blank=True, 
+                                  related_name='business_services', verbose_name="Категория")
+    subcategory = models.ForeignKey('companies.Subcategory', on_delete=models.SET_NULL, null=True, blank=True, 
+                                  related_name='business_services', verbose_name="Подкатегория")
     employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, 
                                   related_name='services', verbose_name="Сотрудник")
     name = models.CharField(max_length=200, verbose_name="Название услуги")

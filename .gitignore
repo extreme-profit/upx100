@@ -1,25 +1,37 @@
-```
+```gitignore
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Database
 db.sqlite3
-
-# Logs
-*.log
+*.db
 
 # Environment
 .env
 .env.local
 .env.*
-
-# Coverage
-.coverage
-coverage/
-htmlcov/
+.venv/
+venv/
+ENV/
 
 # IDE
 .vscode/
@@ -28,7 +40,18 @@ htmlcov/
 *.swo
 *.tmp
 
-# OS
-.DS_Store
-Thumbs.db
+# Logs
+*.log
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# Pytest
+.pytest_cache/
+
+# Migrations (keep migration files themselves, but ignore Python cache in migrations)
+**/__pycache__/
+**/*.pyc
 ```
