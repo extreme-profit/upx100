@@ -66,7 +66,7 @@ class ServiceForm(forms.ModelForm):
         # Получаем категорию из данных формы (при POST) или из начальных значений
         category_id = None
         
-        # Сначала пробуем получить из POST/GT данных
+        # Сначала пробуем получить из POST/GET данных
         if kwargs.get('data'):
             category_id = kwargs['data'].get('category')
         # Если нет в data, пробуем initial
@@ -105,6 +105,17 @@ class ServiceForm(forms.ModelForm):
         """Проверка подкатегории: должна принадлежать выбранной категории"""
         subcategory = self.cleaned_data.get('subcategory')
         category = self.cleaned_data.get('category')
+        
+        # Если подкатегория не выбрана, но должна быть
+        if not subcategory and self.data.get('subcategory'):
+            # Пытаемся получить подкатегорию напрямую из data
+            subcat_id = self.data.get('subcategory')
+            if category:
+                try:
+                    subcategory = Subcategory.objects.get(pk=subcat_id, category_id=category)
+                except Subcategory.DoesNotExist:
+                    raise forms.ValidationError('Выберите корректный вариант. Вашего варианта нет среди допустимых значений.')
+        
         if subcategory and category:
             if subcategory.category != category:
                 raise forms.ValidationError('Подкатегория должна принадлежать выбранной категории')
