@@ -62,25 +62,60 @@
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="{{ form.category.id_for_label }}" class="form-label">Подкатегория</label>
-                                <select name="category" id="{{ form.category.id_for_label }}" class="form-control">
-                                    <option value="">Выберите подкатегорию</option>
-                                    {% for cat in categories %}
-                                        <option value="{{ cat.pk }}" {% if service and service.category.pk == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
-                                    {% endfor %}
-                                </select>
+                                <label for="{{ form.category.id_for_label }}" class="form-label">Категория</label>
+                                {{ form.category }}
                                 {% if form.category.errors %}
                                     <div class="text-danger">{{ form.category.errors }}</div>
                                 {% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="{{ form.employee.id_for_label }}" class="form-label">{{ form.employee.label }}</label>
-                                {{ form.employee }}
-                                {% if form.employee.errors %}
-                                    <div class="text-danger">{{ form.employee.errors }}</div>
+                                <label for="{{ form.subcategory.id_for_label }}" class="form-label">Подкатегория</label>
+                                <select name="subcategory" id="{{ form.subcategory.id_for_label }}" class="form-control" data-category-field="{{ form.category.id_for_label }}">
+                                    <option value="">Выберите подкатегорию</option>
+                                </select>
+                                {% if form.subcategory.errors %}
+                                    <div class="text-danger">{{ form.subcategory.errors }}</div>
                                 {% endif %}
                             </div>
                         </div>
+                        
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const categoryField = document.getElementById('{{ form.category.id_for_label }}');
+                            const subcategoryField = document.getElementById('{{ form.subcategory.id_for_label }}');
+                            
+                            // Функция загрузки подкатегорий
+                            function loadSubcategories(categoryId) {
+                                if (!categoryId) {
+                                    subcategoryField.innerHTML = '<option value="">Выберите подкатегорию</option>';
+                                    return;
+                                }
+                                
+                                fetch(`/api/subcategories/?category=${categoryId}`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        subcategoryField.innerHTML = '<option value="">Выберите подкатегорию</option>';
+                                        data.forEach(subcat => {
+                                            const option = document.createElement('option');
+                                            option.value = subcat.pk;
+                                            option.textContent = subcat.name;
+                                            subcategoryField.appendChild(option);
+                                        });
+                                    })
+                                    .catch(error => console.error('Ошибка загрузки подкатегорий:', error));
+                            }
+                            
+                            // Загружаем подкатегории при изменении категории
+                            categoryField.addEventListener('change', function() {
+                                loadSubcategories(this.value);
+                            });
+                            
+                            // Если есть сохраненная категория (при редактировании), загружаем подкатегории
+                            if (categoryField.value) {
+                                loadSubcategories(categoryField.value);
+                            }
+                        });
+                        </script>
                         
                         <div class="mb-3">
                             <label for="{{ form.payment_amount.id_for_label }}" class="form-label">{{ form.payment_amount.label }}</label>

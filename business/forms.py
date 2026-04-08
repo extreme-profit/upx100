@@ -1,5 +1,6 @@
 from django import forms
 from .models import Company, Employee, Service, Payment
+from companies.models import Category, Subcategory
 
 
 class CompanyForm(forms.ModelForm):
@@ -32,9 +33,22 @@ class EmployeeForm(forms.ModelForm):
 
 class ServiceForm(forms.ModelForm):
     """Форма услуги"""
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.all(),
+        label='Категория',
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    subcategory = forms.ModelChoiceField(
+        queryset=Subcategory.objects.none(),
+        label='Подкатегория',
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
     class Meta:
         model = Service
-        fields = ['name', 'description', 'price', 'duration', 'photo', 'category', 'employee', 'payment_amount']
+        fields = ['name', 'description', 'price', 'duration', 'photo', 'employee', 'payment_amount']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название услуги'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Описание услуги'}),
@@ -45,9 +59,18 @@ class ServiceForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['category'].empty_label = 'Выберите подкатегорию'
         self.fields['employee'].empty_label = 'Выберите сотрудника'
         self.fields['employee'].queryset = Employee.objects.none()  # Будет переопределено в view
+        self.fields['category'].empty_label = 'Выберите категорию'
+        self.fields['subcategory'].empty_label = 'Сначала выберите категорию'
+        
+        # Если редактируем существующую услугу, устанавливаем начальные значения
+        if self.instance and self.instance.pk and self.instance.category:
+            self.fields['category'].initial = self.instance.category
+            self.fields['subcategory'].queryset = Subcategory.objects.filter(category=self.instance.category)
+            self.fields['subcategory'].empty_label = 'Выберите подкатегорию'
+            if self.instance.subcategory:
+                self.fields['subcategory'].initial = self.instance.subcategory
 
 
 class PaymentForm(forms.ModelForm):
