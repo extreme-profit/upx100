@@ -261,7 +261,7 @@ def service_detail_view(request, pk):
 
 @login_required
 def slot_manage_view(request, service_id):
-    """Управление временными слотами"""
+    """Управление временными слотами в виде календарной сетки"""
     try:
         company = request.user.company
         service = company.services.get(pk=service_id)
@@ -269,24 +269,223 @@ def slot_manage_view(request, service_id):
         messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
     
-    date_filter = request.GET.get('date', timezone.now().date())
-    employee_filter = request.GET.get('employee')
-    
-    # Фильтруем слоты по дате и сотруднику
-    time_slots = service.time_slots.filter(date=date_filter)
-    if employee_filter:
-        time_slots = time_slots.filter(employee_id=employee_filter)
-    time_slots = time_slots.order_by('start_time')
-    
-    # Получаем сотрудников услуги для фильтра
+    # Получаем сотрудников услуги
     employees = service.employees.filter(is_active=True)
+    
+    # Дни недели (ПН-ВС)
+    weekdays = [
+        {'num': 0, 'name': 'Пн', 'full': 'Понедельник'},
+        {'num': 1, 'name': 'Вт', 'full': 'Вторник'},
+        {'num': 2, 'name': 'Ср', 'full': 'Среда'},
+        {'num': 3, 'name': 'Чт', 'full': 'Четверг'},
+        {'num': 4, 'name': 'Пт', 'full': 'Пятница'},
+        {'num': 5, 'name': 'Сб', 'full': 'Суббота'},
+        {'num': 6, 'name': 'Вс', 'full': 'Воскресенье'},
+    ]
+    
+    # Часы (00:00 - 23:00)
+    hours = list(range(24))
     
     return render(request, 'business/slot_manage.html', {
         'service': service,
-        'time_slots': time_slots,
-        'current_date': date_filter,
         'employees': employees,
-        'selected_employee': employee_filter,
+        'weekdays': weekdays,
+        'hours': hours,
+    })
+
+
+@login_required
+def slot_get_grid_view(request, service_id):
+    """API для получения сетки слотов"""
+    try:
+        company = request.user.company
+        service = company.services.get(pk=service_id)
+    except (Company.DoesNotExist, Service.DoesNotExist):
+        return JsonResponse({'error': 'Услуга не найдена'}, status=404)
+    
+    employee_id = request.GET.get('employee')
+    
+    # Базовая дата - начало текущей недели (понедельник)
+    today = timezone.now().date()
+    start_of_week = today - timedelta(days=today.weekday())
+    
+    # Даты текущей недели
+    week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
+    
+    # Получаем все слоты на эту неделю
+    slots_qs = ServiceTimeSlot.objects.filter(
+        service=service,
+        date__in=week_dates
+    )
+    
+    if employee_id:
+        slots_qs = slots_qs.filter(employee_id=employee_id)
+    
+    # Строим сетку: ключ - "weekday_hour", значение - статус
+    grid = {}
+    for slot in slots_qs:
+        weekday = slot.date.weekday()
+        hour = slot.start_time.hour
+        key = f"{weekday}_{hour}"
+        grid[key] = {
+            'is_booked': slot.is_booked,
+            'slot_id': slot.pk,
+            'has_booking': slot.booking is not None,
+            'client_name': slot.booking.client_name if slot.booking else None,
+        }
+    
+    return JsonResponse({
+        'grid': grid,
+        'week_dates': [d.isoformat() for d in week_dates],
+    })
+
+
+@login_required
+def slot_update_grid_view(request, service_id):
+    """API для обновления статуса слота в сетке"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Метод не разрешён'}, status=405)
+    
+    try:
+        company = request.user.company
+        service = company.services.get(pk=service_id)
+    except (Company.DoesNotExist, Service.DoesNotExist):
+        return JsonResponse({'error': 'Услуга не найдена'}, status=404)
+    
+    import json
+    data = json.loads(request.body)
+    weekday = data.get('weekday')
+    hour = data.get('hour')
+    action = data.get('action')  # 'toggle', 'set_free', 'set_busy'
+    employee_id = data.get('employee')
+    
+    if weekday is None or hour is None:
+        return JsonResponse({'error': 'Не указаны день или час'}, status=400)
+    
+    # Вычисляем дату
+    today = timezone.now().date()
+    start_of_week = today - timedelta(days=today.weekday())
+    target_date = start_of_week + timedelta(days=int(weekday))
+    
+    start_time = time(int(hour), 0)
+    end_time = time(int(hour) + 1, 0)
+    
+    # Фильтр по сотруднику
+    slot_filter = {
+        'service': service,
+        'date': target_date,
+        'start_time': start_time,
+    }
+    if employee_id:
+        slot_filter['employee_id'] = employee_id
+    
+    slot = ServiceTimeSlot.objects.filter(**slot_filter).first()
+    
+    if slot is None:
+        # Создаём новый слот
+        slot = ServiceTimeSlot.objects.create(
+            service=service,
+            employee_id=employee_id if employee_id else None,
+            date=target_date,
+            start_time=start_time,
+            end_time=end_time,
+            is_booked=(action == 'set_busy'),
+        )
+    else:
+        # Обновляем существующий
+        if action == 'toggle':
+            slot.is_booked = not slot.is_booked
+        elif action == 'set_free':
+            slot.is_booked = False
+        elif action == 'set_busy':
+            slot.is_booked = True
+        
+        if slot.is_booked:
+            slot.booking = None
+        slot.save()
+    
+    return JsonResponse({
+        'success': True,
+        'is_booked': slot.is_booked,
+        'slot_id': slot.pk,
+    })
+
+
+@login_required
+def slot_bulk_update_view(request, service_id):
+    """Массовое обновление слотов (для popup настройки графика)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Метод не разрешён'}, status=405)
+    
+    try:
+        company = request.user.company
+        service = company.services.get(pk=service_id)
+    except (Company.DoesNotExist, Service.DoesNotExist):
+        return JsonResponse({'error': 'Услуга не найдена'}, status=404)
+    
+    import json
+    data = json.loads(request.body)
+    
+    schedule_type = data.get('schedule_type')  # '5_2', 'all_week', 'specific_day'
+    specific_day = data.get('specific_day')  # 0-6 для конкретного дня
+    start_hour = int(data.get('start_hour', 9))
+    end_hour = int(data.get('end_hour', 18))
+    action = data.get('action')  # 'set_free', 'set_busy'
+    employee_id = data.get('employee')
+    
+    today = timezone.now().date()
+    start_of_week = today - timedelta(days=today.weekday())
+    
+    # Определяем дни для обработки
+    days_to_process = []
+    if schedule_type == '5_2':
+        days_to_process = [0, 1, 2, 3, 4]  # Пн-Пт
+    elif schedule_type == 'all_week':
+        days_to_process = [0, 1, 2, 3, 4, 5, 6]  # Все дни
+    elif schedule_type == 'specific_day' and specific_day is not None:
+        days_to_process = [int(specific_day)]
+    
+    slots_created = 0
+    slots_updated = 0
+    
+    for weekday in days_to_process:
+        target_date = start_of_week + timedelta(days=weekday)
+        
+        for hour in range(start_hour, end_hour):
+            start_time = time(hour, 0)
+            end_time = time(hour + 1, 0)
+            
+            slot_filter = {
+                'service': service,
+                'date': target_date,
+                'start_time': start_time,
+            }
+            if employee_id:
+                slot_filter['employee_id'] = employee_id
+            
+            slot = ServiceTimeSlot.objects.filter(**slot_filter).first()
+            
+            if slot is None:
+                ServiceTimeSlot.objects.create(
+                    service=service,
+                    employee_id=employee_id if employee_id else None,
+                    date=target_date,
+                    start_time=start_time,
+                    end_time=end_time,
+                    is_booked=(action == 'set_busy'),
+                )
+                slots_created += 1
+            else:
+                slot.is_booked = (action == 'set_busy')
+                if slot.is_booked:
+                    slot.booking = None
+                slot.save()
+                slots_updated += 1
+    
+    return JsonResponse({
+        'success': True,
+        'slots_created': slots_created,
+        'slots_updated': slots_updated,
     })
 
 

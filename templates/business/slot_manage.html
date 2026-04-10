@@ -9,13 +9,13 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="mb-0 text-primary"><i class="fas fa-clock me-2"></i>Управление слотами</h2>
+                    <h2 class="mb-0 text-primary"><i class="fas fa-calendar-alt me-2"></i>График работы</h2>
                     <p class="text-muted mb-0">{{ service.name }}</p>
                 </div>
                 <div>
-                    <a href="{% url 'business:slot_generate' service.pk %}" class="btn btn-success btn-lg me-2">
-                        <i class="fas fa-calendar-plus me-2"></i>Создать слоты
-                    </a>
+                    <button type="button" class="btn btn-success btn-lg me-2" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+                        <i class="fas fa-clock me-2"></i>Выставить рабочее время
+                    </button>
                     <a href="{% url 'business:service_detail' service.pk %}" class="btn btn-outline-secondary btn-lg">
                         <i class="fas fa-arrow-left me-2"></i>Назад к услуге
                     </a>
@@ -33,83 +33,57 @@
         {% endfor %}
     {% endif %}
     
-    <!-- Фильтр по дате -->
+    <!-- Фильтр по сотруднику -->
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-light py-3">
-            <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Выберите дату</h5>
+            <h5 class="mb-0"><i class="fas fa-user me-2"></i>Сотрудник</h5>
         </div>
         <div class="card-body">
-            <form method="get" class="row g-3 align-items-end">
+            <div class="row g-3 align-items-end">
                 <div class="col-md-4">
-                    <label for="date" class="form-label fw-bold">Дата</label>
-                    <input type="date" name="date" id="date" class="form-control form-control-lg" value="{{ current_date }}">
+                    <label for="employeeFilter" class="form-label fw-bold">Выберите сотрудника</label>
+                    <select id="employeeFilter" class="form-select form-select-lg">
+                        <option value="">Все сотрудники</option>
+                        {% for employee in employees %}
+                            <option value="{{ employee.pk }}">{{ employee.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="col-md-4">
-                    <button type="submit" class="btn btn-primary btn-lg w-100">
-                        <i class="fas fa-search me-2"></i>Показать слоты
+                    <button type="button" id="loadGridBtn" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-sync-alt me-2"></i>Обновить сетку
                     </button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
     
-    <!-- Календарь слотов (интерактивная сетка) -->
+    <!-- Календарная сетка (таблица) -->
     <div class="card shadow-sm border-0">
-        <div class="card-header bg-primary text-white py-3">
-            <h5 class="mb-0"><i class="fas fa-th me-2"></i>Слоты на {{ current_date|date:"d.m.Y" }}</h5>
+        <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-th me-2"></i>Сетка на текущую неделю</h5>
+            <span id="weekRange" class="fw-bold"></span>
         </div>
-        <div class="card-body p-0">
-            {% if time_slots %}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="py-3" style="width: 200px;"><i class="fas fa-clock me-1"></i>Время</th>
-                            <th class="py-3"><i class="fas fa-flag me-1"></i>Статус</th>
-                            <th class="py-3"><i class="fas fa-user me-1"></i>Клиент</th>
-                            <th class="py-3 text-center"><i class="fas fa-cogs me-1"></i>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for slot in time_slots %}
-                        <tr class="align-middle slot-row" data-slot-id="{{ slot.pk }}" data-is-booked="{{ slot.is_booked|yesno:'true,false' }}">
-                            <td class="py-3 fw-bold fs-5">
-                                <i class="fas fa-clock text-primary me-2"></i>{{ slot.start_time|date:"H:i" }} - {{ slot.end_time|date:"H:i" }}
-                            </td>
-                            <td class="py-3">
-                                <span class="badge badge-status px-3 py-2 fs-6">
-                                    <i class="fas fa-{% if slot.is_booked %}lock{% else %}unlock{% endif %} me-1"></i>
-                                    {% if slot.is_booked %}Занят{% else %}Свободен{% endif %}
-                                </span>
-                            </td>
-                            <td class="py-3">
-                                {% if slot.booking %}
-                                    <i class="fas fa-user-check text-success me-2"></i>{{ slot.booking.client_name }}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td class="py-3 text-center">
-                                <button class="btn btn-toggle-slot btn-{% if slot.is_booked %}outline-success{% else %}outline-danger{% endif %} btn-lg" data-slot-id="{{ slot.pk }}" data-url="{% url 'business:slot_toggle' slot.pk %}">
-                                    <i class="fas fa-{% if slot.is_booked %}unlock{% else %}lock{% endif %} me-2"></i>
-                                    {% if slot.is_booked %}Освободить{% else %}Заблокировать{% endif %}
-                                </button>
-                            </td>
-                        </tr>
+        <div class="card-body p-0 table-responsive">
+            <div id="gridLoading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-2 text-muted">Загрузка сетки...</p>
+            </div>
+            <table id="slotsGrid" class="table table-bordered table-hover mb-0" style="display: none; min-width: 1200px;">
+                <thead class="bg-light sticky-top">
+                    <tr>
+                        <th class="py-3 text-center" style="width: 80px; min-width: 80px;"><i class="fas fa-clock me-1"></i>Время</th>
+                        {% for day in weekdays %}
+                            <th class="py-3 text-center day-header" data-day="{{ day.num }}">{{ day.name }}<br><small class="text-muted fw-normal" id="day-date-{{ day.num }}"></small></th>
                         {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
-                <h4 class="text-muted">На эту дату нет слотов</h4>
-                <p class="text-muted">Создайте временные слоты для этой даты</p>
-                <a href="{% url 'business:slot_generate' service.pk %}" class="btn btn-primary btn-lg">
-                    <i class="fas fa-calendar-plus me-2"></i>Создать слоты
-                </a>
-            </div>
-            {% endif %}
+                    </tr>
+                </thead>
+                <tbody id="gridBody">
+                    <!-- Ячейки генерируются JS -->
+                </tbody>
+            </table>
         </div>
     </div>
     
@@ -120,135 +94,386 @@
     </div>
 </div>
 
+<!-- Модальное окно для массового выставления графика -->
+<div class="modal fade" id="scheduleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-clock me-2"></i>Выставить рабочее время</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Тип графика</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="schedule_type" id="schedule5_2" value="5_2" checked>
+                            <label class="btn btn-outline-primary" for="schedule5_2">5/2 (Пн-Пт)</label>
+                            
+                            <input type="radio" class="btn-check" name="schedule_type" id="scheduleAllWeek" value="all_week">
+                            <label class="btn btn-outline-primary" for="scheduleAllWeek">Вся неделя</label>
+                            
+                            <input type="radio" class="btn-check" name="schedule_type" id="scheduleSpecific" value="specific_day">
+                            <label class="btn btn-outline-primary" for="scheduleSpecific">Конкретный день</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="specificDayContainer" style="display: none;">
+                        <label for="specificDay" class="form-label fw-bold">Выберите день</label>
+                        <select id="specificDay" class="form-select">
+                            <option value="0">Понедельник</option>
+                            <option value="1">Вторник</option>
+                            <option value="2">Среда</option>
+                            <option value="3">Четверг</option>
+                            <option value="4">Пятница</option>
+                            <option value="5">Суббота</option>
+                            <option value="6">Воскресенье</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="startHour" class="form-label fw-bold">Время начала</label>
+                            <select id="startHour" class="form-select">
+                                {% for h in hours %}
+                                    <option value="{{ h }}" {% if h == 9 %}selected{% endif %}>{{ h|stringformat:"02d" }}:00</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="endHour" class="form-label fw-bold">Время окончания</label>
+                            <select id="endHour" class="form-select">
+                                {% for h in hours %}
+                                    <option value="{{ h }}" {% if h == 18 %}selected{% endif %}>{{ h|stringformat:"02d" }}:00</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Действие</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="action" id="actionFree" value="set_free" checked>
+                            <label class="btn btn-outline-success" for="actionFree"><i class="fas fa-check me-2"></i>Сделать свободным</label>
+                            
+                            <input type="radio" class="btn-check" name="action" id="actionBusy" value="set_busy">
+                            <label class="btn btn-outline-danger" for="actionBusy"><i class="fas fa-times me-2"></i>Сделать недоступным</label>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Выбранные часы будут отмечены как <strong id="actionText">свободные</strong>. Остальные часы останутся без изменений.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="applyScheduleBtn">
+                    <i class="fas fa-check me-2"></i>Применить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
-    .table tbody tr {
+    .slot-cell {
+        width: 100px;
+        min-width: 80px;
+        height: 50px;
+        cursor: pointer;
         transition: all 0.2s ease;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 0.85rem;
     }
     
-    .table tbody tr:hover {
+    .slot-cell:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        z-index: 10;
+        position: relative;
+    }
+    
+    .slot-cell.free {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+    
+    .slot-cell.free:hover {
+        background-color: #c3e6cb;
+    }
+    
+    .slot-cell.busy {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+    
+    .slot-cell.busy:hover {
+        background-color: #f5c6cb;
+    }
+    
+    .slot-cell.has-booking {
+        background-color: #cce5ff;
+        border-color: #b8daff;
+        color: #004085;
+    }
+    
+    .time-column {
+        font-weight: 600;
         background-color: #f8f9fa;
-        transform: scale(1.005);
+        vertical-align: middle;
+        text-align: center;
     }
     
-    .badge-status {
-        font-weight: 500;
-        transition: all 0.3s ease;
+    .day-header {
+        font-weight: 600;
     }
     
-    .badge-status.bg-success {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
-    }
-    
-    .badge-status.bg-danger {
-        background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%) !important;
-    }
-    
-    .btn-toggle-slot {
-        min-width: 160px;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-toggle-slot:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-    
-    .card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
-    
-    .card:hover {
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+    #scheduleModal .btn-check:checked + .btn {
+        background-color: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
     }
 </style>
 
 <script>
+let currentEmployee = '';
+const serviceId = {{ service.pk }};
+
 document.addEventListener('DOMContentLoaded', function() {
-    const toggleButtons = document.querySelectorAll('.btn-toggle-slot');
-    
-    toggleButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const slotId = this.dataset.slotId;
-            const url = this.dataset.url;
-            const row = document.querySelector(`[data-slot-id="${slotId}"]`);
-            const badge = row.querySelector('.badge-status');
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const isBooked = data.is_booked;
-                    
-                    // Обновляем статус
-                    row.dataset.isBooked = isBooked ? 'true' : 'false';
-                    
-                    // Обновляем бейдж
-                    if (isBooked) {
-                        badge.className = 'badge badge-status bg-danger px-3 py-2 fs-6';
-                        badge.innerHTML = '<i class="fas fa-lock me-1"></i>Занят';
-                        row.querySelector('td:nth-child(3)').innerHTML = '<span class="text-muted">—</span>';
-                    } else {
-                        badge.className = 'badge badge-status bg-success px-3 py-2 fs-6';
-                        badge.innerHTML = '<i class="fas fa-unlock me-1"></i>Свободен';
-                    }
-                    
-                    // Обновляем кнопку
-                    if (isBooked) {
-                        this.className = 'btn btn-toggle-slot btn-outline-success btn-lg';
-                        this.innerHTML = '<i class="fas fa-unlock me-2"></i>Освободить';
-                    } else {
-                        this.className = 'btn btn-toggle-slot btn-outline-danger btn-lg';
-                        this.innerHTML = '<i class="fas fa-lock me-2"></i>Заблокировать';
-                    }
-                    
-                    // Показываем уведомление
-                    showNotification(isBooked ? 'Слот заблокирован' : 'Слот освобождён', 'success');
-                } else {
-                    showNotification(data.error || 'Ошибка при обновлении слота', 'danger');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification('Произошла ошибка при обновлении слота', 'danger');
-            });
+    // Показ/скрытие выбора конкретного дня
+    document.querySelectorAll('input[name="schedule_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const specificContainer = document.getElementById('specificDayContainer');
+            specificContainer.style.display = this.value === 'specific_day' ? 'block' : 'none';
         });
     });
     
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
+    // Обновление текста действия
+    document.querySelectorAll('input[name="action"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const actionText = document.getElementById('actionText');
+            actionText.textContent = this.value === 'set_free' ? 'свободные' : 'недоступные';
+        });
+    });
+    
+    // Загрузка сетки
+    document.getElementById('loadGridBtn').addEventListener('click', loadGrid);
+    
+    // Фильтр по сотруднику
+    document.getElementById('employeeFilter').addEventListener('change', function() {
+        currentEmployee = this.value;
+        loadGrid();
+    });
+    
+    // Применение графика
+    document.getElementById('applyScheduleBtn').addEventListener('click', applySchedule);
+    
+    // Первичная загрузка
+    loadGrid();
+});
+
+function loadGrid() {
+    document.getElementById('gridLoading').style.display = 'block';
+    document.getElementById('slotsGrid').style.display = 'none';
+    
+    let url = `{% url 'business:slot_get_grid' service.pk %}`;
+    if (currentEmployee) {
+        url += '?employee=' + currentEmployee;
     }
     
-    function showNotification(message, type) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show shadow-sm position-fixed`;
-        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        alertDiv.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.body.appendChild(alertDiv);
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showNotification(data.error, 'danger');
+                return;
+            }
+            
+            renderGrid(data.grid, data.week_dates);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Ошибка при загрузке сетки', 'danger');
+        })
+        .finally(() => {
+            document.getElementById('gridLoading').style.display = 'none';
+        });
+}
+
+function renderGrid(grid, weekDates) {
+    // Обновляем даты в шапке
+    weekDates.forEach((date, index) => {
+        const dateEl = document.getElementById(`day-date-${index}`);
+        if (dateEl) {
+            const d = new Date(date);
+            dateEl.textContent = `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth()+1).toString().padStart(2, '0')}`;
+        }
+    });
+    
+    // Обновляем диапазон недели
+    const startDate = new Date(weekDates[0]);
+    const endDate = new Date(weekDates[6]);
+    document.getElementById('weekRange').textContent = 
+        `${startDate.getDate().toString().padStart(2, '0')}.${(startDate.getMonth()+1).toString().padStart(2, '0')} - ${endDate.getDate().toString().padStart(2, '0')}.${(endDate.getMonth()+1).toString().padStart(2, '0')}`;
+    
+    const tbody = document.getElementById('gridBody');
+    tbody.innerHTML = '';
+    
+    // Генерируем строки для каждого часа
+    for (let hour = 0; hour < 24; hour++) {
+        const tr = document.createElement('tr');
         
-        setTimeout(() => {
-            alertDiv.remove();
-        }, 3000);
+        // Колонка времени
+        const timeTd = document.createElement('td');
+        timeTd.className = 'time-column';
+        timeTd.textContent = `${hour.toString().padStart(2, '0')}:00`;
+        tr.appendChild(timeTd);
+        
+        // Ячейки для каждого дня
+        for (let day = 0; day < 7; day++) {
+            const td = document.createElement('td');
+            td.className = 'slot-cell';
+            td.dataset.day = day;
+            td.dataset.hour = hour;
+            
+            const key = `${day}_${hour}`;
+            const slotData = grid[key];
+            
+            if (slotData) {
+                if (slotData.has_booking) {
+                    td.classList.add('has-booking');
+                    td.innerHTML = `<i class="fas fa-user-check"></i><br><small>${slotData.client_name || 'Клиент'}</small>`;
+                } else if (slotData.is_booked) {
+                    td.classList.add('busy');
+                    td.innerHTML = '<i class="fas fa-times"></i><br><small>Недоступно</small>';
+                } else {
+                    td.classList.add('free');
+                    td.innerHTML = '<i class="fas fa-check"></i><br><small>Свободно</small>';
+                }
+            } else {
+                td.classList.add('free');
+                td.innerHTML = '<i class="fas fa-minus"></i><br><small>—</small>';
+            }
+            
+            td.addEventListener('click', () => toggleSlot(day, hour));
+            tr.appendChild(td);
+        }
+        
+        tbody.appendChild(tr);
     }
-});
+    
+    document.getElementById('slotsGrid').style.display = 'table';
+}
+
+function toggleSlot(day, hour) {
+    const url = `{% url 'business:slot_update_grid' service.pk %}`;
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+            weekday: day,
+            hour: hour,
+            action: 'toggle',
+            employee: currentEmployee || null
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadGrid(); // Перезагружаем сетку
+            showNotification('Статус слота обновлён', 'success');
+        } else {
+            showNotification(data.error || 'Ошибка', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ошибка при обновлении', 'danger');
+    });
+}
+
+function applySchedule() {
+    const scheduleType = document.querySelector('input[name="schedule_type"]:checked').value;
+    const specificDay = document.getElementById('specificDay').value;
+    const startHour = parseInt(document.getElementById('startHour').value);
+    const endHour = parseInt(document.getElementById('endHour').value);
+    const action = document.querySelector('input[name="action"]:checked').value;
+    
+    if (startHour >= endHour) {
+        showNotification('Время начала должно быть меньше времени окончания', 'danger');
+        return;
+    }
+    
+    const url = `{% url 'business:slot_bulk_update' service.pk %}`;
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+            schedule_type: scheduleType,
+            specific_day: scheduleType === 'specific_day' ? specificDay : null,
+            start_hour: startHour,
+            end_hour: endHour,
+            action: action,
+            employee: currentEmployee || null
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('scheduleModal')).hide();
+            loadGrid();
+            showNotification(`Создано: ${data.slots_created}, Обновлено: ${data.slots_updated}`, 'success');
+        } else {
+            showNotification(data.error || 'Ошибка', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ошибка при применении графика', 'danger');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show shadow-sm position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
 </script>
 {% endblock %}

@@ -27,6 +27,9 @@ urlpatterns = [
     # Временные слоты
     path('services/<int:service_id>/slots/', views.slot_manage_view, name='slot_manage'),
     path('services/<int:service_id>/slots/generate/', views.slot_generate_view, name='slot_generate'),
+    path('services/<int:service_id>/slots/api/grid/', views.slot_get_grid_view, name='slot_get_grid'),
+    path('services/<int:service_id>/slots/api/update/', views.slot_update_grid_view, name='slot_update_grid'),
+    path('services/<int:service_id>/slots/api/bulk/', views.slot_bulk_update_view, name='slot_bulk_update'),
     path('slots/<int:pk>/toggle/', views.slot_toggle_view, name='slot_toggle'),
     
     # Оплата
