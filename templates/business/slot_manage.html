@@ -61,7 +61,15 @@
     <!-- Календарная сетка (таблица) -->
     <div class="card shadow-sm border-0">
         <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-th me-2"></i>Сетка на текущую неделю</h5>
+            <div class="d-flex align-items-center">
+                <button type="button" id="prevWeekBtn" class="btn btn-sm btn-outline-light me-2">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h5 class="mb-0"><i class="fas fa-th me-2"></i>Сетка недели</h5>
+                <button type="button" id="nextWeekBtn" class="btn btn-sm btn-outline-light ms-2">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
             <span id="weekRange" class="fw-bold"></span>
         </div>
         <div class="card-body p-0 table-responsive">
@@ -71,12 +79,12 @@
                 </div>
                 <p class="mt-2 text-muted">Загрузка сетки...</p>
             </div>
-            <table id="slotsGrid" class="table table-bordered table-hover mb-0" style="display: none; min-width: 1200px;">
+            <table id="slotsGrid" class="table table-bordered table-hover mb-0" style="display: none; min-width: 900px; font-size: 0.75rem;">
                 <thead class="bg-light sticky-top">
                     <tr>
-                        <th class="py-3 text-center" style="width: 80px; min-width: 80px;"><i class="fas fa-clock me-1"></i>Время</th>
+                        <th class="py-2 text-center" style="width: 60px; min-width: 60px;"><i class="fas fa-clock me-1"></i>Время</th>
                         {% for day in weekdays %}
-                            <th class="py-3 text-center day-header" data-day="{{ day.num }}">{{ day.name }}<br><small class="text-muted fw-normal" id="day-date-{{ day.num }}"></small></th>
+                            <th class="py-2 text-center day-header" data-day="{{ day.num }}" style="min-width: 100px;">{{ day.name }}<br><small class="text-muted fw-normal" id="day-date-{{ day.num }}"></small></th>
                         {% endfor %}
                     </tr>
                 </thead>
@@ -181,12 +189,13 @@
     .slot-cell {
         width: 100px;
         min-width: 80px;
-        height: 50px;
+        height: 35px;
         cursor: pointer;
         transition: all 0.2s ease;
         text-align: center;
         vertical-align: middle;
-        font-size: 0.85rem;
+        font-size: 0.7rem;
+        padding: 2px;
     }
     
     .slot-cell:hover {
@@ -227,10 +236,13 @@
         background-color: #f8f9fa;
         vertical-align: middle;
         text-align: center;
+        font-size: 0.75rem;
+        padding: 4px 2px;
     }
     
     .day-header {
         font-weight: 600;
+        font-size: 0.75rem;
     }
     
     #scheduleModal .btn-check:checked + .btn {
@@ -238,11 +250,16 @@
         color: white;
         border-color: #0d6efd;
     }
+    
+    .modal-lg {
+        max-width: 600px;
+    }
 </style>
 
 <script>
 let currentEmployee = '';
 const serviceId = {{ service.pk }};
+let currentWeekOffset = 0; // Смещение недели (0 = текущая, 1 = следующая, -1 = предыдущая)
 
 document.addEventListener('DOMContentLoaded', function() {
     // Показ/скрытие выбора конкретного дня
@@ -262,16 +279,31 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Загрузка сетки
-    document.getElementById('loadGridBtn').addEventListener('click', loadGrid);
+    document.getElementById('loadGridBtn').addEventListener('click', () => {
+        currentWeekOffset = 0;
+        loadGrid();
+    });
     
     // Фильтр по сотруднику
     document.getElementById('employeeFilter').addEventListener('change', function() {
         currentEmployee = this.value;
+        currentWeekOffset = 0;
         loadGrid();
     });
     
     // Применение графика
     document.getElementById('applyScheduleBtn').addEventListener('click', applySchedule);
+    
+    // Навигация по неделям
+    document.getElementById('prevWeekBtn').addEventListener('click', () => {
+        currentWeekOffset--;
+        loadGrid();
+    });
+    
+    document.getElementById('nextWeekBtn').addEventListener('click', () => {
+        currentWeekOffset++;
+        loadGrid();
+    });
     
     // Первичная загрузка
     loadGrid();
@@ -281,9 +313,9 @@ function loadGrid() {
     document.getElementById('gridLoading').style.display = 'block';
     document.getElementById('slotsGrid').style.display = 'none';
     
-    let url = `{% url 'business:slot_get_grid' service.pk %}`;
+    let url = `{% url 'business:slot_get_grid' service.pk %}?week_offset=${currentWeekOffset}`;
     if (currentEmployee) {
-        url += '?employee=' + currentEmployee;
+        url += '&employee=' + currentEmployee;
     }
     
     fetch(url)
@@ -415,6 +447,9 @@ function applySchedule() {
     
     const url = `{% url 'business:slot_bulk_update' service.pk %}`;
     
+    // При установке свободного времени - остальные слоты делаем недоступными
+    const setOthersBusy = action === 'set_free';
+    
     fetch(url, {
         method: 'POST',
         headers: {
@@ -427,7 +462,9 @@ function applySchedule() {
             start_hour: startHour,
             end_hour: endHour,
             action: action,
-            employee: currentEmployee || null
+            set_others_busy: setOthersBusy,
+            employee: currentEmployee || null,
+            week_offset: currentWeekOffset
         }),
     })
     .then(response => response.json())
