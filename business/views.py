@@ -304,12 +304,13 @@ def slot_get_grid_view(request, service_id):
         return JsonResponse({'error': 'Услуга не найдена'}, status=404)
     
     employee_id = request.GET.get('employee')
+    week_offset = int(request.GET.get('week_offset', 0))
     
-    # Базовая дата - начало текущей недели (понедельник)
+    # Базовая дата - начало недели с учётом смещения
     today = timezone.now().date()
-    start_of_week = today - timedelta(days=today.weekday())
+    start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
     
-    # Даты текущей недели
+    # Даты недели с учётом смещения
     week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
     
     # Получаем все слоты на эту неделю
@@ -432,9 +433,11 @@ def slot_bulk_update_view(request, service_id):
     end_hour = int(data.get('end_hour', 18))
     action = data.get('action')  # 'set_free', 'set_busy'
     employee_id = data.get('employee')
+    set_others_busy = data.get('set_others_busy', False)  # Делать ли остальные слоты недоступными
+    week_offset = int(data.get('week_offset', 0))
     
     today = timezone.now().date()
-    start_of_week = today - timedelta(days=today.weekday())
+    start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
     
     # Определяем дни для обработки
     days_to_process = []
@@ -451,7 +454,7 @@ def slot_bulk_update_view(request, service_id):
     for weekday in days_to_process:
         target_date = start_of_week + timedelta(days=weekday)
         
-        for hour in range(start_hour, end_hour):
+        for hour in range(0, 24):  # Проходим по всем часам суток
             start_time = time(hour, 0)
             end_time = time(hour + 1, 0)
             
@@ -465,22 +468,39 @@ def slot_bulk_update_view(request, service_id):
             
             slot = ServiceTimeSlot.objects.filter(**slot_filter).first()
             
-            if slot is None:
-                ServiceTimeSlot.objects.create(
-                    service=service,
-                    employee_id=employee_id if employee_id else None,
-                    date=target_date,
-                    start_time=start_time,
-                    end_time=end_time,
-                    is_booked=(action == 'set_busy'),
-                )
-                slots_created += 1
+            # Определяем нужный статус
+            if start_hour <= hour < end_hour:
+                # В рабочем диапазоне
+                should_be_booked = (action == 'set_busy')
             else:
-                slot.is_booked = (action == 'set_busy')
-                if slot.is_booked:
-                    slot.booking = None
-                slot.save()
-                slots_updated += 1
+                # Вне рабочего диапазона
+                if set_others_busy and action == 'set_free':
+                    # Если устанавливаем свободное время, то остальное делаем недоступным
+                    should_be_booked = True
+                else:
+                    # Иначе оставляем как есть или создаём с текущим действием
+                    should_be_booked = (action == 'set_busy')
+            
+            if slot is None:
+                # Создаём новый слот только если он в диапазоне или set_others_busy=True
+                if (start_hour <= hour < end_hour) or (set_others_busy and action == 'set_free'):
+                    ServiceTimeSlot.objects.create(
+                        service=service,
+                        employee_id=employee_id if employee_id else None,
+                        date=target_date,
+                        start_time=start_time,
+                        end_time=end_time,
+                        is_booked=should_be_booked,
+                    )
+                    slots_created += 1
+            else:
+                # Обновляем существующий слот
+                if slot.is_booked != should_be_booked:
+                    slot.is_booked = should_be_booked
+                    if slot.is_booked:
+                        slot.booking = None
+                    slot.save()
+                    slots_updated += 1
     
     return JsonResponse({
         'success': True,
