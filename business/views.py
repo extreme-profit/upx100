@@ -97,12 +97,12 @@ def employee_create_view(request):
             employee = form.save(commit=False)
             employee.company = company
             employee.save()
-            messages.success(request, 'Сотрудник успешно добавлен!')
+            messages.success(request, 'Сотрудник успешно добавлен! Теперь он может войти в ЛК используя email и пароль.')
             return redirect('business:employee_list')
     else:
         form = EmployeeForm()
     
-    return render(request, 'business/employee_form.html', {'form': form, 'company': company})
+    return render(request, 'business/employee_form.html', {'form': form, 'company': company, 'is_create': True})
 
 
 @login_required
@@ -124,7 +124,7 @@ def employee_edit_view(request, pk):
     else:
         form = EmployeeForm(instance=employee)
     
-    return render(request, 'business/employee_form.html', {'form': form, 'company': company, 'employee': employee})
+    return render(request, 'business/employee_form.html', {'form': form, 'company': company, 'employee': employee, 'is_create': False})
 
 
 @login_required
@@ -177,15 +177,20 @@ def service_create_view(request):
             service.subcategory = form.cleaned_data.get('subcategory')
             service.status = 'pending_payment'
             service.save()
+            # Сохраняем сотрудников
+            employees = form.cleaned_data.get('employees')
+            if employees:
+                service.employees.set(employees)
             messages.success(request, 'Услуга создана! Теперь оплатите её для публикации.')
             return redirect('business:payment_create', service_id=service.pk)
     else:
         form = ServiceForm()
-        form.fields['employee'].queryset = company.employees.filter(is_active=True)
+        form.fields['employees'].queryset = company.employees.filter(is_active=True)
     
     return render(request, 'business/service_form.html', {
         'form': form, 
         'company': company,
+        'is_create': True,
     })
 
 
@@ -209,13 +214,17 @@ def service_edit_view(request, pk):
             if service.status == 'inactive':
                 service.status = 'pending_payment'
             service.save()
+            # Сохраняем сотрудников
+            employees = form.cleaned_data.get('employees')
+            if employees is not None:
+                service.employees.set(employees)
             messages.success(request, 'Услуга обновлена!')
             return redirect('business:service_list')
     else:
         form = ServiceForm(instance=service)
-        form.fields['employee'].queryset = company.employees.filter(is_active=True)
+        form.fields['employees'].queryset = company.employees.filter(is_active=True)
     
-    return render(request, 'business/service_form.html', {'form': form, 'company': company, 'service': service})
+    return render(request, 'business/service_form.html', {'form': form, 'company': company, 'service': service, 'is_create': False})
 
 
 @login_required
@@ -267,24 +276,41 @@ def slot_manage_view(request, service_id):
         return redirect('business:service_list')
     
     date_filter = request.GET.get('date', timezone.now().date())
-    time_slots = service.time_slots.filter(date=date_filter).order_by('start_time')
+    employee_filter = request.GET.get('employee')
+    
+    # Фильтруем слоты по дате и сотруднику
+    time_slots = service.time_slots.filter(date=date_filter)
+    if employee_filter:
+        time_slots = time_slots.filter(employee_id=employee_filter)
+    time_slots = time_slots.order_by('start_time')
+    
+    # Получаем сотрудников услуги для фильтра
+    employees = service.employees.filter(is_active=True)
     
     return render(request, 'business/slot_manage.html', {
         'service': service,
         'time_slots': time_slots,
-        'current_date': date_filter
+        'current_date': date_filter,
+        'employees': employees,
+        'selected_employee': employee_filter,
     })
 
 
 @login_required
 def slot_generate_view(request, service_id):
-    """Генерация временных слотов"""
+    """Генерация временных слотов для каждого сотрудника"""
     try:
         company = request.user.company
         service = company.services.get(pk=service_id)
     except (Company.DoesNotExist, Service.DoesNotExist):
         messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
+    
+    # Получаем сотрудников, привязанных к услуге
+    employees = service.employees.filter(is_active=True)
+    if not employees.exists():
+        messages.error(request, 'К услуге не привязано ни одного сотрудника')
+        return redirect('business:slot_manage', service_id=service_id)
     
     if request.method == 'POST':
         start_date = request.POST.get('start_date')
@@ -294,11 +320,13 @@ def slot_generate_view(request, service_id):
         interval = int(request.POST.get('interval', service.duration))
         
         if start_date and end_date:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
             
-            current_date = start_date
-            while current_date <= end_date:
+            current_date = start_date_obj
+            slots_created = 0
+            
+            while current_date <= end_date_obj:
                 # Пропускаем выходные (суббота=5, воскресенье=6)
                 if current_date.weekday() < 5:
                     current_time = time(start_hour, 0)
@@ -307,23 +335,28 @@ def slot_generate_view(request, service_id):
                     while current_time < end_time:
                         slot_end = datetime.combine(current_date, current_time) + timedelta(minutes=interval)
                         if slot_end.time() <= end_time:
-                            ServiceTimeSlot.objects.get_or_create(
-                                service=service,
-                                date=current_date,
-                                start_time=current_time,
-                                defaults={'end_time': slot_end.time()}
-                            )
+                            # Создаем слот для каждого сотрудника
+                            for employee in employees:
+                                ServiceTimeSlot.objects.get_or_create(
+                                    service=service,
+                                    employee=employee,
+                                    date=current_date,
+                                    start_time=current_time,
+                                    defaults={'end_time': slot_end.time()}
+                                )
+                                slots_created += 1
                         current_time = (datetime.combine(current_date, current_time) + timedelta(minutes=interval)).time()
                 
                 current_date += timedelta(days=1)
             
-            messages.success(request, f'Временные слоты созданы с {start_date} по {end_date}')
+            messages.success(request, f'Создано {slots_created} временных слотов для {employees.count()} сотрудников с {start_date} по {end_date}')
             return redirect('business:slot_manage', service_id=service_id)
     
     context = {
         'service': service,
         'today': timezone.now(),
         'week_later': timezone.now() + timedelta(days=7),
+        'employees_count': employees.count(),
     }
     return render(request, 'business/slot_generate.html', context)
 

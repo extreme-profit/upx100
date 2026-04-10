@@ -33,6 +33,7 @@ class Employee(models.Model):
     position = models.CharField(max_length=100, blank=True, verbose_name="Должность")
     phone = models.CharField(max_length=20, blank=True, verbose_name="Телефон")
     email = models.EmailField(blank=True, verbose_name="Email")
+    password = models.CharField(max_length=128, blank=True, verbose_name="Пароль для ЛК")
     is_active = models.BooleanField(default=True, verbose_name="Активен")
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -43,6 +44,19 @@ class Employee(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.company.name})"
+    
+    def set_password(self, raw_password):
+        """Хеширование пароля"""
+        from django.contrib.auth.hashers import make_password
+        self.password = make_password(raw_password)
+        self.save()
+    
+    def check_password(self, raw_password):
+        """Проверка пароля"""
+        from django.contrib.auth.hashers import check_password
+        if not self.password:
+            return False
+        return check_password(raw_password, self.password)
 
 
 class ServiceCategory(models.Model):
@@ -72,8 +86,7 @@ class Service(models.Model):
                                   related_name='business_services', verbose_name="Категория")
     subcategory = models.ForeignKey('companies.Subcategory', on_delete=models.SET_NULL, null=True, blank=True, 
                                   related_name='business_services', verbose_name="Подкатегория")
-    employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, 
-                                  related_name='services', verbose_name="Сотрудник")
+    employees = models.ManyToManyField(Employee, related_name='services', verbose_name="Сотрудники")
     name = models.CharField(max_length=200, verbose_name="Название услуги")
     description = models.TextField(blank=True, verbose_name="Описание")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена (руб)")
@@ -113,6 +126,7 @@ class Service(models.Model):
 class ServiceTimeSlot(models.Model):
     """Временные слоты для записи на услугу"""
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='time_slots', verbose_name="Услуга")
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='time_slots', verbose_name="Сотрудник", null=True)
     date = models.DateField(verbose_name="Дата")
     start_time = models.TimeField(verbose_name="Время начала")
     end_time = models.TimeField(verbose_name="Время окончания")
@@ -124,11 +138,11 @@ class ServiceTimeSlot(models.Model):
     class Meta:
         verbose_name = "Временной слот"
         verbose_name_plural = "Временные слоты"
-        unique_together = ['service', 'date', 'start_time']
+        unique_together = ['service', 'employee', 'date', 'start_time']
         ordering = ['date', 'start_time']
     
     def __str__(self):
-        return f"{self.service.name} - {self.date} {self.start_time}"
+        return f"{self.service.name} - {self.employee.name if self.employee else 'Общий'} - {self.date} {self.start_time}"
 
 
 class Booking(models.Model):

@@ -19,6 +19,19 @@ class CompanyForm(forms.ModelForm):
 
 class EmployeeForm(forms.ModelForm):
     """Форма сотрудника"""
+    password = forms.CharField(
+        label='Пароль для ЛК',
+        required=False,
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Придумайте пароль'}),
+        help_text='Оставьте пустым при редактировании, если не хотите менять пароль'
+    )
+    password_confirm = forms.CharField(
+        label='Подтверждение пароля',
+        required=False,
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Подтвердите пароль'}),
+        help_text='Повторите пароль'
+    )
+    
     class Meta:
         model = Employee
         fields = ['name', 'position', 'phone', 'email', 'is_active']
@@ -29,6 +42,38 @@ class EmployeeForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # При создании сотрудника пароль обязателен
+        if not self.instance.pk:
+            self.fields['password'].required = True
+            self.fields['password_confirm'].required = True
+    
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if not self.instance.pk and not password:
+            raise forms.ValidationError('Пароль обязателен для нового сотрудника')
+        return password
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        password_confirm = cleaned_data.get('password_confirm')
+        
+        if password and password_confirm and password != password_confirm:
+            raise forms.ValidationError('Пароли не совпадают')
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        employee = super().save(commit=False)
+        password = self.cleaned_data.get('password')
+        if password:
+            employee.set_password(password)
+        if commit:
+            employee.save()
+        return employee
 
 
 class ServiceForm(forms.ModelForm):
@@ -44,10 +89,17 @@ class ServiceForm(forms.ModelForm):
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+    employees = forms.ModelMultipleChoiceField(
+        queryset=Employee.objects.none(),
+        label='Сотрудники',
+        required=True,
+        widget=forms.CheckboxSelectMultiple(),
+        help_text='Выберите одного или нескольких сотрудников, которые оказывают эту услугу'
+    )
     
     class Meta:
         model = Service
-        fields = ['name', 'description', 'price', 'duration', 'photo', 'employee']
+        fields = ['name', 'description', 'price', 'duration', 'photo']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название услуги'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Описание услуги'}),
@@ -57,8 +109,7 @@ class ServiceForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['employee'].empty_label = 'Выберите сотрудника'
-        self.fields['employee'].queryset = Employee.objects.none()  # Будет переопределено в view
+        self.fields['employees'].queryset = Employee.objects.none()  # Будет переопределено в view
         self.fields['category'].empty_label = 'Выберите категорию'
         self.fields['subcategory_id'].empty_label = 'Сначала выберите категорию'
         
@@ -99,6 +150,10 @@ class ServiceForm(forms.ModelForm):
             self.fields['category'].initial = self.instance.category_id
         elif kwargs.get('data') and kwargs['data'].get('category'):
             self.fields['category'].initial = kwargs['data'].get('category')
+        
+        # Если редактируем существующую услугу, загружаем выбранных сотрудников
+        if self.instance and self.instance.pk:
+            self.fields['employees'].initial = self.instance.employees.all()
     
     def clean_subcategory_id(self):
         """Проверка подкатегории: должна принадлежать выбранной категории"""
@@ -115,18 +170,22 @@ class ServiceForm(forms.ModelForm):
         try:
             subcategory = Subcategory.objects.get(id=subcategory_id, category_id=category.id)
         except Subcategory.DoesNotExist:
-            raise forms.ValidationError('Выберите корректный вариант. Вашего варианта нет среди допустимых значений.')
+            raise forms.ValidationError('Выберите корректный вариант. Вашего варианта нет среди допустимных значений.')
         
         return subcategory_id
     
     def save(self, commit=True):
-        """Сохранение услуги с правильной подкатегорией"""
+        """Сохранение услуги с правильной подкатегорией и сотрудниками"""
         service = super().save(commit=False)
         subcategory_id = self.cleaned_data.get('subcategory_id')
         if subcategory_id:
             service.subcategory_id = subcategory_id
         if commit:
             service.save()
+            # Сохраняем сотрудников через many-to-many
+            employees = self.cleaned_data.get('employees')
+            if employees is not None:
+                service.employees.set(employees)
         return service
 
 

@@ -52,6 +52,46 @@
                                 {% endif %}
                             </div>
 
+                            <!-- Пароль (только при создании) -->
+                            {% if is_create %}
+                            <div class="col-md-6">
+                                <label for="id_password" class="form-label fw-bold"><i class="fas fa-lock me-1 text-primary"></i>{{ form.password.label }}</label>
+                                {{ form.password }}
+                                {% if form.password.errors %}
+                                    <div class="text-danger mt-1">{{ form.password.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">{{ form.password.help_text }}</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="id_password_confirm" class="form-label fw-bold"><i class="fas fa-lock me-1 text-primary"></i>{{ form.password_confirm.label }}</label>
+                                {{ form.password_confirm }}
+                                {% if form.password_confirm.errors %}
+                                    <div class="text-danger mt-1">{{ form.password_confirm.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">{{ form.password_confirm.help_text }}</div>
+                            </div>
+                            {% else %}
+                            <!-- Пароль при редактировании -->
+                            <div class="col-md-6">
+                                <label for="id_password" class="form-label fw-bold"><i class="fas fa-lock me-1 text-primary"></i>{{ form.password.label }}</label>
+                                {{ form.password }}
+                                {% if form.password.errors %}
+                                    <div class="text-danger mt-1">{{ form.password.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">{{ form.password.help_text }}</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="id_password_confirm" class="form-label fw-bold"><i class="fas fa-lock me-1 text-primary"></i>{{ form.password_confirm.label }}</label>
+                                {{ form.password_confirm }}
+                                {% if form.password_confirm.errors %}
+                                    <div class="text-danger mt-1">{{ form.password_confirm.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">{{ form.password_confirm.help_text }}</div>
+                            </div>
+                            {% endif %}
+
                             <!-- Активен -->
                             <div class="col-12">
                                 <div class="form-check form-switch p-3 border rounded">

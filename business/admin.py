@@ -24,10 +24,16 @@ class ServiceCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ['name', 'company', 'category', 'employee', 'price', 'duration', 'status', 'payment_due_date']
+    list_display = ['name', 'company', 'category', 'get_employees_list', 'price', 'duration', 'status', 'payment_due_date']
     list_filter = ['status', 'company', 'category']
     search_fields = ['name', 'company__name', 'description']
     readonly_fields = ['created_at', 'updated_at']
+    filter_horizontal = ['employees']
+    
+    def get_employees_list(self, obj):
+        """Получение списка сотрудников через запятую"""
+        return ", ".join([emp.name for emp in obj.employees.all()])
+    get_employees_list.short_description = 'Сотрудники'
 
 
 @admin.register(ServiceTimeSlot)
