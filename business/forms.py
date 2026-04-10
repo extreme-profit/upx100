@@ -103,7 +103,11 @@ class ServiceForm(forms.ModelForm):
         queryset=Subcategory.objects.none(),
         label='Подкатегория',
         required=True,
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        error_messages={
+            'invalid_choice': 'Выберите подкатегорию из выбранной категории',
+            'required': 'Выберите подкатегорию',
+        }
     )
     employees = forms.ModelMultipleChoiceField(
         queryset=Employee.objects.none(),
@@ -179,16 +183,25 @@ class ServiceForm(forms.ModelForm):
     def clean_subcategory(self):
         """Проверка подкатегории: должна принадлежать выбранной категории"""
         subcategory = self.cleaned_data.get('subcategory')
-        category = self.cleaned_data.get('category')
         
+        # Получаем категорию напрямую из data, а не из cleaned_data
+        # потому что clean_subcategory вызывается до clean()
+        category_id = None
+        if self.data.get('category'):
+            try:
+                category_id = int(self.data.get('category'))
+            except (ValueError, TypeError):
+                pass
+        
+        if not category_id:
+            raise forms.ValidationError('Сначала выберите категорию')
+        
+        # Если подкатегория не выбрана - это ошибка (поле required=True)
         if not subcategory:
             raise forms.ValidationError('Выберите подкатегорию')
         
-        if not category:
-            raise forms.ValidationError('Сначала выберите категорию')
-        
-        # Проверяем что подкатегория существует и принадлежит категории
-        if subcategory.category_id != category.id:
+        # Проверяем что подкатегория принадлежит выбранной категории
+        if subcategory.category_id != category_id:
             raise forms.ValidationError('Выбранная подкатегория не относится к выбранной категории')
         
         return subcategory
@@ -197,8 +210,14 @@ class ServiceForm(forms.ModelForm):
         """Сохранение услуги с правильной подкатегорией и сотрудниками"""
         service = super().save(commit=False)
         subcategory = self.cleaned_data.get('subcategory')
+        category = self.cleaned_data.get('category')
+        
+        # Устанавливаем категорию и подкатегорию
+        if category:
+            service.category = category
         if subcategory:
             service.subcategory = subcategory
+            
         if commit:
             service.save()
             # Сохраняем сотрудников через many-to-many
