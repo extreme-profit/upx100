@@ -99,7 +99,7 @@ class ServiceForm(forms.ModelForm):
         required=True,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
-    subcategory_id = forms.ModelChoiceField(
+    subcategory = forms.ModelChoiceField(
         queryset=Subcategory.objects.none(),
         label='Подкатегория',
         required=True,
@@ -155,7 +155,7 @@ class ServiceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         # Устанавливаем queryset для подкатегорий после инициализации
-        self.fields['subcategory_id'].queryset = self._subcategory_queryset
+        self.fields['subcategory'].queryset = self._subcategory_queryset
         
         # Устанавливаем queryset для сотрудников только если есть компания
         if self.company:
@@ -164,7 +164,7 @@ class ServiceForm(forms.ModelForm):
             self.fields['employees'].queryset = Employee.objects.none()
             
         self.fields['category'].empty_label = 'Выберите категорию'
-        self.fields['subcategory_id'].empty_label = 'Сначала выберите категорию'
+        self.fields['subcategory'].empty_label = 'Сначала выберите категорию'
         
         # Если редактируем существующую услугу, устанавливаем начальные значения
         if self.instance and self.instance.pk and self.instance.category_id:
@@ -176,9 +176,9 @@ class ServiceForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             self.fields['employees'].initial = self.instance.employees.all()
     
-    def clean_subcategory_id(self):
+    def clean_subcategory(self):
         """Проверка подкатегории: должна принадлежать выбранной категории"""
-        subcategory = self.cleaned_data.get('subcategory_id')
+        subcategory = self.cleaned_data.get('subcategory')
         category = self.cleaned_data.get('category')
         
         if not subcategory:
@@ -189,14 +189,14 @@ class ServiceForm(forms.ModelForm):
         
         # Проверяем что подкатегория существует и принадлежит категории
         if subcategory.category_id != category.id:
-            raise forms.ValidationError('Выберите корректный вариант. Вашего варианта нет среди допустимных значений.')
+            raise forms.ValidationError('Выбранная подкатегория не относится к выбранной категории')
         
         return subcategory
     
     def save(self, commit=True):
         """Сохранение услуги с правильной подкатегорией и сотрудниками"""
         service = super().save(commit=False)
-        subcategory = self.cleaned_data.get('subcategory_id')
+        subcategory = self.cleaned_data.get('subcategory')
         if subcategory:
             service.subcategory = subcategory
         if commit:
