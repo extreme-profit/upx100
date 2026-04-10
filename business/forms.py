@@ -73,7 +73,10 @@ class EmployeeForm(forms.ModelForm):
             employee = super().save(commit=False)
             password = self.cleaned_data.get('password')
             if password:
-                employee.set_password(password)
+                # Хешируем пароль вручную, не вызывая save() внутри set_password
+                from django.contrib.auth.hashers import make_password
+                employee.password = make_password(password)
+            # Не сохраняем здесь, это сделает view после установки company
             if commit:
                 employee.save()
             return employee
