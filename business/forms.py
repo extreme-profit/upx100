@@ -127,7 +127,35 @@ class ServiceForm(forms.ModelForm):
         # Получаем компанию из kwargs если есть
         self.company = kwargs.pop('company', None)
         
+        # Получаем категорию ДО вызова super().__init__()
+        category_id = None
+        
+        # Сначала пробуем получить из POST/GET данных
+        if kwargs.get('data'):
+            category_id = kwargs['data'].get('category')
+        # Если редактируем существующий объект и категория не передана в data
+        elif kwargs.get('instance') and kwargs['instance'].pk and kwargs['instance'].category_id:
+            category_id = kwargs['instance'].category_id
+        
+        # Преобразуем в int если это строка
+        if category_id and isinstance(category_id, str):
+            try:
+                category_id = int(category_id)
+            except (ValueError, TypeError):
+                category_id = None
+        
+        # Устанавливаем queryset для подкатегорий ДО инициализации поля
+        if category_id:
+            subcategories = Subcategory.objects.filter(category_id=category_id)
+            # Временно сохраняем чтобы использовать после super().__init__()
+            self._subcategory_queryset = subcategories
+        else:
+            self._subcategory_queryset = Subcategory.objects.none()
+        
         super().__init__(*args, **kwargs)
+        
+        # Устанавливаем queryset для подкатегорий после инициализации
+        self.fields['subcategory_id'].queryset = self._subcategory_queryset
         
         # Устанавливаем queryset для сотрудников только если есть компания
         if self.company:
@@ -137,39 +165,6 @@ class ServiceForm(forms.ModelForm):
             
         self.fields['category'].empty_label = 'Выберите категорию'
         self.fields['subcategory_id'].empty_label = 'Сначала выберите категорию'
-        
-        # Получаем категорию из данных формы (при POST) или из начальных значений
-        category_id = None
-        
-        # Сначала пробуем получить из POST/GET данных
-        if kwargs.get('data'):
-            category_id = kwargs['data'].get('category')
-        # Если нет в data, пробуем initial
-        elif kwargs.get('initial') and kwargs['initial'].get('category'):
-            cat = kwargs['initial']['category']
-            category_id = cat.pk if hasattr(cat, 'pk') else cat
-        # Если редактируем существующий объект
-        elif self.instance and self.instance.pk and self.instance.category_id:
-            category_id = self.instance.category_id
-        
-        # Преобразуем в int если это строка
-        if category_id and isinstance(category_id, str):
-            try:
-                category_id = int(category_id)
-            except (ValueError, TypeError):
-                category_id = None
-        
-        # Устанавливаем choices для подкатегорий на основе категории
-        if category_id:
-            subcategories = Subcategory.objects.filter(category_id=category_id)
-            self.fields['subcategory_id'].queryset = subcategories
-            self.fields['subcategory_id'].choices = [('', 'Выберите подкатегорию')] + [(sub.id, sub.name) for sub in subcategories]
-            # Если есть начальное значение подкатегории, устанавливаем его
-            if self.instance and self.instance.pk and self.instance.subcategory_id:
-                self.fields['subcategory_id'].initial = self.instance.subcategory_id
-            elif kwargs.get('data') and kwargs['data'].get('subcategory_id'):
-                # Сохраняем выбранную подкатегорию из POST данных
-                self.fields['subcategory_id'].initial = kwargs['data'].get('subcategory_id')
         
         # Если редактируем существующую услугу, устанавливаем начальные значения
         if self.instance and self.instance.pk and self.instance.category_id:
