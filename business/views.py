@@ -156,7 +156,7 @@ def service_list_view(request):
         messages.error(request, 'Сначала создайте профиль компании')
         return redirect('business:company_edit')
     
-    services = company.services.all().select_related('category', 'employee')
+    services = company.services.all().select_related('category')
     return render(request, 'business/service_list.html', {'services': services, 'company': company})
 
 
