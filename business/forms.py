@@ -67,13 +67,25 @@ class EmployeeForm(forms.ModelForm):
         return cleaned_data
     
     def save(self, commit=True):
-        employee = super().save(commit=False)
-        password = self.cleaned_data.get('password')
-        if password:
-            employee.set_password(password)
-        if commit:
-            employee.save()
-        return employee
+        # При создании сотрудника сначала сохраняем без company, затем устанавливаем его
+        if not self.instance.pk:
+            # Это новый сотрудник - сохраняем с commit=False чтобы установить company
+            employee = super().save(commit=False)
+            password = self.cleaned_data.get('password')
+            if password:
+                employee.set_password(password)
+            if commit:
+                employee.save()
+            return employee
+        else:
+            # Редактирование существующего
+            employee = super().save(commit=commit)
+            password = self.cleaned_data.get('password')
+            if password:
+                employee.set_password(password)
+                if commit:
+                    employee.save()
+            return employee
 
 
 class ServiceForm(forms.ModelForm):
