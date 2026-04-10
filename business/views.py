@@ -170,13 +170,10 @@ def service_create_view(request):
         return redirect('business:company_edit')
     
     if request.method == 'POST':
-        form = ServiceForm(request.POST, request.FILES)
+        form = ServiceForm(request.POST, request.FILES, company=company)
         if form.is_valid():
             service = form.save(commit=False)
             service.company = company
-            # Устанавливаем категорию и подкатегорию из формы
-            service.category = form.cleaned_data.get('category')
-            service.subcategory = form.cleaned_data.get('subcategory')
             service.status = 'pending_payment'
             service.save()
             # Сохраняем сотрудников
@@ -186,8 +183,7 @@ def service_create_view(request):
             messages.success(request, 'Услуга создана! Теперь оплатите её для публикации.')
             return redirect('business:payment_create', service_id=service.pk)
     else:
-        form = ServiceForm()
-        form.fields['employees'].queryset = company.employees.filter(is_active=True)
+        form = ServiceForm(company=company)
     
     return render(request, 'business/service_form.html', {
         'form': form, 
@@ -207,12 +203,9 @@ def service_edit_view(request, pk):
         return redirect('business:service_list')
     
     if request.method == 'POST':
-        form = ServiceForm(request.POST, request.FILES, instance=service)
+        form = ServiceForm(request.POST, request.FILES, instance=service, company=company)
         if form.is_valid():
             service = form.save(commit=False)
-            # Устанавливаем категорию и подкатегорию из формы
-            service.category = form.cleaned_data.get('category')
-            service.subcategory = form.cleaned_data.get('subcategory')
             if service.status == 'inactive':
                 service.status = 'pending_payment'
             service.save()
@@ -223,8 +216,7 @@ def service_edit_view(request, pk):
             messages.success(request, 'Услуга обновлена!')
             return redirect('business:service_list')
     else:
-        form = ServiceForm(instance=service)
-        form.fields['employees'].queryset = company.employees.filter(is_active=True)
+        form = ServiceForm(instance=service, company=company)
     
     return render(request, 'business/service_form.html', {'form': form, 'company': company, 'service': service, 'is_create': False})
 
