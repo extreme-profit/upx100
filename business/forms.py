@@ -148,6 +148,9 @@ class ServiceForm(forms.ModelForm):
             except (ValueError, TypeError):
                 category_id = None
         
+        # Сохраняем ID категории для использования в clean_subcategory
+        self._category_id = category_id
+        
         # Устанавливаем queryset для подкатегорий ДО инициализации поля
         if category_id:
             subcategories = Subcategory.objects.filter(category_id=category_id)
@@ -184,14 +187,8 @@ class ServiceForm(forms.ModelForm):
         """Проверка подкатегории: должна принадлежать выбранной категории"""
         subcategory = self.cleaned_data.get('subcategory')
         
-        # Получаем категорию напрямую из data, а не из cleaned_data
-        # потому что clean_subcategory вызывается до clean()
-        category_id = None
-        if self.data.get('category'):
-            try:
-                category_id = int(self.data.get('category'))
-            except (ValueError, TypeError):
-                pass
+        # Используем сохраненный ID категории из __init__
+        category_id = getattr(self, '_category_id', None)
         
         if not category_id:
             raise forms.ValidationError('Сначала выберите категорию')
@@ -201,7 +198,8 @@ class ServiceForm(forms.ModelForm):
             raise forms.ValidationError('Выберите подкатегорию')
         
         # Проверяем что подкатегория принадлежит выбранной категории
-        if subcategory.category_id != category_id:
+        # Используем int() для надежного сравнения ID
+        if int(subcategory.category_id) != int(category_id):
             raise forms.ValidationError('Выбранная подкатегория не относится к выбранной категории')
         
         return subcategory

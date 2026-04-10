@@ -168,6 +168,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Сохраняем текущее значение подкатегории перед перезагрузкой
+        const currentSubcategoryValue = subcategorySelect.value;
+
         fetch("{% url 'business:subcategories_api' %}?category=" + categoryId)
             .then(response => response.json())
             .then(data => {
@@ -182,6 +185,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         option.selected = true;
                     }
                     {% endif %}
+                    // Восстанавливаем значение если оно есть в новых данных
+                    if (currentSubcategoryValue && String(sub.pk) === currentSubcategoryValue) {
+                        option.selected = true;
+                    }
                     subcategorySelect.appendChild(option);
                 });
                 subcategorySelect.disabled = false;
@@ -195,8 +202,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // При изменении категории
     categorySelect.addEventListener('change', function() {
         const categoryId = this.value;
-        // Сбрасываем подкатегорию при смене категории
-        subcategorySelect.value = ""; 
+        // Сбрасываем подкатегорию при смене категории, но НЕ очищаем value
+        // чтобы Django мог получить его из POST данных
         loadSubcategories(categoryId);
     });
 
@@ -206,8 +213,15 @@ document.addEventListener('DOMContentLoaded', function() {
     {% else %}
     // Если создание, проверяем, есть ли старое значение в POST (при ошибке валидации)
     const savedCategoryId = categorySelect.value;
+    const savedSubcategoryId = subcategorySelect.value;
     if (savedCategoryId) {
         loadSubcategories(savedCategoryId);
+        // Восстанавливаем подкатегорию после загрузки если она была выбрана
+        if (savedSubcategoryId) {
+            setTimeout(function() {
+                subcategorySelect.value = savedSubcategoryId;
+            }, 100);
+        }
     } else {
         subcategorySelect.disabled = true;
     }
