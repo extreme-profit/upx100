@@ -306,6 +306,9 @@ def slot_get_grid_view(request, service_id):
     employee_id = request.GET.get('employee')
     week_offset = int(request.GET.get('week_offset', 0))
     
+    # Получаем интервал из сессии (по умолчанию 60 минут)
+    interval = request.session.get(f'slot_interval_{service_id}', 60)
+    
     # Базовая дата - начало недели с учётом смещения
     today = timezone.now().date()
     start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
@@ -327,17 +330,22 @@ def slot_get_grid_view(request, service_id):
     for slot in slots_qs:
         weekday = slot.date.weekday()
         hour = slot.start_time.hour
-        key = f"{weekday}_{hour}"
+        minute = slot.start_time.minute
+        # Создаем ключ с учётом интервала (например, 9_0, 9_15, 9_30, 9_45 для 15-минутного интервала)
+        key = f"{weekday}_{hour}_{minute}"
         grid[key] = {
             'is_booked': slot.is_booked,
             'slot_id': slot.pk,
             'has_booking': slot.booking is not None,
             'client_name': slot.booking.client_name if slot.booking else None,
+            'start_time': slot.start_time.strftime('%H:%M'),
+            'end_time': slot.end_time.strftime('%H:%M'),
         }
     
     return JsonResponse({
         'grid': grid,
         'week_dates': [d.isoformat() for d in week_dates],
+        'interval': interval,
     })
 
 
@@ -357,8 +365,12 @@ def slot_update_grid_view(request, service_id):
     data = json.loads(request.body)
     weekday = data.get('weekday')
     hour = data.get('hour')
+    minute = data.get('minute', 0)  # Получаем минуты (по умолчанию 0)
     action = data.get('action')  # 'toggle', 'set_free', 'set_busy'
     employee_id = data.get('employee')
+    
+    # Получаем интервал из сессии
+    interval = request.session.get(f'slot_interval_{service_id}', 60)
     
     if weekday is None or hour is None:
         return JsonResponse({'error': 'Не указаны день или час'}, status=400)
@@ -368,8 +380,10 @@ def slot_update_grid_view(request, service_id):
     start_of_week = today - timedelta(days=today.weekday())
     target_date = start_of_week + timedelta(days=int(weekday))
     
-    start_time = time(int(hour), 0)
-    end_time = time(int(hour) + 1, 0)
+    start_time = time(int(hour), int(minute))
+    # Вычисляем время окончания на основе интервала
+    end_datetime = datetime.combine(target_date, start_time) + timedelta(minutes=interval)
+    end_time = end_datetime.time()
     
     # Фильтр по сотруднику
     slot_filter = {
@@ -531,6 +545,9 @@ def slot_generate_view(request, service_id):
         start_hour = int(request.POST.get('start_hour', 9))
         end_hour = int(request.POST.get('end_hour', 18))
         interval = int(request.POST.get('interval', service.duration))
+        
+        # Сохраняем интервал в сессии для использования в slot_manage
+        request.session[f'slot_interval_{service_id}'] = interval
         
         if start_date and end_date:
             start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
