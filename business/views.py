@@ -5,7 +5,7 @@ from django.utils import timezone
 from datetime import timedelta, datetime, time
 from django.http import JsonResponse
 from .models import Company, Employee, Service, ServiceCategory, ServiceTimeSlot, Booking, Payment
-from .forms import CompanyForm, EmployeeForm, ServiceForm, PaymentForm
+from .forms import CompanyForm, EmployeeForm, ServiceForm
 from companies.models import Category, Subcategory
 
 
@@ -181,7 +181,7 @@ def service_create_view(request):
             if employees:
                 service.employees.set(employees)
             messages.success(request, 'Услуга создана! Теперь оплатите её для публикации.')
-            return redirect('business:payment_create', service_id=service.pk)
+            return redirect('business:service_detail', pk=service.pk)
     else:
         form = ServiceForm(company=company)
     
@@ -248,11 +248,6 @@ def service_detail_view(request, pk):
     except (Company.DoesNotExist, Service.DoesNotExist):
         messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
-    
-    # Если услуга не оплачена, перенаправляем на страницу оплаты
-    if not service.is_paid():
-        messages.info(request, 'Услуга требует оплаты для активации')
-        return redirect('business:payment_create', service_id=service.pk)
     
     time_slots = service.time_slots.filter(date__gte=timezone.now().date()).order_by('date', 'start_time')
     bookings = service.bookings.all().order_by('-created_at')
@@ -598,28 +593,6 @@ def slot_toggle_view(request, pk):
 
 
 @login_required
-def payment_create_view(request, service_id):
-    """Создание платежа за услугу"""
-    try:
-        company = request.user.company
-        service = company.services.get(pk=service_id)
-    except (Company.DoesNotExist, Service.DoesNotExist):
-        messages.error(request, 'Услуга не найдена')
-        return redirect('business:service_list')
-    
-    if request.method == 'POST':
-        payment = Payment.objects.create(
-            service=service,
-            amount=service.payment_amount,
-            status='pending'
-        )
-        messages.success(request, 'Платеж создан. Переход к оплате...')
-        return redirect('business:payment_process', pk=payment.pk)
-    
-    return render(request, 'business/payment_create.html', {'service': service})
-
-
-@login_required
 def payment_process_view(request, pk):
     """Обработка платежа (имитация)"""
     try:
@@ -635,7 +608,7 @@ def payment_process_view(request, pk):
     if request.method == 'POST':
         payment.mark_as_paid()
         messages.success(request, 'Оплата прошла успешно! Услуга активирована.')
-        return redirect('business:payment_success')
+        return redirect('business:service_detail', pk=payment.service.pk)
     
     return render(request, 'business/payment_process.html', {'payment': payment})
 
@@ -643,7 +616,7 @@ def payment_process_view(request, pk):
 @login_required
 def payment_success_view(request):
     """Страница успешной оплаты"""
-    return render(request, 'business/payment_success.html')
+    return redirect('business:service_list')
 
 
 @login_required

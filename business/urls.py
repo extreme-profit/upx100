@@ -33,7 +33,6 @@ urlpatterns = [
     path('slots/<int:pk>/toggle/', views.slot_toggle_view, name='slot_toggle'),
     
     # Оплата
-    path('services/<int:service_id>/payment/', views.payment_create_view, name='payment_create'),
     path('payments/<int:pk>/process/', views.payment_process_view, name='payment_process'),
     path('payments/success/', views.payment_success_view, name='payment_success'),
     
