@@ -667,7 +667,7 @@ def booking_list_view(request):
         messages.error(request, 'Сначала создайте профиль компании')
         return redirect('business:company_edit')
     
-    bookings = Booking.objects.filter(service__company=company).select_related('service', 'service__employee').order_by('-created_at')
+    bookings = Booking.objects.filter(service__company=company).select_related('service', 'service__category', 'service__subcategory').order_by('-created_at')
     
     return render(request, 'business/booking_list.html', {'bookings': bookings, 'company': company})
 
