@@ -151,9 +151,6 @@
                                     <div class="actions-cell">
                                         <a href="{% url 'business:service_detail' service.pk %}" class="action-btn edit" title="Просмотр">👁</a>
                                         <a href="{% url 'business:service_edit' service.pk %}" class="action-btn edit" title="Редактировать">✏</a>
-                                        {% if service.status != 'active' %}
-                                        <a href="{% url 'business:payment_create' service.pk %}" class="action-btn edit" style="background: #dcfce7; color: #166534;" title="Оплатить">💳</a>
-                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>

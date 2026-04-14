@@ -11,7 +11,7 @@
                 <h2 class="mb-0 text-primary"><i class="fas fa-concierge-bell me-2"></i>{{ service.name }}</h2>
                 <div>
                     {% if not service.is_paid %}
-                        <a href="{% url 'business:payment_create' service.pk %}" class="btn btn-warning btn-lg">
+                        <a href="{% url 'business:payment_process' service.pk %}" class="btn btn-warning btn-lg">
                             <i class="fas fa-credit-card me-2"></i>Оплатить
                         </a>
                     {% endif %}
