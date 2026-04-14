@@ -152,7 +152,7 @@
                         <label for="startHour" class="form-label fw-bold">Время начала</label>
                         <select id="startHour" class="form-select">
                             {% for h in hours %}
-                                <option value="{{ h }}" {% if h == 9 %}selected{% endif %}>{{ h|stringformat:"02d" }}:00</option>
+                                <option value="{{ h.value }}" {% if h.value == "09:00" %}selected{% endif %}>{{ h.label }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -160,7 +160,7 @@
                         <label for="endHour" class="form-label fw-bold">Время окончания</label>
                         <select id="endHour" class="form-select">
                             {% for h in hours %}
-                                <option value="{{ h }}" {% if h == 18 %}selected{% endif %}>{{ h|stringformat:"02d" }}:00</option>
+                                <option value="{{ h.value }}" {% if h.value == "18:00" %}selected{% endif %}>{{ h.label }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -635,11 +635,15 @@ function toggleSlot(day, hour, minute = 0) {
 function applySchedule() {
     const scheduleType = document.querySelector('input[name="schedule_type"]:checked').value;
     const specificDay = document.getElementById('specificDay').value;
-    const startHour = parseInt(document.getElementById('startHour').value);
-    const endHour = parseInt(document.getElementById('endHour').value);
+    const startHourStr = document.getElementById('startHour').value;
+    const endHourStr = document.getElementById('endHour').value;
     const action = document.querySelector('input[name="action"]:checked').value;
     
-    if (startHour >= endHour) {
+    // Парсим время в формате "HH:MM"
+    const [startHour, startMinute] = startHourStr.split(':').map(Number);
+    const [endHour, endMinute] = endHourStr.split(':').map(Number);
+    
+    if (startHour > endHour || (startHour === endHour && startMinute >= endMinute)) {
         showNotification('Время начала должно быть меньше времени окончания', 'danger');
         return;
     }
@@ -669,7 +673,7 @@ function applySchedule() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            bootstrap.Modal.getInstance(document.getElementById('scheduleModal')).hide();
+            closeModal();
             loadGrid();
             showNotification(`Создано: ${data.slots_created}, Обновлено: ${data.slots_updated}`, 'success');
         } else {
