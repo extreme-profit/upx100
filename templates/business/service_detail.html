@@ -10,6 +10,11 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h2 class="mb-0 text-primary"><i class="fas fa-concierge-bell me-2"></i>{{ service.name }}</h2>
                 <div>
+                    {% if not service.is_paid %}
+                        <a href="{% url 'business:payment_create' service.pk %}" class="btn btn-warning btn-lg">
+                            <i class="fas fa-credit-card me-2"></i>Оплатить
+                        </a>
+                    {% endif %}
                     <a href="{% url 'business:service_edit' service.pk %}" class="btn btn-primary btn-lg">
                         <i class="fas fa-edit me-2"></i>Редактировать
                     </a>
