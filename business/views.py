@@ -597,10 +597,22 @@ def payment_process_view(request, pk):
     """Обработка платежа (имитация)"""
     try:
         company = request.user.company
-        payment = Payment.objects.get(pk=pk, service__company=company)
-    except (Company.DoesNotExist, Payment.DoesNotExist):
-        messages.error(request, 'Платеж не найден')
+        service = company.services.get(pk=pk)
+    except (Company.DoesNotExist, Service.DoesNotExist):
+        messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
+    
+    # Получаем или создаем платеж для услуги
+    payment, created = Payment.objects.get_or_create(
+        service=service,
+        status='pending',
+        defaults={'amount': service.price}
+    )
+    
+    # Если уже оплачено, перенаправляем на детальную страницу
+    if payment.status == 'success':
+        messages.info(request, 'Услуга уже оплачена')
+        return redirect('business:service_detail', pk=service.pk)
     
     # Здесь должна быть интеграция с платежной системой
     # Для демонстрации просто помечаем как оплаченный
