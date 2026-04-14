@@ -603,13 +603,23 @@ def payment_process_view(request, pk):
         return redirect('business:service_list')
     
     # Получаем или создаем платеж для услуги
-    payment, created = Payment.objects.get_or_create(
-        service=service,
-        status='pending',
-        defaults={'amount': service.price}
-    )
-    
-    # Если уже оплачено, перенаправляем на детальную страницу
+    # Сначала проверяем, есть ли уже успешный платеж
+    success_payment = Payment.objects.filter(service=service, status='success').first()
+    if success_payment:
+        messages.info(request, 'Услуга уже оплачена')
+        return redirect('business:service_detail', pk=service.pk)
+
+    # Пытаемся получить существующий неоплаченный платеж
+    payment = Payment.objects.filter(service=service).exclude(status='success').first()
+    if not payment:
+        # Создаем новый платеж
+        payment = Payment.objects.create(
+            service=service,
+            amount=service.price,
+            status='pending'
+        )
+
+    # Если уже оплачено (проверка на всякий случай), перенаправляем на детальную страницу
     if payment.status == 'success':
         messages.info(request, 'Услуга уже оплачена')
         return redirect('business:service_detail', pk=service.pk)
