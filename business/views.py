@@ -249,6 +249,11 @@ def service_detail_view(request, pk):
         messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
     
+    # Если услуга не оплачена, перенаправляем на страницу оплаты
+    if not service.is_paid():
+        messages.info(request, 'Услуга требует оплаты для активации')
+        return redirect('business:payment_create', service_id=service.pk)
+    
     time_slots = service.time_slots.filter(date__gte=timezone.now().date()).order_by('date', 'start_time')
     bookings = service.bookings.all().order_by('-created_at')
     
