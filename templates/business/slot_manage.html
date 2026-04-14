@@ -13,7 +13,7 @@
                     <p class="text-muted mb-0">{{ service.name }}</p>
                 </div>
                 <div>
-                    <button type="button" class="btn btn-success btn-lg me-2" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+                    <button type="button" class="btn btn-success btn-lg me-2" id="openScheduleBtn">
                         <i class="fas fa-clock me-2"></i>Выставить рабочее время
                     </button>
                     <a href="{% url 'business:service_detail' service.pk %}" class="btn btn-outline-secondary btn-lg">
@@ -110,85 +110,84 @@
     </div>
 </div>
 
-<!-- Модальное окно для массового выставления графика -->
-<div class="modal fade" id="scheduleModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="fas fa-clock me-2"></i>Выставить рабочее время</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="scheduleForm">
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Тип графика</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="schedule_type" id="schedule5_2" value="5_2" checked>
-                            <label class="btn btn-outline-primary" for="schedule5_2">5/2 (Пн-Пт)</label>
-                            
-                            <input type="radio" class="btn-check" name="schedule_type" id="scheduleAllWeek" value="all_week">
-                            <label class="btn btn-outline-primary" for="scheduleAllWeek">Вся неделя</label>
-                            
-                            <input type="radio" class="btn-check" name="schedule_type" id="scheduleSpecific" value="specific_day">
-                            <label class="btn btn-outline-primary" for="scheduleSpecific">Конкретный день</label>
-                        </div>
+<!-- Модальное окно для массового выставления графика (кастомный popup без Bootstrap) -->
+<div id="scheduleModal" class="custom-modal" style="display: none;">
+    <div class="custom-modal-overlay" id="modalOverlay"></div>
+    <div class="custom-modal-content">
+        <div class="custom-modal-header">
+            <h5><i class="fas fa-clock me-2"></i>Выставить рабочее время</h5>
+            <button type="button" class="custom-modal-close" id="closeModalBtn">&times;</button>
+        </div>
+        <div class="custom-modal-body">
+            <form id="scheduleForm">
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Тип графика</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="schedule_type" id="schedule5_2" value="5_2" checked>
+                        <label class="btn btn-outline-primary" for="schedule5_2">5/2 (Пн-Пт)</label>
+                        
+                        <input type="radio" class="btn-check" name="schedule_type" id="scheduleAllWeek" value="all_week">
+                        <label class="btn btn-outline-primary" for="scheduleAllWeek">Вся неделя</label>
+                        
+                        <input type="radio" class="btn-check" name="schedule_type" id="scheduleSpecific" value="specific_day">
+                        <label class="btn btn-outline-primary" for="scheduleSpecific">Конкретный день</label>
                     </div>
-                    
-                    <div class="mb-3" id="specificDayContainer" style="display: none;">
-                        <label for="specificDay" class="form-label fw-bold">Выберите день</label>
-                        <select id="specificDay" class="form-select">
-                            <option value="0">Понедельник</option>
-                            <option value="1">Вторник</option>
-                            <option value="2">Среда</option>
-                            <option value="3">Четверг</option>
-                            <option value="4">Пятница</option>
-                            <option value="5">Суббота</option>
-                            <option value="6">Воскресенье</option>
+                </div>
+                
+                <div class="mb-3" id="specificDayContainer" style="display: none;">
+                    <label for="specificDay" class="form-label fw-bold">Выберите день</label>
+                    <select id="specificDay" class="form-select">
+                        <option value="0">Понедельник</option>
+                        <option value="1">Вторник</option>
+                        <option value="2">Среда</option>
+                        <option value="3">Четверг</option>
+                        <option value="4">Пятница</option>
+                        <option value="5">Суббота</option>
+                        <option value="6">Воскресенье</option>
+                    </select>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="startHour" class="form-label fw-bold">Время начала</label>
+                        <select id="startHour" class="form-select">
+                            {% for h in hours %}
+                                <option value="{{ h }}" {% if h == 9 %}selected{% endif %}>{{ h|stringformat:"02d" }}:00</option>
+                            {% endfor %}
                         </select>
                     </div>
-                    
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label for="startHour" class="form-label fw-bold">Время начала</label>
-                            <select id="startHour" class="form-select">
-                                {% for h in hours %}
-                                    <option value="{{ h }}" {% if h == 9 %}selected{% endif %}>{{ h|stringformat:"02d" }}:00</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="endHour" class="form-label fw-bold">Время окончания</label>
-                            <select id="endHour" class="form-select">
-                                {% for h in hours %}
-                                    <option value="{{ h }}" {% if h == 18 %}selected{% endif %}>{{ h|stringformat:"02d" }}:00</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                    <div class="col-md-6">
+                        <label for="endHour" class="form-label fw-bold">Время окончания</label>
+                        <select id="endHour" class="form-select">
+                            {% for h in hours %}
+                                <option value="{{ h }}" {% if h == 18 %}selected{% endif %}>{{ h|stringformat:"02d" }}:00</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Действие</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="action" id="actionFree" value="set_free" checked>
-                            <label class="btn btn-outline-success" for="actionFree"><i class="fas fa-check me-2"></i>Сделать свободным</label>
-                            
-                            <input type="radio" class="btn-check" name="action" id="actionBusy" value="set_busy">
-                            <label class="btn btn-outline-danger" for="actionBusy"><i class="fas fa-times me-2"></i>Сделать недоступным</label>
-                        </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Действие</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="action" id="actionFree" value="set_free" checked>
+                        <label class="btn btn-outline-success" for="actionFree"><i class="fas fa-check me-2"></i>Сделать свободным</label>
+                        
+                        <input type="radio" class="btn-check" name="action" id="actionBusy" value="set_busy">
+                        <label class="btn btn-outline-danger" for="actionBusy"><i class="fas fa-times me-2"></i>Сделать недоступным</label>
                     </div>
-                    
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Выбранные часы будут отмечены как <strong id="actionText">свободные</strong>. Остальные часы останутся без изменений.
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" id="applyScheduleBtn">
-                    <i class="fas fa-check me-2"></i>Применить
-                </button>
-            </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Выбранные часы будут отмечены как <strong id="actionText">свободные</strong>. Остальные часы останутся без изменений.
+                </div>
+            </form>
+        </div>
+        <div class="custom-modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelModalBtn">Отмена</button>
+            <button type="button" class="btn btn-primary" id="applyScheduleBtn">
+                <i class="fas fa-check me-2"></i>Применить
+            </button>
         </div>
     </div>
 </div>
@@ -253,14 +252,101 @@
         font-size: 0.75rem;
     }
     
+    /* Стили для кастомного модального окна (popup) */
+    .custom-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
+        display: none;
+    }
+    
+    .custom-modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .custom-modal-content {
+        position: relative;
+        background-color: #fff;
+        margin: 5% auto;
+        padding: 0;
+        width: 90%;
+        max-width: 600px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes modalSlideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .custom-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        background-color: #0d6efd;
+        color: white;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .custom-modal-header h5 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    
+    .custom-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.8rem;
+        color: white;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .custom-modal-close:hover {
+        opacity: 0.8;
+    }
+    
+    .custom-modal-body {
+        padding: 20px;
+    }
+    
+    .custom-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 15px 20px;
+        border-top: 1px solid #dee2e6;
+        border-radius: 0 0 8px 8px;
+        background-color: #f8f9fa;
+    }
+    
     #scheduleModal .btn-check:checked + .btn {
         background-color: #0d6efd;
         color: white;
         border-color: #0d6efd;
-    }
-    
-    .modal-lg {
-        max-width: 600px;
     }
 </style>
 
@@ -270,6 +356,52 @@ const serviceId = {{ service.pk }};
 let currentWeekOffset = 0; // Смещение недели (0 = текущая, 1 = следующая, -1 = предыдущая)
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Получаем элементы модального окна
+    const modal = document.getElementById('scheduleModal');
+    const openBtn = document.getElementById('openScheduleBtn');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const overlay = document.getElementById('modalOverlay');
+    
+    // Функция открытия модального окна
+    function openModal() {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Блокируем прокрутку фона
+    }
+    
+    // Функция закрытия модального окна
+    function closeModal() {
+        modal.style.display = 'none';
+        document.body.style.overflow = ''; // Возвращаем прокрутку
+    }
+    
+    // Открытие по кнопке
+    if (openBtn) {
+        openBtn.addEventListener('click', openModal);
+    }
+    
+    // Закрытие по крестику
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
+    }
+    
+    // Закрытие по кнопке "Отмена"
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeModal);
+    }
+    
+    // Закрытие по клику на оверлей
+    if (overlay) {
+        overlay.addEventListener('click', closeModal);
+    }
+    
+    // Закрытие по ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.style.display === 'block') {
+            closeModal();
+        }
+    });
+    
     // Показ/скрытие выбора конкретного дня
     document.querySelectorAll('input[name="schedule_type"]').forEach(radio => {
         radio.addEventListener('change', function() {
