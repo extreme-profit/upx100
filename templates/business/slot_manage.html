@@ -326,7 +326,7 @@ function loadGrid() {
                 return;
             }
             
-            renderGrid(data.grid, data.week_dates);
+            renderGrid(data.grid, data.week_dates, data.interval);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -337,7 +337,7 @@ function loadGrid() {
         });
 }
 
-function renderGrid(grid, weekDates) {
+function renderGrid(grid, weekDates, interval) {
     // Обновляем даты в шапке
     weekDates.forEach((date, index) => {
         const dateEl = document.getElementById(`day-date-${index}`);
@@ -356,8 +356,10 @@ function renderGrid(grid, weekDates) {
     const tbody = document.getElementById('gridBody');
     tbody.innerHTML = '';
     
-    // Получаем интервал из данных (по умолчанию 60 минут)
-    const interval = data.interval || 60;
+    // Если интервал не передан, используем 60 минут по умолчанию
+    if (!interval) {
+        interval = 60;
+    }
     
     // Генерируем строки для каждого временного слота на основе интервала
     for (let hour = 0; hour < 24; hour++) {
