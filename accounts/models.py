@@ -28,6 +28,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = (
         ('admin', 'Администратор'),
         ('entrepreneur', 'Предприниматель'),
+        ('employee', 'Сотрудник'),
     )
 
     email = models.EmailField('Email', unique=True)
@@ -73,4 +74,24 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def is_entrepreneur(self):
         return self.role == 'entrepreneur'
+    
+    def is_employee(self):
+        return self.role == 'employee'
+    
+    def get_employee_profile(self):
+        """Возвращает профиль сотрудника, если пользователь - сотрудник"""
+        if hasattr(self, 'employee_profile'):
+            return self.employee_profile
+        return None
+    
+    def get_company(self):
+        """Возвращает компанию пользователя (для предпринимателя или сотрудника)"""
+        if self.role == 'entrepreneur':
+            if hasattr(self, 'company'):
+                return self.company
+        elif self.role == 'employee':
+            employee_profile = self.get_employee_profile()
+            if employee_profile:
+                return employee_profile.company
+        return None
 

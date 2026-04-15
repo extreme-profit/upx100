@@ -559,7 +559,7 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h1>🏢 upx100</h1>
-                <p>Панель предпринимателя</p>
+                <p>{% if user.role == 'employee' %}Панель сотрудника{% else %}Панель предпринимателя{% endif %}</p>
             </div>
             
             <nav class="sidebar-nav">
@@ -620,7 +620,7 @@
         <!-- Main Content -->
         <main class="main-content">
             <div class="topbar">
-                <h2 class="topbar-title">{{ title|default:"Панель предпринимателя" }}</h2>
+                <h2 class="topbar-title">{% if user.role == 'employee' %}{{ title|default:"Панель сотрудника" }}{% else %}{{ title|default:"Панель предпринимателя" }}{% endif %}</h2>
                 <div class="user-menu">
                     <div class="user-avatar">{{ user.username|first|upper }}</div>
                     <span style="font-size: 14px; color: #64748b;">{{ user.username }}</span>

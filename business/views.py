@@ -150,13 +150,21 @@ def employee_delete_view(request, pk):
 @login_required
 def service_list_view(request):
     """Список услуг компании"""
-    try:
-        company = request.user.company
-    except Company.DoesNotExist:
-        messages.error(request, 'Сначала создайте профиль компании')
-        return redirect('business:company_edit')
+    company = request.user.get_company()
+    if not company:
+        messages.error(request, 'Компания не найдена')
+        return redirect('home')
+
+    # Для сотрудников фильтруем только услуги, к которым они привязаны
+    if request.user.role == 'employee':
+        employee_profile = request.user.get_employee_profile()
+        if employee_profile:
+            services = employee_profile.services.all().select_related('category')
+        else:
+            services = Service.objects.none()
+    else:
+        services = company.services.all().select_related('category')
     
-    services = company.services.all().select_related('category')
     return render(request, 'business/service_list.html', {'services': services, 'company': company})
 
 
@@ -787,16 +795,68 @@ def payment_success_view(request):
 @login_required
 def booking_list_view(request):
     """Список бронирований"""
-    try:
-        company = request.user.company
-    except Company.DoesNotExist:
-        messages.error(request, 'Сначала создайте профиль компании')
-        return redirect('business:company_edit')
-    
-    bookings = Booking.objects.filter(service__company=company).select_related('service', 'service__category', 'service__subcategory').order_by('-created_at')
-    
+    company = request.user.get_company()
+    if not company:
+        messages.error(request, 'Компания не найдена')
+        return redirect('home')
+
+    # Для сотрудников фильтруем только по услугам, к которым они привязаны
+    if request.user.role == 'employee':
+        employee_profile = request.user.get_employee_profile()
+        if employee_profile:
+            bookings = Booking.objects.filter(
+                service__company=company,
+                service__employees=employee_profile
+            ).select_related('service', 'service__category', 'service__subcategory').order_by('-created_at')
+        else:
+            bookings = Booking.objects.none()
+    else:
+        bookings = Booking.objects.filter(service__company=company).select_related('service', 'service__category', 'service__subcategory').order_by('-created_at')
+
     return render(request, 'business/booking_list.html', {'bookings': bookings, 'company': company})
 
+
+
+
+@login_required
+def employee_dashboard_view(request):
+    """Панель сотрудника - услуги и бронирования"""
+    if request.user.role != 'employee':
+        messages.error(request, 'Доступ только для сотрудников')
+        return redirect('home')
+    
+    company = request.user.get_company()
+    if not company:
+        messages.error(request, 'Компания не найдена')
+        return redirect('home')
+    
+    employee_profile = request.user.get_employee_profile()
+    if not employee_profile:
+        messages.error(request, 'Профиль сотрудника не найден')
+        return redirect('home')
+    
+    # Услуги, к которым привязан сотрудник
+    services = employee_profile.services.all().select_related('category')
+    
+    # Бронирования только по услугам сотрудника
+    bookings = Booking.objects.filter(
+        service__employees=employee_profile
+    ).select_related('service', 'service__category', 'service__subcategory').order_by('-created_at')[:20]
+    
+    pending_bookings_count = Booking.objects.filter(
+        service__employees=employee_profile,
+        status='pending'
+    ).count()
+    
+    context = {
+        'company': company,
+        'employee': employee_profile,
+        'services': services,
+        'bookings': bookings,
+        'pending_bookings_count': pending_bookings_count,
+        'is_employee_dashboard': True,
+    }
+    return render(request, 'business/employee_dashboard.html', context)
 
 @login_required
 def booking_confirm_view(request, pk):
