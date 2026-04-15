@@ -1,46 +1,39 @@
 ```
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+*.pyc
+*.pyo
+*.pyd
 
 # Database
 db.sqlite3
-*.db
 
 # Logs
 *.log
-server.log
 
 # Environment
 .env
 .env.local
-.env.*
-!.env.example
+*.env.*
 
-# Migration files (generated)
-business/migrations/
-accounts/migrations/
-bookings/migrations/
-companies/migrations/
-payments/migrations/
-search/migrations/
-services/migrations/
+# Dependencies
+.venv/
+venv/
+node_modules/
+
+# Build artifacts
+dist/
+build/
+target/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
 ```

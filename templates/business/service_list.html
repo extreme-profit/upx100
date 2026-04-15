@@ -6,7 +6,9 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="card-title mb-0">Услуги</h3>
+        {% if user.role != 'employee' %}
         <a href="{% url 'business:service_create' %}" class="btn btn-primary">+ Добавить услугу</a>
+        {% endif %}
     </div>
     <div class="card-body">
             {% if services %}
@@ -45,9 +47,13 @@
                             <td>
                                 <div class="actions-cell">
                                     <a href="{% url 'business:service_detail' service.pk %}" class="action-btn edit" title="Просмотр">👁</a>
+                                    {% if user.role != 'employee' %}
                                     <a href="{% url 'business:service_edit' service.pk %}" class="action-btn edit" title="Редактировать">✏</a>
+                                    {% endif %}
                                     <a href="{% url 'business:slot_manage' service.pk %}" class="action-btn edit" style="background: #dbeafe; color: #1e40af;" title="Слоты">📅</a>
+                                    {% if user.role != 'employee' %}
                                     <a href="{% url 'business:service_delete' service.pk %}" class="action-btn delete" title="Удалить" onclick="confirmDelete(event, '{% url 'business:service_delete' service.pk %}')">🗑</a>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
@@ -59,8 +65,12 @@
             <div class="empty-state">
                 <div class="empty-state-icon">🛠</div>
                 <h3>Услуг пока нет</h3>
+                {% if user.role != 'employee' %}
                 <p>Создайте первую услугу для вашей компании</p>
                 <a href="{% url 'business:service_create' %}" class="btn btn-primary">+ Добавить услугу</a>
+                {% else %}
+                <p>Вам ещё не назначены услуги</p>
+                {% endif %}
             </div>
             {% endif %}
         </div>

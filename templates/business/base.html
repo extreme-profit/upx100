@@ -563,6 +563,25 @@
             </div>
             
             <nav class="sidebar-nav">
+                {% if user.role == 'employee' %}
+                <!-- Меню для сотрудника -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Услуги</div>
+                    <a href="{% url 'business:service_list' %}" class="nav-link {% if 'service' in request.resolver_match.url_name %}active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+                        Мои услуги
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Бронирования</div>
+                    <a href="{% url 'business:booking_list' %}" class="nav-link {% if 'booking' in request.resolver_match.url_name %}active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                        Мои бронирования
+                    </a>
+                </div>
+                {% else %}
+                <!-- Меню для предпринимателя -->
                 <div class="nav-section">
                     <div class="nav-section-title">Главное</div>
                     <a href="{% url 'business:company_profile' %}" class="nav-link {% if request.resolver_match.url_name == 'company_profile' %}active{% endif %}">
@@ -602,6 +621,7 @@
                         Бронирования
                     </a>
                 </div>
+                {% endif %}
                 
                 <div class="nav-section">
                     <div class="nav-section-title">Навигация</div>
