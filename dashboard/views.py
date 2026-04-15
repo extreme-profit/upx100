@@ -4,13 +4,17 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from accounts.models import User
 from companies.models import Category
-from services.models import Service
+from business.models import Service
 
 
 def home_view(request):
     """Главная страница сайта"""
     categories = Category.objects.all()[:6]
-    services = Service.objects.select_related('provider').filter(is_active=True).order_by('-created_at')[:6]
+    # Берём активные услуги из бизнес-модели, у которых компания проверена
+    services = Service.objects.select_related('company').filter(
+        status='active',
+        company__is_verified=True
+    ).order_by('-created_at')[:6]
     
     context = {
         'categories': categories,

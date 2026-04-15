@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q
-from services.models import Service
+from business.models import Service
 from companies.models import Category, Subcategory
 
 
@@ -9,7 +9,11 @@ def search_view(request):
     query = request.GET.get('q', '')
     category_slug = request.GET.get('category', '')
     
-    services = Service.objects.filter(is_active=True)
+    # Берём только активные услуги проверенных компаний
+    services = Service.objects.select_related('company').filter(
+        status='active',
+        company__is_verified=True
+    )
     categories = Category.objects.all()
     
     # Поиск по запросу
