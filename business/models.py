@@ -26,37 +26,35 @@ class Company(models.Model):
 
 
 class Employee(models.Model):
-    """Модель сотрудника компании"""
+    """Модель сотрудника компании
+    
+    Сотрудник теперь всегда связан с пользователем User с ролью 'employee'.
+    Пользователь хранит данные для аутентификации, а Employee - профильные данные.
+    """
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='employees', verbose_name="Компания")
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='employee_profile')
-    name = models.CharField(max_length=150, verbose_name="Имя сотрудника")
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='employee_profile')
     position = models.CharField(max_length=100, blank=True, verbose_name="Должность")
     phone = models.CharField(max_length=20, blank=True, verbose_name="Телефон")
-    email = models.EmailField(blank=True, verbose_name="Email")
-    password = models.CharField(max_length=128, blank=True, verbose_name="Пароль для ЛК")
     is_active = models.BooleanField(default=True, verbose_name="Активен")
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         verbose_name = "Сотрудник"
         verbose_name_plural = "Сотрудники"
-        unique_together = ['company', 'name']
+        unique_together = ['company', 'user']
     
     def __str__(self):
-        return f"{self.name} ({self.company.name})"
+        return f"{self.user.get_full_name()} ({self.company.name})"
     
-    def set_password(self, raw_password):
-        """Хеширование пароля"""
-        from django.contrib.auth.hashers import make_password
-        self.password = make_password(raw_password)
-        self.save()
+    @property
+    def name(self):
+        """Имя сотрудника из связанного пользователя"""
+        return self.user.get_full_name() or self.user.email
     
-    def check_password(self, raw_password):
-        """Проверка пароля"""
-        from django.contrib.auth.hashers import check_password
-        if not self.password:
-            return False
-        return check_password(raw_password, self.password)
+    @property
+    def email(self):
+        """Email сотрудника из связанного пользователя"""
+        return self.user.email
 
 
 class ServiceCategory(models.Model):
