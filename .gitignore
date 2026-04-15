@@ -1,25 +1,8 @@
-```gitignore
-# Python compiled files
+```
+# Compiled Python files
 *.pyc
 __pycache__/
 
-# Django specific
-*.pyc
-__pycache__/
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-.env
-.env.local
-*.env.*
+# Database file
 db.sqlite3
-db.sqlite3-journal
-media/
-staticfiles/
-*.log
-.DS_Store
-Thumbs.db
 ```
