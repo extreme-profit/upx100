@@ -21,11 +21,14 @@ def subcategories_api_view(request):
 
 @login_required
 def company_profile_view(request):
-    """Просмотр профиля компании"""
-    try:
-        company = request.user.company
-    except Company.DoesNotExist:
+    """Просмотр профиля компании (для предпринимателя и сотрудника)"""
+    company = request.user.get_company()
+    if not company:
         return redirect('business:company_edit')
+    
+    # Если пользователь - сотрудник, перенаправляем на панель сотрудника
+    if request.user.role == 'employee':
+        return redirect('business:employee_dashboard')
     
     employees = company.employees.all()
     services = company.services.all()
