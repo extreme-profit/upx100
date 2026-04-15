@@ -8,32 +8,29 @@ __pycache__/
 # Database
 db.sqlite3
 
-# Logs
-*.log
-
-# Environment
-.env
-.env.local
-*.env.*
-
 # Dependencies
 .venv/
 venv/
-node_modules/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Build artifacts
-dist/
-build/
-target/
+# Logs
+*.log
 
-# Editors
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor
 .vscode/
 .idea/
 *.swp
 *.swo
-*.tmp
-
-# OS
-.DS_Store
-Thumbs.db
+*~
 ```
