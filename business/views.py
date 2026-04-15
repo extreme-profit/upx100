@@ -5,7 +5,7 @@ from django.utils import timezone
 from datetime import timedelta, datetime, time
 from django.http import JsonResponse
 from .models import Company, Employee, Service, ServiceCategory, ServiceTimeSlot, Booking, Payment
-from .forms import CompanyForm, EmployeeForm, ServiceForm
+from .forms import CompanyForm, EmployeeForm, ServiceForm, ServiceTimeSlotGenerateForm
 from companies.models import Category, Subcategory
 
 
@@ -458,8 +458,9 @@ def slot_bulk_update_view(request, service_id):
     set_others_busy = data.get('set_others_busy', False)  # Делать ли остальные слоты недоступными
     week_offset = int(data.get('week_offset', 0))
     
-    # Получаем интервал из сессии (по умолчанию duration услуги)
+    # Получаем интервал и длительность из сессии
     interval = request.session.get(f'slot_interval_{service_id}', service.duration)
+    duration = request.session.get(f'slot_duration_{service_id}', service.duration)
     
     today = timezone.now().date()
     start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
@@ -487,8 +488,8 @@ def slot_bulk_update_view(request, service_id):
         while current_time < end_time_limit:
             start_time = current_time.time()
             
-            # Вычисляем время окончания слота
-            end_datetime = current_time + timedelta(minutes=interval)
+            # Вычисляем время окончания слота на основе длительности услуги
+            end_datetime = current_time + timedelta(minutes=duration)
             end_time = end_datetime.time()
             
             # Если время окончания выходит за рамки end_hour, прекращаем
@@ -528,8 +529,8 @@ def slot_bulk_update_view(request, service_id):
                     slot.save()
                     slots_updated += 1
             
-            # Переходим к следующему слоту
-            current_time = end_datetime
+            # Переходим к следующему слоту с шагом interval
+            current_time = current_time + timedelta(minutes=interval)
         
         # Если нужно сделать остальные слоты недоступными (вне рабочего времени)
         if set_others_busy and action == 'set_free':
@@ -540,7 +541,7 @@ def slot_bulk_update_view(request, service_id):
             current_time = day_start
             while current_time <= day_end:
                 start_time = current_time.time()
-                end_datetime = current_time + timedelta(minutes=interval)
+                end_datetime = current_time + timedelta(minutes=duration)
                 
                 # Проверяем, попадает ли слот в рабочее время
                 work_start = datetime.combine(target_date, time(start_hour, 0))
@@ -574,7 +575,7 @@ def slot_bulk_update_view(request, service_id):
                         slot.save()
                         slots_updated += 1
                 
-                current_time = end_datetime
+                current_time = current_time + timedelta(minutes=interval)
     
     return JsonResponse({
         'success': True,
@@ -600,52 +601,78 @@ def slot_generate_view(request, service_id):
         return redirect('business:slot_manage', service_id=service_id)
     
     if request.method == 'POST':
-        start_date = request.POST.get('start_date')
-        end_date = request.POST.get('end_date')
-        start_hour = int(request.POST.get('start_hour', 9))
-        end_hour = int(request.POST.get('end_hour', 18))
-        interval = int(request.POST.get('interval', service.duration))
-        
-        # Сохраняем интервал в сессии для использования в slot_manage
-        request.session[f'slot_interval_{service_id}'] = interval
-        
-        if start_date and end_date:
-            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+        form = ServiceTimeSlotGenerateForm(request.POST, service=service)
+        if form.is_valid():
+            schedule_type = form.cleaned_data['schedule_type']
+            start_time = form.cleaned_data['start_time']
+            end_time = form.cleaned_data['end_time']
+            duration = form.cleaned_data['duration']
+            interval = form.cleaned_data['interval']
+            weekdays = form.cleaned_data.get('weekdays', [])
             
-            current_date = start_date_obj
+            # Сохраняем интервал и длительность в сессии для использования в slot_manage
+            request.session[f'slot_interval_{service_id}'] = interval
+            request.session[f'slot_duration_{service_id}'] = duration
+            
+            # Определяем дни для обработки
+            days_to_process = []
+            if schedule_type == '5_2':
+                days_to_process = [0, 1, 2, 3, 4]  # Пн-Пт
+            elif schedule_type == 'all_week':
+                days_to_process = [0, 1, 2, 3, 4, 5, 6]  # Все дни
+            elif schedule_type == 'specific':
+                days_to_process = [int(d) for d in weekdays]
+            
+            # Генерируем слоты на 4 недели вперед
+            today = timezone.now().date()
             slots_created = 0
             
-            while current_date <= end_date_obj:
-                # Пропускаем выходные (суббота=5, воскресенье=6)
-                if current_date.weekday() < 5:
-                    current_time = time(start_hour, 0)
-                    end_time = time(end_hour, 0)
-                    
-                    while current_time < end_time:
-                        slot_end = datetime.combine(current_date, current_time) + timedelta(minutes=interval)
-                        if slot_end.time() <= end_time:
-                            # Создаем слот для каждого сотрудника
-                            for employee in employees:
-                                ServiceTimeSlot.objects.get_or_create(
-                                    service=service,
-                                    employee=employee,
-                                    date=current_date,
-                                    start_time=current_time,
-                                    defaults={'end_time': slot_end.time()}
-                                )
-                                slots_created += 1
-                        current_time = (datetime.combine(current_date, current_time) + timedelta(minutes=interval)).time()
+            for week_offset in range(4):  # 4 недели
+                start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
                 
-                current_date += timedelta(days=1)
+                for weekday in days_to_process:
+                    target_date = start_of_week + timedelta(days=weekday)
+                    
+                    # Пропускаем прошедшие даты
+                    if target_date < today:
+                        continue
+                    
+                    # Генерируем слоты на основе интервала
+                    current_minutes = start_time.hour * 60 + start_time.minute
+                    end_minutes = end_time.hour * 60 + end_time.minute
+                    
+                    while current_minutes + interval <= end_minutes:
+                        start_hour = current_minutes // 60
+                        start_minute = current_minutes % 60
+                        current_time = time(start_hour, start_minute)
+                        
+                        # Вычисляем время окончания слота
+                        end_total_minutes = current_minutes + interval
+                        end_hour = end_total_minutes // 60
+                        end_min = end_total_minutes % 60
+                        slot_end_time = time(end_hour, end_min)
+                        
+                        # Создаем слот для каждого сотрудника
+                        for employee in employees:
+                            ServiceTimeSlot.objects.get_or_create(
+                                service=service,
+                                employee=employee,
+                                date=target_date,
+                                start_time=current_time,
+                                defaults={'end_time': slot_end_time}
+                            )
+                            slots_created += 1
+                        
+                        current_minutes += interval
             
-            messages.success(request, f'Создано {slots_created} временных слотов для {employees.count()} сотрудников с {start_date} по {end_date}')
+            messages.success(request, f'Создано {slots_created} временных слотов для {employees.count()} сотрудников')
             return redirect('business:slot_manage', service_id=service_id)
+    else:
+        form = ServiceTimeSlotGenerateForm(service=service)
     
     context = {
         'service': service,
-        'today': timezone.now(),
-        'week_later': timezone.now() + timedelta(days=7),
+        'form': form,
         'employees_count': employees.count(),
     }
     return render(request, 'business/slot_generate.html', context)

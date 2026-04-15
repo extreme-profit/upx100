@@ -3,6 +3,103 @@ from .models import Company, Employee, Service, Payment
 from companies.models import Category, Subcategory
 
 
+class ServiceTimeSlotGenerateForm(forms.Form):
+    """Форма генерации временных слотов"""
+    WEEKDAY_CHOICES = [
+        (0, 'Понедельник'),
+        (1, 'Вторник'),
+        (2, 'Среда'),
+        (3, 'Четверг'),
+        (4, 'Пятница'),
+        (5, 'Суббота'),
+        (6, 'Воскресенье'),
+    ]
+    
+    SCHEDULE_TYPE_CHOICES = [
+        ('5_2', '5/2 (Пн-Пт)'),
+        ('all_week', 'Каждый день'),
+        ('specific', 'Выбрать дни'),
+    ]
+    
+    schedule_type = forms.ChoiceField(
+        label='Тип графика',
+        choices=SCHEDULE_TYPE_CHOICES,
+        initial='5_2',
+        widget=forms.RadioSelect(attrs={'class': 'btn-check'}),
+    )
+    
+    weekdays = forms.MultipleChoiceField(
+        label='Дни недели',
+        choices=WEEKDAY_CHOICES,
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        help_text='Выберите дни недели для работы'
+    )
+    
+    start_time = forms.TimeField(
+        label='Начало рабочего дня',
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control form-control-lg'}),
+        initial='09:00',
+    )
+    
+    end_time = forms.TimeField(
+        label='Конец рабочего дня',
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control form-control-lg'}),
+        initial='18:00',
+    )
+    
+    duration = forms.IntegerField(
+        label='Длительность услуги (мин)',
+        min_value=5,
+        max_value=1440,
+        widget=forms.NumberInput(attrs={'class': 'form-control form-control-lg', 'min': 5, 'max': 1440}),
+        help_text='Длительность одной услуги в минутах'
+    )
+    
+    interval = forms.IntegerField(
+        label='Интервал записи (минуты)',
+        min_value=5,
+        max_value=1440,
+        widget=forms.NumberInput(attrs={'class': 'form-control form-control-lg', 'min': 5, 'max': 1440}),
+        help_text='Шаг времени между записями (от 5 до 1440 минут)'
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.service = kwargs.pop('service', None)
+        super().__init__(*args, **kwargs)
+        
+        # Устанавливаем начальное значение длительности из услуги
+        if self.service:
+            self.fields['duration'].initial = self.service.duration
+            self.fields['interval'].initial = self.service.duration
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        duration = cleaned_data.get('duration')
+        interval = cleaned_data.get('interval')
+        schedule_type = cleaned_data.get('schedule_type')
+        weekdays = cleaned_data.get('weekdays')
+        
+        if start_time and end_time:
+            if start_time >= end_time:
+                raise forms.ValidationError('Время окончания должно быть позже времени начала')
+            
+            # Проверяем, что между началом и концом помещается хотя бы одна услуга
+            start_minutes = start_time.hour * 60 + start_time.minute
+            end_minutes = end_time.hour * 60 + end_time.minute
+            work_duration = end_minutes - start_minutes
+            
+            if duration and work_duration < duration:
+                raise forms.ValidationError(f'Рабочий день слишком короткий. Для услуги длительностью {duration} мин требуется как минимум {duration} минут рабочего времени')
+        
+        if schedule_type == 'specific' and not weekdays:
+            raise forms.ValidationError('Выберите хотя бы один день недели')
+        
+        return cleaned_data
+
+
 class CompanyForm(forms.ModelForm):
     """Форма профиля компании"""
     class Meta:
@@ -120,12 +217,11 @@ class ServiceForm(forms.ModelForm):
     
     class Meta:
         model = Service
-        fields = ['name', 'description', 'price', 'duration', 'photo']
+        fields = ['name', 'description', 'price', 'photo']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название услуги'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Описание услуги'}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'duration': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'В минутах'}),
         }
     
     def __init__(self, *args, **kwargs):

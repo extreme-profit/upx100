@@ -1,31 +1,25 @@
-```
-# Python
-__pycache__/
+```gitignore
+# Python compiled files
 *.pyc
+__pycache__/
+
+# Django specific
+*.pyc
+__pycache__/
 *.pyo
 *.pyd
-
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-
-# Environment
+.Python
+env/
+venv/
+.venv/
 .env
 .env.local
 *.env.*
-
-# Editors
-.vscode/
-.idea/
-
-# Dependencies
-.venv/
-venv/
-node_modules/
-
-# Build artifacts
-dist/
-build/
-target/
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+*.log
+.DS_Store
+Thumbs.db
 ```
