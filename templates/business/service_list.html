@@ -19,7 +19,6 @@
                             <th>Категория</th>
                             <th>Сотрудник</th>
                             <th>Цена</th>
-                            <th>Длительность</th>
                             <th>Статус</th>
                             <th>Действия</th>
                         </tr>
@@ -38,7 +37,6 @@
                             <td>{{ service.category.name|default:"—" }}</td>
                             <td>{{ service.employee.name|default:"Не назначен" }}</td>
                             <td>{{ service.price }} ₽</td>
-                            <td>{{ service.duration }} мин</td>
                             <td>
                                 <span class="badge badge-{% if service.status == 'active' %}success{% elif service.status == 'pending_payment' %}warning{% elif service.status == 'inactive' %}danger{% else %}secondary{% endif %}">
                                     {{ service.get_status_display }}
@@ -49,7 +47,7 @@
                                     <a href="{% url 'business:service_detail' service.pk %}" class="action-btn edit" title="Просмотр">👁</a>
                                     <a href="{% url 'business:service_edit' service.pk %}" class="action-btn edit" title="Редактировать">✏</a>
                                     <a href="{% url 'business:slot_manage' service.pk %}" class="action-btn edit" style="background: #dbeafe; color: #1e40af;" title="Слоты">📅</a>
-                                    <a href="{% url 'business:service_delete' service.pk %}" class="action-btn delete" title="Удалить">🗑</a>
+                                    <a href="{% url 'business:service_delete' service.pk %}" class="action-btn delete" title="Удалить" onclick="confirmDelete(event, '{% url 'business:service_delete' service.pk %}')">🗑</a>
                                 </div>
                             </td>
                         </tr>
@@ -71,4 +69,34 @@
     <div style="margin-top: 24px;">
         <a href="{% url 'business:company_profile' %}" class="btn btn-secondary">← Назад в панель</a>
     </div>
+    
+    <script>
+        // Получаем CSRF токен из cookie
+        function getCsrfToken() {
+            const csrfCookie = document.cookie.split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+            return csrfCookie || '';
+        }
+        
+        function confirmDelete(event, url) {
+            event.preventDefault();
+            if (confirm('Вы уверены, что хотите удалить эту услугу? Это действие нельзя отменить.')) {
+                // Создаем форму для POST запроса
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = url;
+                
+                // Добавляем CSRF токен
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'csrfmiddlewaretoken';
+                input.value = getCsrfToken();
+                form.appendChild(input);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
 {% endblock %}
