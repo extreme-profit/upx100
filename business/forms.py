@@ -68,10 +68,14 @@ class ServiceTimeSlotGenerateForm(forms.Form):
         self.service = kwargs.pop('service', None)
         super().__init__(*args, **kwargs)
         
-        # Устанавливаем начальное значение длительности из услуги
-        if self.service:
-            self.fields['duration'].initial = self.service.duration
-            self.fields['interval'].initial = self.service.duration
+        # Устанавливаем начальные значения из сессии если есть
+        if self.service and self.service.id:
+            session_duration = kwargs.get('initial', {}).get('duration')
+            session_interval = kwargs.get('initial', {}).get('interval')
+            if session_duration:
+                self.fields['duration'].initial = session_duration
+            if session_interval:
+                self.fields['interval'].initial = session_interval
     
     def clean(self):
         cleaned_data = super().clean()
