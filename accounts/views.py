@@ -12,6 +12,9 @@ def get_login_redirect_url(user):
     elif user.role == 'entrepreneur':
         # Для предпринимателей - переход в личный кабинет компании
         return 'business:company_profile'
+    elif user.role == 'employee':
+        # Для сотрудников - переход в панель сотрудника (услуги и бронирования)
+        return 'business:employee_dashboard'
     else:
         return 'home'
 

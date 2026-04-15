@@ -40,4 +40,7 @@ urlpatterns = [
     path('bookings/', views.booking_list_view, name='booking_list'),
     path('bookings/<int:pk>/confirm/', views.booking_confirm_view, name='booking_confirm'),
     path('bookings/<int:pk>/cancel/', views.booking_cancel_view, name='booking_cancel'),
+    
+    # Панель сотрудника
+    path('employee/dashboard/', views.employee_dashboard_view, name='employee_dashboard'),
 ]
