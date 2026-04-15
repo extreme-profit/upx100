@@ -285,7 +285,7 @@ def slot_manage_view(request, service_id):
     
     # Генерируем часы с учетом длительности услуги для popup
     # Получаем интервал из сессии или используем duration услуги (по умолчанию 30 мин если None)
-    interval = request.session.get(f'slot_interval_{service.id}', service.duration)
+    interval = request.session.get(f'slot_duration_{service.id}', service.duration)
     if not interval:
         interval = 30  # Значение по умолчанию если ничего не найдено
     hours = []
@@ -318,7 +318,7 @@ def slot_get_grid_view(request, service_id):
     week_offset = int(request.GET.get('week_offset', 0))
     
     # Получаем интервал из сессии (по умолчанию duration услуги)
-    interval = request.session.get(f'slot_interval_{service_id}', service.duration)
+    interval = request.session.get(f'slot_duration_{service_id}', service.duration)
     if not interval:
         interval = 30  # Значение по умолчанию
     
@@ -383,7 +383,7 @@ def slot_update_grid_view(request, service_id):
     employee_id = data.get('employee')
     
     # Получаем интервал из сессии
-    interval = request.session.get(f'slot_interval_{service_id}', service.duration)
+    interval = request.session.get(f'slot_duration_{service_id}', service.duration)
     if not interval:
         interval = 30  # Значение по умолчанию
     
@@ -466,7 +466,7 @@ def slot_bulk_update_view(request, service_id):
     week_offset = int(data.get('week_offset', 0))
     
     # Получаем интервал и длительность из сессии
-    interval = request.session.get(f'slot_interval_{service_id}', service.duration)
+    interval = request.session.get(f'slot_duration_{service_id}', service.duration)
     if not interval:
         interval = 30  # Значение по умолчанию
     
@@ -616,23 +616,20 @@ def slot_generate_view(request, service_id):
         # Получаем значения из сессии для initial
         initial_data = {}
         session_duration = request.session.get(f'slot_duration_{service_id}')
-        session_interval = request.session.get(f'slot_interval_{service_id}')
         if session_duration:
             initial_data['duration'] = session_duration
-        if session_interval:
-            initial_data['interval'] = session_interval
         
         form = ServiceTimeSlotGenerateForm(request.POST, service=service, initial=initial_data)
         if form.is_valid():
             schedule_type = form.cleaned_data['schedule_type']
+            start_date = form.cleaned_data['start_date']
+            end_date = form.cleaned_data['end_date']
             start_time = form.cleaned_data['start_time']
             end_time = form.cleaned_data['end_time']
             duration = form.cleaned_data['duration']
-            interval = form.cleaned_data['interval']
             weekdays = form.cleaned_data.get('weekdays', [])
             
-            # Сохраняем интервал и длительность в сессии для использования в slot_manage
-            request.session[f'slot_interval_{service_id}'] = interval
+            # Сохраняем длительность в сессии для использования в slot_manage
             request.session[f'slot_duration_{service_id}'] = duration
             
             # Определяем дни для обработки
@@ -644,33 +641,28 @@ def slot_generate_view(request, service_id):
             elif schedule_type == 'specific':
                 days_to_process = [int(d) for d in weekdays]
             
-            # Генерируем слоты на 4 недели вперед
-            today = timezone.now().date()
+            # Генерируем слоты в указанном диапазоне дат
             slots_created = 0
+            current_date = start_date
             
-            for week_offset in range(4):  # 4 недели
-                start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
-                
-                for weekday in days_to_process:
-                    target_date = start_of_week + timedelta(days=weekday)
-                    
-                    # Пропускаем прошедшие даты
-                    if target_date < today:
-                        continue
-                    
-                    # Генерируем слоты на основе интервала
-                    current_minutes = start_time.hour * 60 + start_time.minute
+            while current_date <= end_date:
+                # Проверяем, попадает ли день в выбранные дни недели
+                weekday = current_date.weekday()
+                if weekday in days_to_process:
+                    # Генерируем слоты на основе длительности услуги
+                    start_minutes = start_time.hour * 60 + start_time.minute
                     end_minutes = end_time.hour * 60 + end_time.minute
                     
-                    while current_minutes + interval <= end_minutes:
+                    current_minutes = start_minutes
+                    while current_minutes + duration <= end_minutes:
                         start_hour = current_minutes // 60
                         start_minute = current_minutes % 60
-                        current_time = time(start_hour, start_minute)
+                        slot_start_time = time(start_hour, start_minute)
                         
                         # Вычисляем время окончания слота
-                        end_total_minutes = current_minutes + interval
-                        end_hour = end_total_minutes // 60
-                        end_min = end_total_minutes % 60
+                        slot_end_minutes = current_minutes + duration
+                        end_hour = slot_end_minutes // 60
+                        end_min = slot_end_minutes % 60
                         slot_end_time = time(end_hour, end_min)
                         
                         # Создаем слот для каждого сотрудника
@@ -678,13 +670,19 @@ def slot_generate_view(request, service_id):
                             ServiceTimeSlot.objects.get_or_create(
                                 service=service,
                                 employee=employee,
-                                date=target_date,
-                                start_time=current_time,
+                                date=current_date,
+                                start_time=slot_start_time,
                                 defaults={'end_time': slot_end_time}
                             )
                             slots_created += 1
                         
-                        current_minutes += interval
+                        # Переходим к следующему слоту с шагом duration (интервал = длительности)
+                        current_minutes += duration
+                    
+                    # Если нужно сделать остальные слоты недоступными (вне рабочего времени)
+                    # Пропускаем этот шаг для простоты - можно добавить при необходимости
+                
+                current_date += timedelta(days=1)
             
             messages.success(request, f'Создано {slots_created} временных слотов для {employees.count()} сотрудников')
             return redirect('business:slot_manage', service_id=service_id)
@@ -692,11 +690,8 @@ def slot_generate_view(request, service_id):
         # Получаем значения из сессии для initial
         initial_data = {}
         session_duration = request.session.get(f'slot_duration_{service_id}')
-        session_interval = request.session.get(f'slot_interval_{service_id}')
         if session_duration:
             initial_data['duration'] = session_duration
-        if session_interval:
-            initial_data['interval'] = session_interval
         
         form = ServiceTimeSlotGenerateForm(service=service, initial=initial_data)
     

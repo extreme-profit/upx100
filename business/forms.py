@@ -1,4 +1,6 @@
 from django import forms
+from django.utils import timezone
+from datetime import timedelta
 from .models import Company, Employee, Service, Payment
 from companies.models import Category, Subcategory
 
@@ -21,6 +23,18 @@ class ServiceTimeSlotGenerateForm(forms.Form):
         ('specific', 'Выбрать дни'),
     ]
     
+    start_date = forms.DateField(
+        label='С какой даты создать',
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control form-control-lg'}),
+        help_text='Дата начала генерации слотов'
+    )
+    
+    end_date = forms.DateField(
+        label='До какой даты создать',
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control form-control-lg'}),
+        help_text='Дата окончания генерации слотов'
+    )
+    
     schedule_type = forms.ChoiceField(
         label='Тип графика',
         choices=SCHEDULE_TYPE_CHOICES,
@@ -36,6 +50,14 @@ class ServiceTimeSlotGenerateForm(forms.Form):
         help_text='Выберите дни недели для работы'
     )
     
+    duration = forms.IntegerField(
+        label='Длительность услуги (мин)',
+        min_value=5,
+        max_value=1440,
+        widget=forms.NumberInput(attrs={'class': 'form-control form-control-lg', 'min': 5, 'max': 1440}),
+        help_text='Длительность одной услуги в минутах'
+    )
+    
     start_time = forms.TimeField(
         label='Начало рабочего дня',
         widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control form-control-lg'}),
@@ -48,43 +70,35 @@ class ServiceTimeSlotGenerateForm(forms.Form):
         initial='18:00',
     )
     
-    duration = forms.IntegerField(
-        label='Длительность услуги (мин)',
-        min_value=5,
-        max_value=1440,
-        widget=forms.NumberInput(attrs={'class': 'form-control form-control-lg', 'min': 5, 'max': 1440}),
-        help_text='Длительность одной услуги в минутах'
-    )
-    
-    interval = forms.IntegerField(
-        label='Интервал записи (минуты)',
-        min_value=5,
-        max_value=1440,
-        widget=forms.NumberInput(attrs={'class': 'form-control form-control-lg', 'min': 5, 'max': 1440}),
-        help_text='Шаг времени между записями (от 5 до 1440 минут)'
-    )
-    
     def __init__(self, *args, **kwargs):
         self.service = kwargs.pop('service', None)
         super().__init__(*args, **kwargs)
         
+        # Устанавливаем начальные значения дат
+        if not self.initial.get('start_date'):
+            self.fields['start_date'].initial = timezone.now().date()
+        if not self.initial.get('end_date'):
+            self.fields['end_date'].initial = timezone.now().date() + timedelta(days=30)
+        
         # Устанавливаем начальные значения из сессии если есть
         if self.service and self.service.id:
             session_duration = kwargs.get('initial', {}).get('duration')
-            session_interval = kwargs.get('initial', {}).get('interval')
             if session_duration:
                 self.fields['duration'].initial = session_duration
-            if session_interval:
-                self.fields['interval'].initial = session_interval
     
     def clean(self):
         cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
         duration = cleaned_data.get('duration')
-        interval = cleaned_data.get('interval')
         schedule_type = cleaned_data.get('schedule_type')
         weekdays = cleaned_data.get('weekdays')
+        
+        if start_date and end_date:
+            if start_date > end_date:
+                raise forms.ValidationError('Дата окончания должна быть позже даты начала')
         
         if start_time and end_time:
             if start_time >= end_time:
