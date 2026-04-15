@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ service.name }} - Запись на услугу{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 40px 0;">
+    <!-- Информация об услуге -->
+    <div style="margin-bottom: 40px; padding: 30px; background: #f8f9fa; border-radius: 10px;">
+        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+            {% if service.photo %}
+                <img src="{{ service.photo.url }}" alt="{{ service.name }}" style="width: 300px; height: 250px; object-fit: cover; border-radius: 8px;">
+            {% endif %}
+            <div style="flex: 1; min-width: 250px;">
+                <h1>{{ service.name }}</h1>
+                <p style="font-size: 24px; font-weight: bold; color: #28a745; margin: 15px 0;">{{ service.price }} ₽</p>
+                {% if service.duration %}
+                    <p style="color: #666;">⏱ Длительность: {{ service.duration }} минут</p>
+                {% endif %}
+                <p style="color: #666;">🏢 Компания: {{ service.company.name }}</p>
+                {% if service.description %}
+                    <p style="color: #555; line-height: 1.6; margin-top: 20px;">{{ service.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Выбор времени записи -->
+    <h2 style="margin-bottom: 20px;">Выберите удобное время</h2>
+    
+    {% if slots_by_date %}
+        <div style="display: grid; gap: 20px;">
+            {% for date_str, slots in slots_by_date.items %}
+                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
+                    <h3 style="margin-bottom: 15px; color: #333;">
+                        {% if date_str == today_str %}Сегодня{% elif date_str == tomorrow_str %}Завтра{% else %}{{ date_str|date:"d.m.Y" }}{% endif %}
+                    </h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        {% for slot in slots %}
+                            <a href="{% url 'client:booking_create' service.pk %}?slot_id={{ slot.pk }}" 
+                               class="btn btn--outline"
+                               style="min-width: 100px; text-align: center;"
+                               onmouseover="this.style.background='#007bff'; this.style.color='white'"
+                               onmouseout="this.style.background=''; this.style.color=''">
+                                {{ slot.start_time|date:"H:i" }}
+                                {% if slot.employee %}
+                                    <br><small style="font-size: 11px;">{{ slot.employee.name|truncatechars:15 }}</small>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 10px;">
+            <p style="font-size: 18px; color: #666;">На ближайшие 14 дней нет свободных времён для записи.</p>
+            <p style="color: #888; margin-top: 10px;">Пожалуйста, свяжитесь с компанией напрямую или зайдите позже.</p>
+        </div>
+    {% endif %}
+    
+    <div style="margin-top: 40px;">
+        <a href="{% url 'client:company_detail' service.company.pk %}" class="btn btn--outline">← Вернуться к компании</a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем классы для стилизации
+    const links = document.querySelectorAll('a[href*="slot_id"]');
+    links.forEach(link => {
+        link.style.display = 'inline-block';
+        link.style.padding = '10px 15px';
+        link.style.border = '1px solid #007bff';
+        link.style.borderRadius = '5px';
+        link.style.textDecoration = 'none';
+        link.style.color = '#007bff';
+        link.style.transition = 'all 0.2s';
+    });
+});
+</script>
+{% endblock %}

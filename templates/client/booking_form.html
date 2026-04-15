@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Запись на услугу - {{ service.name }}{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 40px 0; max-width: 600px;">
+    <h1 style="margin-bottom: 30px;">Запись на услугу</h1>
+    
+    <!-- Информация об услуге и времени -->
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
+        <h3 style="margin-bottom: 15px;">{{ service.name }}</h3>
+        <p style="color: #666;">🏢 {{ service.company.name }}</p>
+        <p style="font-size: 20px; font-weight: bold; color: #28a745;">{{ service.price }} ₽</p>
+        
+        {% if slot %}
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                <p style="margin-bottom: 5px;"><strong>Дата:</strong> {{ slot.date|date:"d.m.Y" }}</p>
+                <p style="margin-bottom: 5px;"><strong>Время:</strong> {{ slot.start_time|date:"H:i" }} - {{ slot.end_time|date:"H:i" }}</p>
+                {% if slot.employee %}
+                    <p><strong>Специалист:</strong> {{ slot.employee.name }}</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Форма записи -->
+    <form method="post" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+        {% csrf_token %}
+        
+        {% if slot %}
+            <input type="hidden" name="slot_id" value="{{ slot.pk }}">
+        {% endif %}
+        
+        <div style="margin-bottom: 20px;">
+            <label for="client_name" style="display: block; margin-bottom: 8px; font-weight: bold;">Ваше имя *</label>
+            <input type="text" id="client_name" name="client_name" required 
+                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px;"
+                   placeholder="Иван Иванов">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label for="client_phone" style="display: block; margin-bottom: 8px; font-weight: bold;">Телефон *</label>
+            <input type="tel" id="client_phone" name="client_phone" required 
+                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px;"
+                   placeholder="+7 (999) 000-00-00">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label for="client_email" style="display: block; margin-bottom: 8px; font-weight: bold;">Email (необязательно)</label>
+            <input type="email" id="client_email" name="client_email" 
+                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px;"
+                   placeholder="example@mail.ru">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label for="notes" style="display: block; margin-bottom: 8px; font-weight: bold;">Комментарий (необязательно)</label>
+            <textarea id="notes" name="notes" rows="3" 
+                      style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px;"
+                      placeholder="Пожелания к услуге, особенности и т.д."></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button type="submit" class="btn btn--primary" style="flex: 1; padding: 15px; font-size: 16px;">
+                Записаться
+            </button>
+            <a href="{% url 'client:service_detail' service.pk %}" class="btn btn--outline" style="flex: 1; padding: 15px; font-size: 16px; text-align: center;">
+                Отмена
+            </a>
+        </div>
+    </form>
+    
+    <p style="margin-top: 20px; font-size: 14px; color: #888; text-align: center;">
+        После отправки формы мы свяжемся с вами для подтверждения записи.
+    </p>
+</div>
+{% endblock %}
