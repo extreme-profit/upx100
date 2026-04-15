@@ -286,10 +286,12 @@ def slot_manage_view(request, service_id):
     # Генерируем часы с учетом длительности услуги для popup
     interval = service.duration
     hours = []
-    for h in range(24):
-        for m in range(0, 60, interval):
-            time_str = f"{h:02d}:{m:02d}"
-            hours.append({'value': time_str, 'label': time_str})
+    # Генерируем все возможные слоты с шагом interval минут от 00:00 до 23:59
+    for total_minutes in range(0, 24 * 60, interval):
+        h = total_minutes // 60
+        m = total_minutes % 60
+        time_str = f"{h:02d}:{m:02d}"
+        hours.append({'value': time_str, 'label': time_str})
     
     return render(request, 'business/slot_manage.html', {
         'service': service,
