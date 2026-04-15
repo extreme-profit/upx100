@@ -9,25 +9,39 @@ from companies.models import Category
 def companies_list_view(request):
     """Список всех компаний для клиентов"""
     category_slug = request.GET.get('category')
+    subcategory_slug = request.GET.get('subcategory')
     
-    companies = Company.objects.all()
+    # Показываем только проверенные компании
+    companies = Company.objects.filter(owner__is_verified=True)
     categories = Category.objects.all()
     
     if category_slug:
-        companies = companies.filter(services__category__slug=category_slug).distinct()
+        companies = companies.filter(
+            services__category__slug=category_slug,
+            services__status='active'
+        ).distinct()
+        
+        # Если выбрана подкатегория, фильтруем ещё по ней
+        if subcategory_slug:
+            companies = companies.filter(
+                services__subcategory__slug=subcategory_slug
+            ).distinct()
     
     context = {
         'companies': companies,
         'categories': categories,
         'selected_category': category_slug,
+        'selected_subcategory': subcategory_slug,
     }
     return render(request, 'client/companies_list.html', context)
 
 
 def company_detail_view(request, company_id):
     """Страница компании с услугами для клиентов"""
-    company = get_object_or_404(Company, pk=company_id)
-    services = company.services.filter(status='active').prefetch_related('employees')
+    # Проверяем что компания проверена
+    company = get_object_or_404(Company, pk=company_id, owner__is_verified=True)
+    # Показываем только активные услуги
+    services = company.services.filter(status='active').prefetch_related('employees', 'category', 'subcategory')
     
     context = {
         'company': company,
@@ -38,7 +52,8 @@ def company_detail_view(request, company_id):
 
 def service_detail_view(request, service_id):
     """Страница услуги с возможностью записи"""
-    service = get_object_or_404(Service, pk=service_id, status='active')
+    # Проверяем что услуга активна и компания проверена
+    service = get_object_or_404(Service, pk=service_id, status='active', company__owner__is_verified=True)
     
     # Получаем доступные слоты на ближайшие 14 дней
     today = timezone.now().date()
@@ -73,7 +88,8 @@ def service_detail_view(request, service_id):
 
 def booking_create_view(request, service_id):
     """Создание бронирования"""
-    service = get_object_or_404(Service, pk=service_id, status='active')
+    # Проверяем что услуга активна и компания проверена
+    service = get_object_or_404(Service, pk=service_id, status='active', company__owner__is_verified=True)
     
     if request.method == 'POST':
         slot_id = request.POST.get('slot_id')

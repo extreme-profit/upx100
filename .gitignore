@@ -1,4 +1,7 @@
 ```
-__pycache__/
-*.pyc
+# Logs
+*.log
+
+# Database
+db.sqlite3
 ```
