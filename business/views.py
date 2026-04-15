@@ -173,7 +173,11 @@ def service_list_view(request):
 
 @login_required
 def service_create_view(request):
-    """Создание услуги"""
+    """Создание услуги (только для предпринимателя)"""
+    if request.user.role == 'employee':
+        messages.error(request, 'Доступ запрещён. Только предприниматель может создавать услуги.')
+        return redirect('business:service_list')
+    
     try:
         company = request.user.company
     except Company.DoesNotExist:
