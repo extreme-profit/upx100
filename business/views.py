@@ -283,14 +283,23 @@ def slot_manage_view(request, service_id):
         {'num': 6, 'name': 'Вс', 'full': 'Воскресенье'},
     ]
     
-    # Генерируем часы с учетом длительности услуги для popup
-    # Получаем интервал из сессии или используем duration услуги (по умолчанию 30 мин если None)
+    # Получаем интервал и время работы из сессии или используем значения по умолчанию
     interval = request.session.get(f'slot_duration_{service.id}', service.duration)
     if not interval:
         interval = 30  # Значение по умолчанию если ничего не найдено
+    
+    work_start_str = request.session.get(f'slot_work_start_{service.id}', '09:00')
+    work_end_str = request.session.get(f'slot_work_end_{service.id}', '18:00')
+    
     hours = []
-    # Генерируем все возможные слоты с шагом interval минут от 00:00 до 23:59
-    for total_minutes in range(0, 24 * 60, interval):
+    # Генерируем все возможные слоты с шагом interval минут от начала рабочего дня до конца
+    start_parts = work_start_str.split(':')
+    start_total = int(start_parts[0]) * 60 + int(start_parts[1])
+    
+    end_parts = work_end_str.split(':')
+    end_total = int(end_parts[0]) * 60 + int(end_parts[1])
+    
+    for total_minutes in range(start_total, end_total + 1, interval):
         h = total_minutes // 60
         m = total_minutes % 60
         time_str = f"{h:02d}:{m:02d}"
@@ -302,6 +311,8 @@ def slot_manage_view(request, service_id):
         'weekdays': weekdays,
         'hours': hours,
         'interval': interval,
+        'work_start': work_start_str,
+        'work_end': work_end_str,
     })
 
 
@@ -629,8 +640,10 @@ def slot_generate_view(request, service_id):
             duration = form.cleaned_data['duration']
             weekdays = form.cleaned_data.get('weekdays', [])
             
-            # Сохраняем длительность в сессии для использования в slot_manage
+            # Сохраняем длительность и время работы в сессии для использования в slot_manage
             request.session[f'slot_duration_{service_id}'] = duration
+            request.session[f'slot_work_start_{service_id}'] = start_time.strftime('%H:%M')
+            request.session[f'slot_work_end_{service_id}'] = end_time.strftime('%H:%M')
             
             # Определяем дни для обработки
             days_to_process = []
