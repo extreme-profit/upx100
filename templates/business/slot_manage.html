@@ -356,7 +356,8 @@
 let currentEmployee = '';
 const serviceId = {{ service.pk }};
 let currentWeekOffset = 0; // Смещение недели (0 = текущая, 1 = следующая, -1 = предыдущая)
-const serviceDuration = {{ service.duration }}; // Длительность услуги в минутах
+// Получаем длительность из контекста (interval уже рассчитан в view с учетом сессии и duration)
+const serviceDuration = {{ interval|default:30 }}; // Длительность услуги в минутах
 
 // Глобальная функция закрытия модального окна
 function closeModal() {
