@@ -15,6 +15,18 @@
                     <form method="post" id="slotGenerateForm">
                         {% csrf_token %}
                         
+                        <!-- Длительность услуги -->
+                        <div class="mb-4">
+                            <label for="{{ form.duration.id_for_label }}" class="form-label fw-bold">{{ form.duration.label }}</label>
+                            {{ form.duration }}
+                            {% if form.duration.errors %}
+                                <div class="text-danger small mt-1">{{ form.duration.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-2">
+                                <i class="fas fa-info-circle me-1"></i>{{ form.duration.help_text }}
+                            </small>
+                        </div>
+                        
                         <!-- Тип графика -->
                         <div class="mb-4">
                             <label class="form-label fw-bold">{{ form.schedule_type.label }}</label>
@@ -61,35 +73,28 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.end_time.id_for_label }}" class="form-label fw-bold">{{ form.end_time.label }}</label>
-                                {{ form.end_time }}
+                                <select name="{{ form.end_time.name }}" id="{{ form.end_time.id_for_label }}" class="form-control form-control-lg">
+                                    <option value="">Выберите время окончания</option>
+                                </select>
                                 {% if form.end_time.errors %}
                                     <div class="text-danger small mt-1">{{ form.end_time.errors.0 }}</div>
                                 {% endif %}
+                                <small class="form-text text-muted d-block mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>Время окончания рассчитывается автоматически на основе начала рабочего дня и длительности услуги
+                                </small>
                             </div>
                         </div>
                         
-                        <!-- Длительность услуги и интервал -->
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="{{ form.duration.id_for_label }}" class="form-label fw-bold">{{ form.duration.label }}</label>
-                                {{ form.duration }}
-                                {% if form.duration.errors %}
-                                    <div class="text-danger small mt-1">{{ form.duration.errors.0 }}</div>
-                                {% endif %}
-                                <small class="form-text text-muted d-block mt-2">
-                                    <i class="fas fa-info-circle me-1"></i>{{ form.duration.help_text }}
-                                </small>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.interval.id_for_label }}" class="form-label fw-bold">{{ form.interval.label }}</label>
-                                {{ form.interval }}
-                                {% if form.interval.errors %}
-                                    <div class="text-danger small mt-1">{{ form.interval.errors.0 }}</div>
-                                {% endif %}
-                                <small class="form-text text-muted d-block mt-2">
-                                    <i class="fas fa-info-circle me-1"></i>{{ form.interval.help_text }}
-                                </small>
-                            </div>
+                        <!-- Интервал записи -->
+                        <div class="mb-4">
+                            <label for="{{ form.interval.id_for_label }}" class="form-label fw-bold">{{ form.interval.label }}</label>
+                            {{ form.interval }}
+                            {% if form.interval.errors %}
+                                <div class="text-danger small mt-1">{{ form.interval.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-2">
+                                <i class="fas fa-info-circle me-1"></i>{{ form.interval.help_text }}
+                            </small>
                         </div>
                         
                         <div class="alert alert-info border-0 shadow-sm">
@@ -154,27 +159,51 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Автоматическое обновление конца рабочего дня при изменении начала и длительности
     const startTimeInput = document.getElementById('{{ form.start_time.id_for_label }}');
-    const endTimeInput = document.getElementById('{{ form.end_time.id_for_label }}');
+    const endTimeSelect = document.getElementById('{{ form.end_time.id_for_label }}');
     const durationInput = document.getElementById('{{ form.duration.id_for_label }}');
     
-    function calculateEndTime() {
+    function updateEndTimeOptions() {
         if (!startTimeInput.value || !durationInput.value) return;
         
-        const [hours, minutes] = startTimeInput.value.split(':').map(Number);
-        const startTotalMinutes = hours * 60 + minutes;
+        const [startHours, startMinutes] = startTimeInput.value.split(':').map(Number);
+        const startTotalMinutes = startHours * 60 + startMinutes;
         const duration = parseInt(durationInput.value);
-        const endTotalMinutes = startTotalMinutes + duration;
         
-        const endHours = Math.floor(endTotalMinutes / 60);
-        const endMinutes = endTotalMinutes % 60;
+        // Очищаем select
+        endTimeSelect.innerHTML = '<option value="">Выберите время окончания</option>';
         
-        if (endHours < 24) {
-            endTimeInput.value = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+        // Генерируем варианты от (начало + длительность) до 23:59 с шагом duration
+        let currentMinutes = startTotalMinutes + duration;
+        const maxMinutes = 24 * 60; // 23:59
+        
+        while (currentMinutes <= maxMinutes) {
+            const hours = Math.floor(currentMinutes / 60);
+            const minutes = currentMinutes % 60;
+            
+            if (hours < 24) {
+                const timeValue = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                const option = document.createElement('option');
+                option.value = timeValue;
+                option.textContent = timeValue;
+                endTimeSelect.appendChild(option);
+            }
+            
+            currentMinutes += duration;
+        }
+        
+        // Выбираем первый вариант (минимальное время окончания)
+        if (endTimeSelect.options.length > 1) {
+            endTimeSelect.selectedIndex = 1;
         }
     }
     
-    startTimeInput.addEventListener('change', calculateEndTime);
-    durationInput.addEventListener('change', calculateEndTime);
+    startTimeInput.addEventListener('change', updateEndTimeOptions);
+    durationInput.addEventListener('change', updateEndTimeOptions);
+    
+    // Инициализируем при загрузке если есть значения
+    if (startTimeInput.value && durationInput.value) {
+        updateEndTimeOptions();
+    }
 });
 </script>
 {% endblock %}
