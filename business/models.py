@@ -90,7 +90,7 @@ class Service(models.Model):
     name = models.CharField(max_length=200, verbose_name="Название услуги")
     description = models.TextField(blank=True, verbose_name="Описание")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена (руб)")
-    duration = models.PositiveIntegerField(help_text="Длительность в минутах", verbose_name="Длительность (мин)")
+    duration = models.PositiveIntegerField(help_text="Длительность в минутах", verbose_name="Длительность (мин)", null=True, blank=True)
     photo = models.ImageField(upload_to='service_photos/', blank=True, null=True, verbose_name="Фото услуги")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', verbose_name="Статус")
     created_at = models.DateTimeField(auto_now_add=True)
