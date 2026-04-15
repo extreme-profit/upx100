@@ -210,10 +210,19 @@ def service_create_view(request):
 @login_required
 def service_edit_view(request, pk):
     """Редактирование услуги"""
+    # Сотрудники не могут редактировать услуги
+    if request.user.role == 'employee':
+        messages.error(request, 'Доступ запрещён. Только предприниматель может редактировать услуги.')
+        return redirect('business:service_list')
+    
+    company = request.user.get_company()
+    if not company:
+        messages.error(request, 'Компания не найдена')
+        return redirect('business:service_list')
+    
     try:
-        company = request.user.company
         service = company.services.get(pk=pk)
-    except (Company.DoesNotExist, Service.DoesNotExist):
+    except Service.DoesNotExist:
         messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
     
@@ -239,10 +248,19 @@ def service_edit_view(request, pk):
 @login_required
 def service_delete_view(request, pk):
     """Удаление услуги"""
+    # Сотрудники не могут удалять услуги
+    if request.user.role == 'employee':
+        messages.error(request, 'Доступ запрещён. Только предприниматель может удалять услуги.')
+        return redirect('business:service_list')
+    
+    company = request.user.get_company()
+    if not company:
+        messages.error(request, 'Компания не найдена')
+        return redirect('business:service_list')
+    
     try:
-        company = request.user.company
         service = company.services.get(pk=pk)
-    except (Company.DoesNotExist, Service.DoesNotExist):
+    except Service.DoesNotExist:
         messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
     
@@ -258,10 +276,15 @@ def service_delete_view(request, pk):
 @login_required
 def service_detail_view(request, pk):
     """Детальный просмотр услуги"""
+    company = request.user.get_company()
+    if not company:
+        messages.error(request, 'Компания не найдена')
+        return redirect('business:service_list')
+    
+    # Для сотрудников проверяем, что услуга привязана к их компании
     try:
-        company = request.user.company
         service = company.services.get(pk=pk)
-    except (Company.DoesNotExist, Service.DoesNotExist):
+    except Service.DoesNotExist:
         messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
     
@@ -278,10 +301,15 @@ def service_detail_view(request, pk):
 @login_required
 def slot_manage_view(request, service_id):
     """Управление временными слотами в виде календарной сетки"""
+    company = request.user.get_company()
+    if not company:
+        messages.error(request, 'Компания не найдена')
+        return redirect('business:service_list')
+    
+    # Для сотрудников проверяем, что услуга привязана к их компании
     try:
-        company = request.user.company
         service = company.services.get(pk=service_id)
-    except (Company.DoesNotExist, Service.DoesNotExist):
+    except Service.DoesNotExist:
         messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
     
@@ -335,10 +363,13 @@ def slot_manage_view(request, service_id):
 @login_required
 def slot_get_grid_view(request, service_id):
     """API для получения сетки слотов"""
+    company = request.user.get_company()
+    if not company:
+        return JsonResponse({'error': 'Компания не найдена'}, status=404)
+    
     try:
-        company = request.user.company
         service = company.services.get(pk=service_id)
-    except (Company.DoesNotExist, Service.DoesNotExist):
+    except Service.DoesNotExist:
         return JsonResponse({'error': 'Услуга не найдена'}, status=404)
     
     employee_id = request.GET.get('employee')
@@ -395,10 +426,13 @@ def slot_update_grid_view(request, service_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Метод не разрешён'}, status=405)
     
+    company = request.user.get_company()
+    if not company:
+        return JsonResponse({'error': 'Компания не найдена'}, status=404)
+    
     try:
-        company = request.user.company
         service = company.services.get(pk=service_id)
-    except (Company.DoesNotExist, Service.DoesNotExist):
+    except Service.DoesNotExist:
         return JsonResponse({'error': 'Услуга не найдена'}, status=404)
     
     import json
