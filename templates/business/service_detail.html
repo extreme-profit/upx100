@@ -80,8 +80,16 @@
                     </div>
                     {% endif %}
                     <div class="mb-3">
-                        <label class="fw-bold text-muted"><i class="fas fa-user-tie me-2"></i>Сотрудник:</label>
-                        <p>{{ service.employee.name|default:"Не назначен" }}</p>
+                        <label class="fw-bold text-muted"><i class="fas fa-user-tie me-2"></i>Сотрудники:</label>
+                        <p>
+                            {% if service.employees.all %}
+                                {% for employee in service.employees.all %}
+                                    {{ employee.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                Не назначены
+                            {% endif %}
+                        </p>
                     </div>
                     <div class="mb-3">
                         <label class="fw-bold text-muted"><i class="fas fa-flag me-2"></i>Статус:</label>
