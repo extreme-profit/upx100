@@ -156,54 +156,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Инициализация при загрузке
     toggleWeekdaysContainer();
-    
-    // Автоматическое обновление конца рабочего дня при изменении начала и длительности
-    const startTimeInput = document.getElementById('{{ form.start_time.id_for_label }}');
-    const endTimeSelect = document.getElementById('{{ form.end_time.id_for_label }}');
-    const durationInput = document.getElementById('{{ form.duration.id_for_label }}');
-    
-    function updateEndTimeOptions() {
-        if (!startTimeInput.value || !durationInput.value) return;
-        
-        const [startHours, startMinutes] = startTimeInput.value.split(':').map(Number);
-        const startTotalMinutes = startHours * 60 + startMinutes;
-        const duration = parseInt(durationInput.value);
-        
-        // Очищаем select
-        endTimeSelect.innerHTML = '<option value="">Выберите время окончания</option>';
-        
-        // Генерируем варианты от (начало + длительность) до 23:59 с шагом duration
-        let currentMinutes = startTotalMinutes + duration;
-        const maxMinutes = 24 * 60; // 23:59
-        
-        while (currentMinutes <= maxMinutes) {
-            const hours = Math.floor(currentMinutes / 60);
-            const minutes = currentMinutes % 60;
-            
-            if (hours < 24) {
-                const timeValue = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-                const option = document.createElement('option');
-                option.value = timeValue;
-                option.textContent = timeValue;
-                endTimeSelect.appendChild(option);
-            }
-            
-            currentMinutes += duration;
-        }
-        
-        // Выбираем первый вариант (минимальное время окончания)
-        if (endTimeSelect.options.length > 1) {
-            endTimeSelect.selectedIndex = 1;
-        }
-    }
-    
-    startTimeInput.addEventListener('change', updateEndTimeOptions);
-    durationInput.addEventListener('change', updateEndTimeOptions);
-    
-    // Инициализируем при загрузке если есть значения
-    if (startTimeInput.value && durationInput.value) {
-        updateEndTimeOptions();
-    }
 });
 </script>
 {% endblock %}

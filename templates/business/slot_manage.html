@@ -43,9 +43,11 @@
                 <div class="col-md-4">
                     <label for="employeeFilter" class="form-label fw-bold">Выберите сотрудника</label>
                     <select id="employeeFilter" class="form-select form-select-lg">
-                        <option value="">Все сотрудники</option>
+                        <option value="{{ employees.first.pk }}">{{ employees.first.name }}</option>
                         {% for employee in employees %}
-                            <option value="{{ employee.pk }}">{{ employee.name }}</option>
+                            {% if not forloop.first %}
+                                <option value="{{ employee.pk }}">{{ employee.name }}</option>
+                            {% endif %}
                         {% endfor %}
                     </select>
                 </div>
