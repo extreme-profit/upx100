@@ -236,7 +236,8 @@ def service_delete_view(request, pk):
         messages.success(request, 'Услуга удалена!')
         return redirect('business:service_list')
     
-    return render(request, 'business/service_confirm_delete.html', {'service': service})
+    # Для GET запроса просто перенаправляем, подтверждение будет в JS
+    return redirect('business:service_list')
 
 
 @login_required
