@@ -496,9 +496,9 @@ function renderGrid(grid, weekDates, interval) {
     const tbody = document.getElementById('gridBody');
     tbody.innerHTML = '';
     
-    // Если интервал не передан, используем 60 минут по умолчанию
+    // Если интервал не передан, используем duration услуги по умолчанию
     if (!interval) {
-        interval = 60;
+        interval = {{ service.duration }};
     }
     
     // Собираем все строки сначала в массив, чтобы потом отфильтровать
