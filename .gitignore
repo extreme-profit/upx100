@@ -1,7 +1,14 @@
 ```
-# Logs
-*.log
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # Database
 db.sqlite3
+
+# Logs
+*.log
+server.log
 ```
