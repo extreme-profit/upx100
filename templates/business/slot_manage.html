@@ -505,65 +505,62 @@ function renderGrid(grid, weekDates, interval) {
     const allRows = [];
     
     // Генерируем строки для каждого временного слота на основе интервала
-    for (let hour = 0; hour < 24; hour++) {
-        // Рассчитываем количество слотов в этом часе на основе интервала
-        const slotsPerHour = 60 / interval;
+    // Используем последовательную генерацию с шагом interval минут от 00:00 до 23:59
+    for (let totalMinutes = 0; totalMinutes < 24 * 60; totalMinutes += interval) {
+        const hour = Math.floor(totalMinutes / 60);
+        const minute = totalMinutes % 60;
+        const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         
-        for (let slotIndex = 0; slotIndex < slotsPerHour; slotIndex++) {
-            const minute = slotIndex * interval;
-            const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const tr = document.createElement('tr');
+        tr.dataset.hour = hour;
+        tr.dataset.minute = minute;
+        
+        // Колонка времени
+        const timeTd = document.createElement('td');
+        timeTd.className = 'time-column';
+        timeTd.textContent = timeLabel;
+        tr.appendChild(timeTd);
+        
+        // Флаг: есть ли в этой строке хотя бы один свободный слот или слот с бронью
+        let hasFreeOrBooking = false;
+        
+        // Ячейки для каждого дня
+        for (let day = 0; day < 7; day++) {
+            const td = document.createElement('td');
+            td.className = 'slot-cell';
+            td.dataset.day = day;
+            td.dataset.hour = hour;
+            td.dataset.minute = minute;
             
-            const tr = document.createElement('tr');
-            tr.dataset.hour = hour;
-            tr.dataset.minute = minute;
+            const key = `${day}_${hour}_${minute}`;
+            const slotData = grid[key];
             
-            // Колонка времени
-            const timeTd = document.createElement('td');
-            timeTd.className = 'time-column';
-            timeTd.textContent = timeLabel;
-            tr.appendChild(timeTd);
-            
-            // Флаг: есть ли в этой строке хотя бы один свободный слот или слот с бронью
-            let hasFreeOrBooking = false;
-            
-            // Ячейки для каждого дня
-            for (let day = 0; day < 7; day++) {
-                const td = document.createElement('td');
-                td.className = 'slot-cell';
-                td.dataset.day = day;
-                td.dataset.hour = hour;
-                td.dataset.minute = minute;
-                
-                const key = `${day}_${hour}_${minute}`;
-                const slotData = grid[key];
-                
-                if (slotData) {
-                    if (slotData.has_booking) {
-                        td.classList.add('has-booking');
-                        td.innerHTML = `<i class="fas fa-user-check"></i><br><small>${slotData.client_name || 'Клиент'}</small>`;
-                        hasFreeOrBooking = true;
-                    } else if (slotData.is_booked) {
-                        td.classList.add('busy');
-                        td.innerHTML = '<i class="fas fa-times"></i><br><small>Недоступно</small>';
-                    } else {
-                        td.classList.add('free');
-                        td.innerHTML = '<i class="fas fa-check"></i><br><small>Свободно</small>';
-                        hasFreeOrBooking = true;
-                    }
-                } else {
-                    // Если слот не найден - показываем "недоступно" вместо прочерка
+            if (slotData) {
+                if (slotData.has_booking) {
+                    td.classList.add('has-booking');
+                    td.innerHTML = `<i class="fas fa-user-check"></i><br><small>${slotData.client_name || 'Клиент'}</small>`;
+                    hasFreeOrBooking = true;
+                } else if (slotData.is_booked) {
                     td.classList.add('busy');
-                    td.innerHTML = '<i class="fas fa-ban"></i><br><small>Недоступно</small>';
+                    td.innerHTML = '<i class="fas fa-times"></i><br><small>Недоступно</small>';
+                } else {
+                    td.classList.add('free');
+                    td.innerHTML = '<i class="fas fa-check"></i><br><small>Свободно</small>';
+                    hasFreeOrBooking = true;
                 }
-                
-                td.addEventListener('click', () => toggleSlot(day, hour, minute));
-                tr.appendChild(td);
+            } else {
+                // Если слот не найден - показываем "недоступно" вместо прочерка
+                td.classList.add('busy');
+                td.innerHTML = '<i class="fas fa-ban"></i><br><small>Недоступно</small>';
             }
             
-            // Сохраняем информацию о наличии свободных слотов в строке
-            tr.dataset.hasFreeOrBooking = hasFreeOrBooking ? 'true' : 'false';
-            allRows.push(tr);
+            td.addEventListener('click', () => toggleSlot(day, hour, minute));
+            tr.appendChild(td);
         }
+        
+        // Сохраняем информацию о наличии свободных слотов в строке
+        tr.dataset.hasFreeOrBooking = hasFreeOrBooking ? 'true' : 'false';
+        allRows.push(tr);
     }
     
     // Сохраняем все строки в глобальной переменной для фильтрации
