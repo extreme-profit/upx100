@@ -133,7 +133,25 @@ class CompanyForm(forms.ModelForm):
 
 
 class EmployeeForm(forms.ModelForm):
-    """Форма сотрудника"""
+    """Форма сотрудника
+    
+    Теперь форма создаёт/обновляет связанного пользователя Django с ролью 'employee'.
+    """
+    first_name = forms.CharField(
+        label='Имя',
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Имя'}),
+    )
+    last_name = forms.CharField(
+        label='Фамилия',
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Фамилия'}),
+    )
+    email = forms.EmailField(
+        label='Email',
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
+    )
     password = forms.CharField(
         label='Пароль для ЛК',
         required=False,
@@ -149,18 +167,21 @@ class EmployeeForm(forms.ModelForm):
     
     class Meta:
         model = Employee
-        fields = ['name', 'position', 'phone', 'email', 'is_active']
+        fields = ['position', 'phone', 'is_active']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ФИО сотрудника'}),
             'position': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Должность'}),
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+7 (___) ___-__-__'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # При создании сотрудника пароль обязателен
+        # При создании сотрудника заполняем начальные значения из связанного пользователя
+        if self.instance.pk and self.instance.user:
+            self.fields['first_name'].initial = self.instance.user.first_name
+            self.fields['last_name'].initial = self.instance.user.last_name
+            self.fields['email'].initial = self.instance.user.email
+        # При создании нового сотрудника пароль обязателен
         if not self.instance.pk:
             self.fields['password'].required = True
             self.fields['password_confirm'].required = True
@@ -181,28 +202,50 @@ class EmployeeForm(forms.ModelForm):
         
         return cleaned_data
     
-    def save(self, commit=True):
-        # При создании сотрудника сначала сохраняем без company, затем устанавливаем его
+    def save(self, commit=True, company=None):
+        """Сохранение сотрудника с созданием/обновлением связанного пользователя"""
         if not self.instance.pk:
-            # Это новый сотрудник - сохраняем с commit=False чтобы установить company
+            # Создание нового сотрудника
+            from accounts.models import User
+            
+            # Создаём пользователя с ролью employee
+            user = User.objects.create_user(
+                email=self.cleaned_data['email'],
+                password=self.cleaned_data['password'],
+                first_name=self.cleaned_data['first_name'],
+                last_name=self.cleaned_data['last_name'],
+                role='employee',
+                phone=self.cleaned_data.get('phone', ''),
+            )
+            
+            # Создаём профиль сотрудника
             employee = super().save(commit=False)
-            password = self.cleaned_data.get('password')
-            if password:
-                # Хешируем пароль вручную, не вызывая save() внутри set_password
-                from django.contrib.auth.hashers import make_password
-                employee.password = make_password(password)
-            # Не сохраняем здесь, это сделает view после установки company
+            employee.user = user
+            if company:
+                employee.company = company
             if commit:
                 employee.save()
             return employee
         else:
-            # Редактирование существующего
-            employee = super().save(commit=commit)
-            password = self.cleaned_data.get('password')
-            if password:
-                employee.set_password(password)
+            # Редактирование существующего сотрудника
+            employee = super().save(commit=False)
+            
+            # Обновляем данные пользователя
+            if employee.user:
+                employee.user.first_name = self.cleaned_data['first_name']
+                employee.user.last_name = self.cleaned_data['last_name']
+                employee.user.email = self.cleaned_data['email']
+                employee.user.phone = self.cleaned_data.get('phone', '')
+                
+                password = self.cleaned_data.get('password')
+                if password:
+                    employee.user.set_password(password)
+                
                 if commit:
-                    employee.save()
+                    employee.user.save()
+            
+            if commit:
+                employee.save()
             return employee
 
 
