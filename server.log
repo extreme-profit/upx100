@@ -1,0 +1,99 @@
+Watching for file changes with StatReloader
+Forbidden (CSRF cookie not set.): /accounts/login/
+[15/Apr/2026 22:32:51] "POST /accounts/login/ HTTP/1.1" 403 3331
+/workspace/business/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 15, 2026 - 22:32:46
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/workspace/business/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 15, 2026 - 22:42:37
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/workspace/business/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 15, 2026 - 22:55:36
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/workspace/business/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 15, 2026 - 22:55:48
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/workspace/business/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 15, 2026 - 22:56:01
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/workspace/business/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 15, 2026 - 22:56:14
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/workspace/config/settings.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 15, 2026 - 22:56:20
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader
+/workspace/config/urls.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+April 15, 2026 - 23:16:20
+Django version 6.0.4, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+Watching for file changes with StatReloader

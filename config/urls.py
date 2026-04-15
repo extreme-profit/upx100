@@ -12,4 +12,5 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls', namespace='dashboard')),
     path('search/', include('search.urls', namespace='search')),
     path('business/', include('business.urls', namespace='business')),
+    path('client/', include('client.urls', namespace='client')),
 ]
