@@ -23,9 +23,24 @@ wheels/
 
 # Database
 db.sqlite3
+*.db
+
+# Logs
+*.log
+server.log
 
 # Environment
 .env
 .env.local
 .env.*
+!.env.example
+
+# Migration files (generated)
+business/migrations/
+accounts/migrations/
+bookings/migrations/
+companies/migrations/
+payments/migrations/
+search/migrations/
+services/migrations/
 ```
