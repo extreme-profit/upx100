@@ -403,6 +403,11 @@ def user_toggle_active(request, pk):
     """Бан/разбан пользователя (AJAX endpoint)"""
     user = get_object_or_404(User, pk=pk)
     
+    # Защита от блокировки самого себя
+    if request.user.pk == user.pk:
+        messages.error(request, 'Нельзя заблокировать самого себя')
+        return redirect('dashboard:user_list')
+    
     if request.method == 'POST':
         user.is_active = not user.is_active
         user.save()
