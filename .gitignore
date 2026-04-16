@@ -1,22 +1,33 @@
 ```
-# Compiled Python files
-*.pyc
+# Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Database file
-db.sqlite3
-
-# Logs and temp files
+# Logs
 *.log
-*.tmp
-*.swp
 
-# Environment files
+# Environment
 .env
 .env.local
 *.env.*
 
+# Dependencies
+.venv/
+venv/
+node_modules/
+
+# Build artifacts
+dist/
+build/
+target/
+
 # Editors
 .vscode/
 .idea/
+
+# OS
+.DS_Store
+Thumbs.db
 ```
