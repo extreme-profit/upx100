@@ -70,6 +70,7 @@ def service_detail_view(request, service_id):
     # Получаем доступные слоты на ближайшие 14 дней
     today = timezone.now().date()
     end_date = today + timedelta(days=14)
+    now = timezone.now()
     
     time_slots_qs = ServiceTimeSlot.objects.filter(
         service=service,
@@ -81,9 +82,16 @@ def service_detail_view(request, service_id):
     if selected_employee:
         time_slots_qs = time_slots_qs.filter(employee=selected_employee)
     
+    # Фильтруем прошедшие слоты
+    filtered_slots = []
+    for slot in time_slots_qs:
+        slot_datetime = timezone.make_aware(timezone.datetime.combine(slot.date, slot.start_time))
+        if slot_datetime > now:
+            filtered_slots.append(slot)
+    
     # Группируем слоты по датам
     slots_by_date = {}
-    for slot in time_slots_qs:
+    for slot in filtered_slots:
         date_str = slot.date.strftime('%Y-%m-%d')
         if date_str not in slots_by_date:
             slots_by_date[date_str] = []
