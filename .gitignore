@@ -1,5 +1,5 @@
 ```
-# Python
+# Python compiled files
 __pycache__/
 *.pyc
 *.pyo
@@ -7,8 +7,4 @@ __pycache__/
 
 # Database
 db.sqlite3
-
-# Logs
-*.log
-server.log
 ```
