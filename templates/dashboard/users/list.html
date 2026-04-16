@@ -90,12 +90,14 @@
                         <td class="actions-cell">
                             <a href="{% url 'dashboard:user_detail' user.pk %}" class="action-btn edit">👁️</a>
                             <a href="{% url 'dashboard:user_edit' user.pk %}" class="action-btn edit">✏️</a>
+                            {% if user.pk != request.user.pk %}
                             <form method="post" action="{% url 'dashboard:user_toggle_active' user.pk %}" style="display: inline;" onsubmit="return confirm('Вы уверены?');">
                                 {% csrf_token %}
                                 <button type="submit" class="action-btn toggle">
                                     {% if user.is_active %}🚫{% else %}✅{% endif %}
                                 </button>
                             </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
