@@ -840,7 +840,10 @@ def booking_list_view(request):
     if not company:
         messages.error(request, 'Компания не найдена')
         return redirect('home')
-
+    
+    # Получаем статус из GET параметров для фильтрации
+    status_filter = request.GET.get('status')
+    
     # Для сотрудников фильтруем только по услугам, к которым они привязаны
     if request.user.role == 'employee':
         employee_profile = request.user.get_employee_profile()
@@ -853,8 +856,31 @@ def booking_list_view(request):
             bookings = Booking.objects.none()
     else:
         bookings = Booking.objects.filter(service__company=company).select_related('service', 'service__category', 'service__subcategory').order_by('-created_at')
-
-    return render(request, 'business/booking_list.html', {'bookings': bookings, 'company': company})
+    
+    # Применяем фильтр по статусу если указан
+    if status_filter:
+        bookings = bookings.filter(status=status_filter)
+    
+    # Получаем информацию о временных слотах для каждого бронирования
+    bookings_with_slots = []
+    for booking in bookings:
+        slot = booking.time_slots.first()
+        booking_time = None
+        booking_date = None
+        if slot:
+            booking_time = slot.start_time
+            booking_date = slot.date
+        bookings_with_slots.append({
+            'booking': booking,
+            'time': booking_time,
+            'date': booking_date,
+        })
+    
+    return render(request, 'business/booking_list.html', {
+        'bookings_with_slots': bookings_with_slots,
+        'company': company,
+        'selected_status': status_filter,
+    })
 
 
 
@@ -924,7 +950,7 @@ def booking_confirm_view(request, pk):
             booking.status = 'confirmed'
             booking.save()
             messages.success(request, 'Бронирование подтверждено!')
-            return redirect('business:employee_dashboard')
+            return redirect('business:booking_list')
         except (Employee.DoesNotExist, Booking.DoesNotExist):
             pass
     
@@ -967,7 +993,7 @@ def booking_cancel_view(request, pk):
                     slot.save()
             booking.save()
             messages.success(request, 'Бронирование отменено!')
-            return redirect('business:employee_dashboard')
+            return redirect('business:booking_list')
         except (Employee.DoesNotExist, Booking.DoesNotExist):
             pass
     

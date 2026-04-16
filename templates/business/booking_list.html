@@ -57,7 +57,7 @@
             <h5 class="mb-0"><i class="fas fa-list me-2"></i>Список бронирований</h5>
         </div>
         <div class="card-body p-0">
-            {% if bookings %}
+            {% if bookings_with_slots %}
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead class="bg-light">
@@ -65,6 +65,7 @@
                             <th class="py-3"><i class="fas fa-user me-1"></i>Клиент</th>
                             <th class="py-3"><i class="fas fa-concierge-bell me-1"></i>Услуга</th>
                             <th class="py-3"><i class="fas fa-user-tie me-1"></i>Сотрудник</th>
+                            <th class="py-3"><i class="fas fa-calendar-alt me-1"></i>Дата и время</th>
                             <th class="py-3"><i class="fas fa-phone me-1"></i>Телефон</th>
                             <th class="py-3"><i class="fas fa-envelope me-1"></i>Email</th>
                             <th class="py-3"><i class="fas fa-flag me-1"></i>Статус</th>
@@ -74,11 +75,23 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for booking in bookings %}
+                        {% for item in bookings_with_slots %}
+                        {% with booking=item.booking slot_time=item.time slot_date=item.date %}
                         <tr class="align-middle">
                             <td class="py-3 fw-bold">{{ booking.client_name }}</td>
                             <td class="py-3">{{ booking.service.name }}</td>
                             <td class="py-3">{{ booking.service.employee.name|default:"—" }}</td>
+                            <td class="py-3">
+                                {% if slot_date and slot_time %}
+                                    <span class="text-primary fw-bold">
+                                        <i class="fas fa-calendar-check me-1"></i>{{ slot_date|date:"d.m.Y" }}
+                                        <br>
+                                        <i class="fas fa-clock me-1"></i>{{ slot_time|date:"H:i" }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
                             <td class="py-3">
                                 <a href="tel:{{ booking.client_phone }}" class="text-decoration-none">
                                     <i class="fas fa-phone-alt text-success me-1"></i>{{ booking.client_phone }}
@@ -120,6 +133,7 @@
                                 {% endif %}
                             </td>
                         </tr>
+                        {% endwith %}
                         {% endfor %}
                     </tbody>
                 </table>
