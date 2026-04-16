@@ -47,7 +47,7 @@
                     {% if service.company %}
                         <p><strong>Компания:</strong> {{ service.company.name }}</p>
                     {% endif %}
-                    <a href="#" class="btn btn--primary">Записаться</a>
+                    <a href="{% url 'client:service_detail' service.pk %}" class="btn btn--primary">Записаться</a>
                 </div>
             {% endfor %}
         </div>
