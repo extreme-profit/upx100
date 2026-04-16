@@ -444,3 +444,21 @@ def user_change_role(request, pk):
     
     return redirect('dashboard:user_list')
 
+
+@admin_required
+def user_verify(request, pk):
+    """Подтверждение компании предпринимателя (верификация)"""
+    user = get_object_or_404(User, pk=pk)
+    
+    if request.method == 'POST':
+        if user.role == 'entrepreneur':
+            user.is_verified = True
+            user.save()
+            display_name = user.company_name or user.email
+            messages.success(request, f'Компания "{display_name}" успешно проверена и верифицирована')
+        else:
+            messages.error(request, 'Верифицировать можно только компанию предпринимателя')
+        
+        return redirect('dashboard:user_detail', pk=pk)
+    
+    return redirect('dashboard:user_detail', pk=pk)

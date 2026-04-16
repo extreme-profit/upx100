@@ -25,4 +25,5 @@ urlpatterns = [
     path('users/<int:pk>/edit/', views.user_edit, name='user_edit'),
     path('users/<int:pk>/toggle-active/', views.user_toggle_active, name='user_toggle_active'),
     path('users/<int:pk>/change-role/', views.user_change_role, name='user_change_role'),
+    path('users/<int:pk>/verify/', views.user_verify, name='user_verify'),
 ]

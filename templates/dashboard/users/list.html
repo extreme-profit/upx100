@@ -45,7 +45,6 @@
                         <th>Роль</th>
                         <th>Дата регистрации</th>
                         <th>Статус</th>
-                        <th>Верификация</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -62,6 +61,13 @@
                         <td>
                             {% if user.company_name %}
                             <span style="color: #475569;">{{ user.company_name }}</span>
+                            {% if user.role == 'entrepreneur' %}
+                                {% if user.is_verified %}
+                                    <span style="color: #16a34a; font-size: 12px;">(Проверена)</span>
+                                {% else %}
+                                    <span style="color: #ca8a04; font-size: 12px;">(Не проверена)</span>
+                                {% endif %}
+                            {% endif %}
                             {% else %}
                             <span style="color: #94a3b8;">—</span>
                             {% endif %}
@@ -81,13 +87,6 @@
                             <span class="badge badge-danger">✗ Заблокирован</span>
                             {% endif %}
                         </td>
-                        <td>
-                            {% if user.is_verified %}
-                            <span class="badge badge-success">✓ Проверен</span>
-                            {% else %}
-                            <span class="badge badge-warning">○ Не проверен</span>
-                            {% endif %}
-                        </td>
                         <td class="actions-cell">
                             <a href="{% url 'dashboard:user_detail' user.pk %}" class="action-btn edit">👁️</a>
                             <a href="{% url 'dashboard:user_edit' user.pk %}" class="action-btn edit">✏️</a>
@@ -101,7 +100,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" style="text-align: center; padding: 40px; color: #64748b;">
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #64748b;">
                             Пользователи не найдены
                         </td>
                     </tr>
