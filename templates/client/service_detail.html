@@ -24,8 +24,32 @@
         </div>
     </div>
     
+    <!-- Выбор сотрудника -->
+    {% if employees %}
+    <h2 style="margin-bottom: 20px;">Выберите специалиста</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 40px;">
+        <a href="{% url 'client:service_detail' service.pk %}" 
+           class="btn {% if not selected_employee %}btn--primary{% else %}btn--outline{% endif %}"
+           style="min-width: 150px; text-align: center;">
+            Все специалисты
+        </a>
+        {% for employee in employees %}
+            <a href="{% url 'client:service_detail' service.pk %}?employee_id={{ employee.pk }}" 
+               class="btn {% if selected_employee == employee %}btn--primary{% else %}btn--outline{% endif %}"
+               style="min-width: 150px; text-align: center;">
+                {{ employee.name|truncatechars:20 }}
+            </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
     <!-- Выбор времени записи -->
-    <h2 style="margin-bottom: 20px;">Выберите удобное время</h2>
+    <h2 style="margin-bottom: 20px;">
+        Выберите удобное время
+        {% if selected_employee %}
+            <span style="font-size: 16px; color: #666; font-weight: normal;">для специалиста: {{ selected_employee.name }}</span>
+        {% endif %}
+    </h2>
     
     {% if slots_by_date %}
         <div style="display: grid; gap: 20px;">
@@ -53,8 +77,17 @@
         </div>
     {% else %}
         <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 10px;">
-            <p style="font-size: 18px; color: #666;">На ближайшие 14 дней нет свободных времён для записи.</p>
-            <p style="color: #888; margin-top: 10px;">Пожалуйста, свяжитесь с компанией напрямую или зайдите позже.</p>
+            <p style="font-size: 18px; color: #666;">
+                {% if selected_employee %}
+                    У выбранного специалиста нет свободных времён на ближайшие 14 дней.
+                {% else %}
+                    На ближайшие 14 дней нет свободных времён для записи.
+                {% endif %}
+            </p>
+            <p style="color: #888; margin-top: 10px;">Пожалуйста, выберите другого специалиста или зайдите позже.</p>
+            {% if selected_employee %}
+                <a href="{% url 'client:service_detail' service.pk %}" class="btn btn--primary" style="margin-top: 20px;">Показать всех специалистов</a>
+            {% endif %}
         </div>
     {% endif %}
     

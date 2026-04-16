@@ -55,19 +55,35 @@ def service_detail_view(request, service_id):
     # Проверяем что услуга активна и компания проверена
     service = get_object_or_404(Service, pk=service_id, status='active', company__owner__is_verified=True)
     
+    # Получаем всех сотрудников услуги
+    employees = service.employees.filter(is_active=True).prefetch_related('user')
+    
+    # Получаем выбранного сотрудника (если есть)
+    employee_id = request.GET.get('employee_id')
+    selected_employee = None
+    if employee_id:
+        try:
+            selected_employee = employees.get(pk=employee_id)
+        except Employee.DoesNotExist:
+            pass
+    
     # Получаем доступные слоты на ближайшие 14 дней
     today = timezone.now().date()
     end_date = today + timedelta(days=14)
     
-    time_slots = ServiceTimeSlot.objects.filter(
+    time_slots_qs = ServiceTimeSlot.objects.filter(
         service=service,
         date__range=(today, end_date),
         is_booked=False
     ).select_related('employee').order_by('date', 'start_time')
     
+    # Фильтруем по сотруднику если выбран
+    if selected_employee:
+        time_slots_qs = time_slots_qs.filter(employee=selected_employee)
+    
     # Группируем слоты по датам
     slots_by_date = {}
-    for slot in time_slots:
+    for slot in time_slots_qs:
         date_str = slot.date.strftime('%Y-%m-%d')
         if date_str not in slots_by_date:
             slots_by_date[date_str] = []
@@ -79,6 +95,8 @@ def service_detail_view(request, service_id):
     
     context = {
         'service': service,
+        'employees': employees,
+        'selected_employee': selected_employee,
         'slots_by_date': slots_by_date,
         'today_str': today_str,
         'tomorrow_str': tomorrow_str,
@@ -135,6 +153,7 @@ def booking_create_view(request, service_id):
     context = {
         'service': service,
         'slot': slot,
+        'employee': slot.employee if slot and slot.employee else None,
     }
     return render(request, 'client/booking_form.html', context)
 
