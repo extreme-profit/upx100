@@ -51,6 +51,7 @@
                             <th>Услуга</th>
                             <th>Статус</th>
                             <th>Дата создания</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -64,6 +65,20 @@
                                 </span>
                             </td>
                             <td>{{ booking.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                {% if booking.status == 'pending' %}
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'business:booking_confirm' booking.pk %}" class="btn btn-sm btn-success" title="Подтвердить">✓</a>
+                                        <a href="{% url 'business:booking_cancel' booking.pk %}" class="btn btn-sm btn-danger" title="Отменить">✗</a>
+                                    </div>
+                                {% elif booking.status == 'confirmed' %}
+                                    <span class="text-muted"><small>✓ Подтверждено</small></span>
+                                {% elif booking.status == 'cancelled' %}
+                                    <span class="text-muted"><small>✗ Отменено</small></span>
+                                {% else %}
+                                    <span class="text-muted"><small>Завершено</small></span>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

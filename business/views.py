@@ -901,38 +901,75 @@ def employee_dashboard_view(request):
 
 @login_required
 def booking_confirm_view(request, pk):
-    """Подтверждение бронирования"""
+    """Подтверждение бронирования (для предпринимателя или сотрудника)"""
+    # Проверяем для предпринимателя
     try:
         company = request.user.company
         booking = Booking.objects.get(pk=pk, service__company=company)
-    except (Company.DoesNotExist, Booking.DoesNotExist):
-        messages.error(request, 'Бронирование не найдено')
+        booking.status = 'confirmed'
+        booking.save()
+        messages.success(request, 'Бронирование подтверждено!')
         return redirect('business:booking_list')
+    except (Company.DoesNotExist, Booking.DoesNotExist):
+        pass
     
-    booking.status = 'confirmed'
-    booking.save()
-    messages.success(request, 'Бронирование подтверждено!')
+    # Проверяем для сотрудника
+    if request.user.role == 'employee':
+        try:
+            employee_profile = request.user.get_employee_profile()
+            booking = Booking.objects.get(
+                pk=pk,
+                service__employees=employee_profile
+            )
+            booking.status = 'confirmed'
+            booking.save()
+            messages.success(request, 'Бронирование подтверждено!')
+            return redirect('business:employee_dashboard')
+        except (Employee.DoesNotExist, Booking.DoesNotExist):
+            pass
     
+    messages.error(request, 'Бронирование не найдено')
     return redirect('business:booking_list')
 
 
 @login_required
 def booking_cancel_view(request, pk):
-    """Отмена бронирования"""
+    """Отмена бронирования (для предпринимателя или сотрудника)"""
+    # Проверяем для предпринимателя
     try:
         company = request.user.company
         booking = Booking.objects.get(pk=pk, service__company=company)
-    except (Company.DoesNotExist, Booking.DoesNotExist):
-        messages.error(request, 'Бронирование не найдено')
+        booking.status = 'cancelled'
+        if booking.time_slots.exists():
+            for slot in booking.time_slots.all():
+                slot.is_booked = False
+                slot.booking = None
+                slot.save()
+        booking.save()
+        messages.success(request, 'Бронирование отменено!')
         return redirect('business:booking_list')
+    except (Company.DoesNotExist, Booking.DoesNotExist):
+        pass
     
-    booking.status = 'cancelled'
-    if booking.time_slots.exists():
-        for slot in booking.time_slots.all():
-            slot.is_booked = False
-            slot.booking = None
-            slot.save()
-    booking.save()
-    messages.success(request, 'Бронирование отменено!')
+    # Проверяем для сотрудника
+    if request.user.role == 'employee':
+        try:
+            employee_profile = request.user.get_employee_profile()
+            booking = Booking.objects.get(
+                pk=pk,
+                service__employees=employee_profile
+            )
+            booking.status = 'cancelled'
+            if booking.time_slots.exists():
+                for slot in booking.time_slots.all():
+                    slot.is_booked = False
+                    slot.booking = None
+                    slot.save()
+            booking.save()
+            messages.success(request, 'Бронирование отменено!')
+            return redirect('business:employee_dashboard')
+        except (Employee.DoesNotExist, Booking.DoesNotExist):
+            pass
     
+    messages.error(request, 'Бронирование не найдено')
     return redirect('business:booking_list')
