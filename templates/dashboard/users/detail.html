@@ -83,10 +83,16 @@
                 {% endif %}
                 <h4 style="margin-bottom: 8px;">{{ user_obj.company.name }}</h4>
                 <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">{{ user_obj.company.address }}</p>
-                <div style="display: flex; gap: 8px; justify-content: center;">
+                <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
                     <span class="badge {% if user_obj.company.is_verified %}badge-success{% else %}badge-warning{% endif %}">
                         {% if user_obj.company.is_verified %}✓ Проверена{% else %}⏳ Не проверена{% endif %}
                     </span>
+                    {% if user_obj.role == 'entrepreneur' and not user_obj.is_verified %}
+                    <form method="post" action="{% url 'dashboard:user_verify' user_obj.pk %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm">✓ Подтвердить</button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
             {% else %}
