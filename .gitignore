@@ -1,26 +1,32 @@
-```
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Dependencies
-.venv/
+# Virtual Environments
 venv/
+ENV/
+env.bak/
+.venv/
 env/
-.env
-.env.local
-.env.*
-.envrc
-
-# Logs
-*.log
-
-# Coverage
-.coverage
-coverage/
-htmlcov/
+ENV/
 
 # IDE
 .vscode/
@@ -29,7 +35,17 @@ htmlcov/
 *.swo
 *.tmp
 
-# OS
-.DS_Store
-Thumbs.db
-```
+# Environment
+.env
+.env.local
+*.env.*
+
+# Logs
+*.log
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+.pytest_cache/
+.mypy_cache/
