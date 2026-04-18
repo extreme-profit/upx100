@@ -326,7 +326,7 @@ def subcategory_delete(request, pk):
 @admin_required
 def user_list(request):
     """Список пользователей"""
-    from companies.models import Company
+    from business.models import Company
     users = User.objects.order_by('-date_joined').select_related('company')
     
     # Фильтры
