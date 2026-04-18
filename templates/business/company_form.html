@@ -165,8 +165,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (lngInput) lngInput.value = lng.toFixed(6);
         }
         
-        // Обработчик клика по карте - исправленный синтаксис
-        map.events.on('click', function(e) {
+        // Обработчик клика по карте - исправленный синтаксис для Yandex Maps API 2.1
+        map.events.add('click', function(e) {
             var coords = e.get('coords');
             var lat = coords[0];
             var lng = coords[1];
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Обработчик перетаскивания маркера
-        marker.events.on('dragend', function() {
+        marker.events.add('dragend', function() {
             var coords = marker.geometry.getCoordinates();
             var lat = coords[0];
             var lng = coords[1];
