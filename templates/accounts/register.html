@@ -226,10 +226,11 @@
         // Инициализируем карту
         var map = L.map('map').setView([currentLat, currentLng], 10);
         
-        // Добавляем слой OpenStreetMap (бесплатный, работает в РФ)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
+        // Добавляем слой CartoDB Positron (бесплатный, работает в РФ без блокировок)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
         }).addTo(map);
         
         // Создаем маркер
@@ -265,30 +266,25 @@
         });
         
         // Обработчики изменения полей формы (для синхронизации при ручном вводе)
+        function onInputChange() {
+            var lat = latInput ? parseFloat(latInput.value) : defaultLat;
+            var lng = lngInput ? parseFloat(lngInput.value) : defaultLng;
+            
+            if (!isNaN(lat) && !isNaN(lng)) {
+                var newLatLng = new L.LatLng(lat, lng);
+                marker.setLatLng(newLatLng);
+                map.panTo(newLatLng);
+            }
+        }
+        
         if (latInput) {
-            latInput.addEventListener('change', function() {
-                var lat = parseFloat(this.value);
-                var lng = lngInput ? parseFloat(lngInput.value) : currentLng;
-                
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    var newLatLng = new L.LatLng(lat, lng);
-                    marker.setLatLng(newLatLng);
-                    map.setView(newLatLng, 13);
-                }
-            });
+            latInput.addEventListener('change', onInputChange);
+            latInput.addEventListener('input', onInputChange);
         }
         
         if (lngInput) {
-            lngInput.addEventListener('change', function() {
-                var lat = latInput ? parseFloat(latInput.value) : currentLat;
-                var lng = parseFloat(this.value);
-                
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    var newLatLng = new L.LatLng(lat, lng);
-                    marker.setLatLng(newLatLng);
-                    map.setView(newLatLng, 13);
-                }
-            });
+            lngInput.addEventListener('change', onInputChange);
+            lngInput.addEventListener('input', onInputChange);
         }
     });
     </script>
