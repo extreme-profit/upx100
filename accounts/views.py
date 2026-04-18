@@ -89,7 +89,13 @@ def register_company_view(request):
         login(request, user)
         return redirect('business:company_profile')
     
-    return render(request, 'accounts/register.html')
+    # Передаем API ключ в шаблон
+    from decouple import config
+    yandex_api_key = config('YANDEX_MAPS_API_KEY', default='')
+    
+    return render(request, 'accounts/register.html', {
+        'yandex_api_key': yandex_api_key
+    })
 
 
 def login_view(request):

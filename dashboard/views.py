@@ -365,9 +365,14 @@ def user_detail(request, pk):
     """Детальная информация о пользователе"""
     user = get_object_or_404(User, pk=pk)
     
+    # Передаем API ключ в шаблон
+    from decouple import config
+    yandex_api_key = config('YANDEX_MAPS_API_KEY', default='')
+    
     context = {
         'user_obj': user,
         'title': f'{user.email} ({user.company_name or "Без названия"})',
+        'yandex_api_key': yandex_api_key,
     }
     return render(request, 'dashboard/users/detail.html', context)
 

@@ -69,7 +69,14 @@ def company_edit_view(request):
     else:
         form = CompanyForm(instance=company)
     
-    return render(request, 'business/company_form.html', {'form': form, 'is_create': is_create})
+    from decouple import config
+    yandex_api_key = config('YANDEX_MAPS_API_KEY', default='')
+    
+    return render(request, 'business/company_form.html', {
+        'form': form, 
+        'is_create': is_create,
+        'yandex_api_key': yandex_api_key
+    })
 
 
 @login_required
