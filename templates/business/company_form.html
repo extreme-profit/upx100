@@ -126,87 +126,89 @@
     }
 </style>
 
-<!-- Подключаем Leaflet (бесплатная карта OpenStreetMap, доступна в РФ) -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Подключаем Yandex Maps API для интерактивной карты -->
+<script src="https://api-maps.yandex.ru/2.1/?apikey={{ settings.YANDEX_MAPS_API_KEY }}&lang=ru_RU" type="text/javascript"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Получаем текущие координаты из полей формы
-    var latInput = document.getElementById('id_latitude');
-    var lngInput = document.getElementById('id_longitude');
-    
-    // Значения по умолчанию (Москва)
-    var defaultLat = 55.7558;
-    var defaultLng = 37.6173;
-    
-    // Получаем текущие значения или используем дефолтные
-    var currentLat = latInput && latInput.value ? parseFloat(latInput.value) : defaultLat;
-    var currentLng = lngInput && lngInput.value ? parseFloat(lngInput.value) : defaultLng;
-    
-    // Инициализируем карту
-    var map = L.map('map').setView([currentLat, currentLng], 13);
-    
-    // Добавляем слой CartoDB Positron (бесплатный, работает в РФ без блокировок)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-    }).addTo(map);
-    
-    // Создаем маркер
-    var marker = L.marker([currentLat, currentLng], {
-        draggable: true
-    }).addTo(map);
-    
-    // Функция обновления координат в полях формы
-    function updateCoords(lat, lng) {
-        if (latInput) latInput.value = lat.toFixed(6);
-        if (lngInput) lngInput.value = lng.toFixed(6);
-    }
-    
-    // Обработчик клика по карте
-    map.on('click', function(e) {
-        var lat = e.latlng.lat;
-        var lng = e.latlng.lng;
+    ymaps.ready(function() {
+        // Получаем текущие координаты из полей формы
+        var latInput = document.getElementById('id_latitude');
+        var lngInput = document.getElementById('id_longitude');
         
-        // Перемещаем маркер
-        marker.setLatLng([lat, lng]);
+        // Значения по умолчанию (Москва)
+        var defaultLat = 55.7558;
+        var defaultLng = 37.6173;
         
-        // Обновляем поля формы
-        updateCoords(lat, lng);
-    });
-    
-    // Обработчик перетаскивания маркера
-    marker.on('dragend', function(e) {
-        var lat = marker.getLatLng().lat;
-        var lng = marker.getLatLng().lng;
+        // Получаем текущие значения или используем дефолтные
+        var currentLat = latInput && latInput.value ? parseFloat(latInput.value) : defaultLat;
+        var currentLng = lngInput && lngInput.value ? parseFloat(lngInput.value) : defaultLng;
         
-        // Обновляем поля формы
-        updateCoords(lat, lng);
-    });
-    
-    // Обработчики изменения полей формы (для синхронизации при ручном вводе)
-    function onInputChange() {
-        var lat = latInput ? parseFloat(latInput.value) : defaultLat;
-        var lng = lngInput ? parseFloat(lngInput.value) : defaultLng;
+        // Инициализируем карту
+        var map = new ymaps.Map("map", {
+            center: [currentLat, currentLng],
+            zoom: 13,
+            controls: ['zoomControl', 'fullscreenControl']
+        });
         
-        if (!isNaN(lat) && !isNaN(lng)) {
-            var newLatLng = new L.LatLng(lat, lng);
-            marker.setLatLng(newLatLng);
-            map.panTo(newLatLng);
+        // Создаем маркер
+        var marker = new ymaps.Placemark([currentLat, currentLng], {}, {
+            draggable: true,
+            preset: 'islands#blueCircleDotIcon'
+        });
+        
+        map.geoObjects.add(marker);
+        
+        // Функция обновления координат в полях формы
+        function updateCoords(lat, lng) {
+            if (latInput) latInput.value = lat.toFixed(6);
+            if (lngInput) lngInput.value = lng.toFixed(6);
         }
-    }
-    
-    if (latInput) {
-        latInput.addEventListener('change', onInputChange);
-        latInput.addEventListener('input', onInputChange);
-    }
-    
-    if (lngInput) {
-        lngInput.addEventListener('change', onInputChange);
-        lngInput.addEventListener('input', onInputChange);
-    }
+        
+        // Обработчик клика по карте
+        map.events.click(function(e) {
+            var coords = e.get('coords');
+            var lat = coords[0];
+            var lng = coords[1];
+            
+            // Перемещаем маркер
+            marker.geometry.setCoordinates([lat, lng]);
+            
+            // Обновляем поля формы
+            updateCoords(lat, lng);
+        });
+        
+        // Обработчик перетаскивания маркера
+        marker.events.dragend(function() {
+            var coords = marker.geometry.getCoordinates();
+            var lat = coords[0];
+            var lng = coords[1];
+            
+            // Обновляем поля формы
+            updateCoords(lat, lng);
+        });
+        
+        // Обработчики изменения полей формы (для синхронизации при ручном вводе)
+        function onInputChange() {
+            var lat = latInput ? parseFloat(latInput.value) : defaultLat;
+            var lng = lngInput ? parseFloat(lngInput.value) : defaultLng;
+            
+            if (!isNaN(lat) && !isNaN(lng)) {
+                marker.geometry.setCoordinates([lat, lng]);
+                map.setCenter([lat, lng]);
+            }
+        }
+        
+        if (latInput) {
+            latInput.addEventListener('change', onInputChange);
+            latInput.addEventListener('input', onInputChange);
+        }
+        
+        if (lngInput) {
+            lngInput.addEventListener('change', onInputChange);
+            lngInput.addEventListener('input', onInputChange);
+        }
+    });
 });
 </script>
 {% endblock %}
