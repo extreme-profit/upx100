@@ -63,6 +63,7 @@ def register_company_view(request):
             first_name=first_name,
             last_name=last_name,
             phone=phone,
+            company_name=company_name,  # Сохраняем название компании в пользователе
             is_verified=False,  # По умолчанию компания не проверена
             is_active=True,
         )
