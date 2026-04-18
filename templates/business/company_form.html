@@ -80,6 +80,13 @@
                                     <div class="text-danger mt-1">{{ form.longitude.errors }}</div>
                                 {% endif %}
                             </div>
+                            
+                            <!-- Карта -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold"><i class="fas fa-map me-1 text-primary"></i>Расположение на карте</label>
+                                <div id="map" style="height: 400px; width: 100%; border-radius: 8px; border: 1px solid #dee2e6;"></div>
+                                <div class="form-text mt-2">Кликните по карте чтобы установить координаты, или перетащите маркер.</div>
+                            </div>
                         </div>
 
                         <hr class="my-4">
@@ -118,4 +125,91 @@
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
     }
 </style>
+
+<!-- Подключаем Leaflet (бесплатная карта OpenStreetMap) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Получаем текущие координаты из полей формы
+    var latInput = document.getElementById('id_latitude');
+    var lngInput = document.getElementById('id_longitude');
+    
+    // Значения по умолчанию (Москва)
+    var defaultLat = 55.7558;
+    var defaultLng = 37.6173;
+    
+    // Получаем текущие значения или используем дефолтные
+    var currentLat = latInput && latInput.value ? parseFloat(latInput.value) : defaultLat;
+    var currentLng = lngInput && lngInput.value ? parseFloat(lngInput.value) : defaultLng;
+    
+    // Инициализируем карту
+    var map = L.map('map').setView([currentLat, currentLng], 13);
+    
+    // Добавляем слой OpenStreetMap (бесплатный)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Создаем маркер
+    var marker = L.marker([currentLat, currentLng], {
+        draggable: true
+    }).addTo(map);
+    
+    // Функция обновления координат в полях формы
+    function updateCoords(lat, lng) {
+        if (latInput) latInput.value = lat.toFixed(6);
+        if (lngInput) lngInput.value = lng.toFixed(6);
+    }
+    
+    // Обработчик клика по карте
+    map.on('click', function(e) {
+        var lat = e.latlng.lat;
+        var lng = e.latlng.lng;
+        
+        // Перемещаем маркер
+        marker.setLatLng([lat, lng]);
+        
+        // Обновляем поля формы
+        updateCoords(lat, lng);
+    });
+    
+    // Обработчик перетаскивания маркера
+    marker.on('dragend', function(e) {
+        var lat = marker.getLatLng().lat;
+        var lng = marker.getLatLng().lng;
+        
+        // Обновляем поля формы
+        updateCoords(lat, lng);
+    });
+    
+    // Обработчики изменения полей формы (для синхронизации при ручном вводе)
+    if (latInput) {
+        latInput.addEventListener('change', function() {
+            var lat = parseFloat(this.value);
+            var lng = lngInput ? parseFloat(lngInput.value) : currentLng;
+            
+            if (!isNaN(lat) && !isNaN(lng)) {
+                var newLatLng = new L.LatLng(lat, lng);
+                marker.setLatLng(newLatLng);
+                map.setView(newLatLng, 13);
+            }
+        });
+    }
+    
+    if (lngInput) {
+        lngInput.addEventListener('change', function() {
+            var lat = latInput ? parseFloat(latInput.value) : currentLat;
+            var lng = parseFloat(this.value);
+            
+            if (!isNaN(lat) && !isNaN(lng)) {
+                var newLatLng = new L.LatLng(lat, lng);
+                marker.setLatLng(newLatLng);
+                map.setView(newLatLng, 13);
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

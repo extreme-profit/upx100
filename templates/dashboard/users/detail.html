@@ -83,17 +83,30 @@
                 {% endif %}
                 <h4 style="margin-bottom: 8px;">{{ user_obj.company.name }}</h4>
                 <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">{{ user_obj.company.address }}</p>
-                <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                
+                <!-- Статус верификации между описанием и картой -->
+                <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 20px;">
                     <span class="badge {% if user_obj.company.is_verified %}badge-success{% else %}badge-warning{% endif %}">
                         {% if user_obj.company.is_verified %}✓ Проверена{% else %}⏳ Не проверена{% endif %}
                     </span>
-                    {% if user_obj.role == 'entrepreneur' and not user_obj.is_verified %}
+                    {% if user_obj.role == 'entrepreneur' and not user_obj.company.is_verified %}
                     <form method="post" action="{% url 'dashboard:user_verify' user_obj.pk %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-success btn-sm">✓ Подтвердить</button>
                     </form>
                     {% endif %}
                 </div>
+                
+                <!-- Карта с расположением компании -->
+                {% if user_obj.company.latitude and user_obj.company.longitude %}
+                <div style="margin-top: 16px;">
+                    <h5 style="margin-bottom: 12px; text-align: left;">📍 Расположение на карте</h5>
+                    <div id="map" style="height: 300px; width: 100%; border-radius: 8px; border: 1px solid #dee2e6;"></div>
+                    <p style="font-size: 13px; color: #64748b; margin-top: 8px; text-align: left;">
+                        Координаты: {{ user_obj.company.latitude }}, {{ user_obj.company.longitude }}
+                    </p>
+                </div>
+                {% endif %}
             </div>
             {% else %}
             <div class="empty-state">
@@ -105,4 +118,26 @@
         </div>
     </div>
 </div>
+
+<!-- Подключаем Leaflet для карты на странице админа -->
+{% if user_obj.company and user_obj.company.latitude and user_obj.company.longitude %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var lat = {{ user_obj.company.latitude }};
+    var lng = {{ user_obj.company.longitude }};
+    
+    var map = L.map('map').setView([lat, lng], 15);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    L.marker([lat, lng]).addTo(map)
+        .bindPopup('{{ user_obj.company.name|escapejs }}')
+        .openPopup();
+});
+</script>
+{% endif %}
 {% endblock %}

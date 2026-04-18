@@ -67,12 +67,21 @@ def register_company_view(request):
             is_active=True,
         )
         
-        # Создаём связанную компанию
+        # Создаём связанную компанию с полными данными
+        address = request.POST.get('address', '').strip()
+        description = request.POST.get('description', '').strip()
+        latitude = request.POST.get('latitude', '').strip() or None
+        longitude = request.POST.get('longitude', '').strip() or None
+        
         Company.objects.create(
             owner=user,
             name=company_name,
             phone=phone,
             email=email,
+            address=address,
+            description=description,
+            latitude=latitude if latitude else None,
+            longitude=longitude if longitude else None,
             is_verified=False,  # Компания не проверена до модерации
         )
         

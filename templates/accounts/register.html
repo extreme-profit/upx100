@@ -158,6 +158,29 @@
             </div>
             
             <div class="form-group">
+                <label for="address">Адрес компании *</label>
+                <input type="text" id="address" name="address" class="form-control" required placeholder="Город, улица, дом">
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Описание компании</label>
+                <textarea id="description" name="description" class="form-control" rows="3" placeholder="Расскажите о вашей компании"></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="latitude">Широта</label>
+                    <input type="text" id="latitude" name="latitude" class="form-control" placeholder="55.7558" step="0.000001">
+                    <small style="color: #64748b;">Можно заполнить позже на карте</small>
+                </div>
+                <div class="form-group">
+                    <label for="longitude">Долгота</label>
+                    <input type="text" id="longitude" name="longitude" class="form-control" placeholder="37.6173" step="0.000001">
+                    <small style="color: #64748b;">Можно заполнить позже на карте</small>
+                </div>
+            </div>
+            
+            <div class="form-group">
                 <label for="password">Пароль *</label>
                 <input type="password" id="password" name="password" class="form-control" required minlength="8">
             </div>
