@@ -119,27 +119,30 @@
     </div>
 </div>
 
-<!-- Подключаем Leaflet для карты на странице админа -->
+<!-- Подключаем Yandex Maps API для карты на странице админа -->
 {% if user_obj.company and user_obj.company.latitude and user_obj.company.longitude %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://api-maps.yandex.ru/2.1/?apikey={{ settings.YANDEX_MAPS_API_KEY }}&lang=ru_RU" type="text/javascript"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var lat = {{ user_obj.company.latitude }};
-    var lng = {{ user_obj.company.longitude }};
-    
-    var map = L.map('map').setView([lat, lng], 15);
-    
-    // Используем CartoDB Positron - работает в РФ без блокировок
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-    }).addTo(map);
-    
-    L.marker([lat, lng]).addTo(map)
-        .bindPopup('{{ user_obj.company.name|escapejs }}')
-        .openPopup();
+    ymaps.ready(function() {
+        var lat = {{ user_obj.company.latitude }};
+        var lng = {{ user_obj.company.longitude }};
+        
+        var map = new ymaps.Map("map", {
+            center: [lat, lng],
+            zoom: 15,
+            controls: ['zoomControl', 'fullscreenControl']
+        });
+        
+        var marker = new ymaps.Placemark([lat, lng], {
+            balloonContent: '{{ user_obj.company.name|escapejs }}'
+        }, {
+            preset: 'islands#blueCircleDotIcon'
+        });
+        
+        map.geoObjects.add(marker);
+        marker.balloon.open();
+    });
 });
 </script>
 {% endif %}

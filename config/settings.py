@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +21,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-xc$6ufbd4v+*-yc1pkyx0ku2=o7xb3h-%mp^#m!dj8ggyy-e1d'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-xc$6ufbd4v+*-yc1pkyx0ku2=o7xb3h-%mp^#m!dj8ggyy-e1d')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',') if config('ALLOWED_HOSTS', default='') else []
+
+# Yandex Maps API Key
+YANDEX_MAPS_API_KEY = config('YANDEX_MAPS_API_KEY', default='')
 
 
 # Application definition
@@ -73,6 +77,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.settings',
             ],
         },
     },
