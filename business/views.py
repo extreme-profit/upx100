@@ -104,11 +104,8 @@ def employee_create_view(request):
     if request.method == 'POST':
         form = EmployeeForm(request.POST)
         if form.is_valid():
-            # Сохраняем с commit=False чтобы сначала установить company
-            employee = form.save(commit=False)
-            # Устанавливаем компанию перед сохранением
-            employee.company = company
-            employee.save()
+            # Сохраняем сотрудника, передавая компанию
+            employee = form.save(commit=True, company=company)
             messages.success(request, 'Сотрудник успешно добавлен! Теперь он может войти в ЛК используя email и пароль.')
             return redirect('business:employee_list')
     else:
