@@ -32,7 +32,7 @@
                         {% if user_obj.role == 'admin' %}
                         <span class="badge badge-info">Администратор</span>
                         {% elif user_obj.role == 'entrepreneur' %}
-                        <span class="badge badge-success">Предприниматель</span>
+                        <span class="badge badge-success">Сотрудник</span>
                         {% else %}
                         <span class="badge badge-info">Клиент</span>
                         {% endif %}
@@ -70,6 +70,12 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Компания</h3>
+            {% if user_obj.role == 'entrepreneur' and not user_obj.is_verified %}
+            <form method="post" action="{% url 'dashboard:user_verify' user_obj.pk %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">✓ Подтвердить</button>
+            </form>
+            {% endif %}
         </div>
         <div class="card-body">
             {% if user_obj.company %}
@@ -85,12 +91,6 @@
                     <span class="badge {% if user_obj.is_verified %}badge-success{% else %}badge-warning{% endif %}">
                         {% if user_obj.is_verified %}✓ Проверена{% else %}⏳ Не проверена{% endif %}
                     </span>
-                    {% if user_obj.role == 'entrepreneur' and not user_obj.is_verified %}
-                    <form method="post" action="{% url 'dashboard:user_verify' user_obj.pk %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-success btn-sm">✓ Подтвердить</button>
-                    </form>
-                    {% endif %}
                 </div>
                 
                 <!-- Карта с расположением компании -->
