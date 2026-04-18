@@ -19,6 +19,57 @@ def get_login_redirect_url(user):
         return 'home'
 
 
+def register_company_view(request):
+    """Страница регистрации компании"""
+    if request.user.is_authenticated:
+        return redirect(get_login_redirect_url(request.user))
+    
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '')
+        password_confirm = request.POST.get('password_confirm', '')
+        company_name = request.POST.get('company_name', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        
+        # Валидация
+        if not email or not password:
+            messages.error(request, 'Email и пароль обязательны')
+            return render(request, 'accounts/register.html')
+        
+        if password != password_confirm:
+            messages.error(request, 'Пароли не совпадают')
+            return render(request, 'accounts/register.html')
+        
+        if len(password) < 8:
+            messages.error(request, 'Пароль должен быть не менее 8 символов')
+            return render(request, 'accounts/register.html')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Пользователь с таким email уже существует')
+            return render(request, 'accounts/register.html')
+        
+        # Создание пользователя-предпринимателя со статусом "не проверен"
+        user = User.objects.create_user(
+            email=email,
+            password=password,
+            role='entrepreneur',
+            company_name=company_name,
+            first_name=first_name,
+            last_name=last_name,
+            phone=phone,
+            is_verified=False,  # По умолчанию компания не проверена
+            is_active=True,
+        )
+        
+        messages.success(request, f'Компания "{company_name}" успешно зарегистрирована! Ожидайте проверки администратором.')
+        login(request, user)
+        return redirect('business:company_profile')
+    
+    return render(request, 'accounts/register.html')
+
+
 def login_view(request):
     """Страница входа"""
     if request.user.is_authenticated:
