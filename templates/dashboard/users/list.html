@@ -59,16 +59,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if user.company %}
-                            <span style="color: #475569;">{{ user.company.name }}</span>
-                            {% if user.role == 'entrepreneur' %}
-                                {% if user.company.is_verified %}
-                                    <span style="color: #16a34a; font-size: 12px;">(Проверена)</span>
-                                {% else %}
-                                    <span style="color: #ca8a04; font-size: 12px;">(Не проверена)</span>
-                                {% endif %}
-                            {% endif %}
-                            {% elif user.company_name %}
+                            {% if user.company_name %}
                             <span style="color: #475569;">{{ user.company_name }}</span>
                             {% if user.role == 'entrepreneur' %}
                                 {% if user.is_verified %}
@@ -85,7 +76,7 @@
                             {% if user.role == 'admin' %}
                             <span class="badge badge-info">Администратор</span>
                             {% elif user.role == 'entrepreneur' %}
-                            <span class="badge badge-success">Предприниматель</span>
+                            <span class="badge badge-success">Сотрудник</span>
                             {% endif %}
                         </td>
                         <td>{{ user.date_joined|date:"d.m.Y H:i" }}</td>
