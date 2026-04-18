@@ -21,14 +21,30 @@ wheels/
 .installed.cfg
 *.egg
 
-# Django
-*.log
-local_settings.py
+# Database
 db.sqlite3
-db.sqlite3-journal
+*.db
+
+# Migrations
+*/migrations/*.py[cod]
+*/migrations/__pycache__/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # Environment
 .env
 .env.local
-.env.*
+*.env.*
+
+# Logs
+*.log
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
 ```

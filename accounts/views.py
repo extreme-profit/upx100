@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import User
+from business.models import Company
 
 
 def get_login_redirect_url(user):
@@ -50,17 +51,29 @@ def register_company_view(request):
             messages.error(request, 'Пользователь с таким email уже существует')
             return render(request, 'accounts/register.html')
         
+        if not company_name:
+            messages.error(request, 'Название компании обязательно')
+            return render(request, 'accounts/register.html')
+        
         # Создание пользователя-предпринимателя со статусом "не проверен"
         user = User.objects.create_user(
             email=email,
             password=password,
             role='entrepreneur',
-            company_name=company_name,
             first_name=first_name,
             last_name=last_name,
             phone=phone,
             is_verified=False,  # По умолчанию компания не проверена
             is_active=True,
+        )
+        
+        # Создаём связанную компанию
+        Company.objects.create(
+            owner=user,
+            name=company_name,
+            phone=phone,
+            email=email,
+            is_verified=False,  # Компания не проверена до модерации
         )
         
         messages.success(request, f'Компания "{company_name}" успешно зарегистрирована! Ожидайте проверки администратором.')
