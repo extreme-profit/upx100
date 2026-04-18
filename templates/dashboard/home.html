@@ -20,19 +20,8 @@
     </div>
     
     <div class="stat-card">
-        <div class="stat-label">Компании</div>
-        <div class="stat-value">{{ companies_count }}</div>
-        <div class="stat-change">
-            <span>🏢 Зарегистрировано компаний</span>
-        </div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-label">Неактивные пользователи</div>
+        <div class="stat-label">Заблокированные аккаунты</div>
         <div class="stat-value" style="color: #ef4444;">{{ inactive_users }}</div>
-        <div class="stat-change negative">
-            <span>⚠️ Заблокированные аккаунты</span>
-        </div>
     </div>
 </div>
 
@@ -70,7 +59,7 @@
                             {% elif user.role == 'entrepreneur' %}
                             <span class="badge badge-success">Предприниматель</span>
                             {% else %}
-                            <span class="badge badge-info">Клиент</span>
+                            <span class="badge badge-info">Сотрудник</span>
                             {% endif %}
                         </td>
                         <td>{{ user.email }}</td>

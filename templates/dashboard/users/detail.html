@@ -9,12 +9,8 @@
             <a href="{% url 'dashboard:user_list' %}" class="btn btn-secondary">← Назад</a>
         </div>
         <div class="card-body">
-            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
-                <div class="user-avatar" style="width: 64px; height: 64px; font-size: 24px;">{{ user_obj.username|first|upper }}</div>
-                <div>
-                    <h4 style="margin-bottom: 4px;">{{ user_obj.username }}</h4>
-                    <p style="color: #64748b; font-size: 14px;">ID: {{ user_obj.pk }}</p>
-                </div>
+            <div style="margin-bottom: 24px;">
+                <p style="color: #64748b; font-size: 14px;">ID: {{ user_obj.pk }}</p>
             </div>
             
             <table style="width: 100%;">
@@ -54,7 +50,7 @@
                 </tr>
                 <tr>
                     <td style="padding: 12px 0; color: #64748b;"><strong>Дата регистрации:</strong></td>
-                    <td style="padding: 12px 0;">{{ user_obj.created_at|date:"d.m.Y H:i" }}</td>
+                    <td style="padding: 12px 0;">{{ user_obj.date_joined|date:"d.m.Y H:i" }}</td>
                 </tr>
             </table>
             
@@ -86,10 +82,10 @@
                 
                 <!-- Статус верификации между описанием и картой -->
                 <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 20px;">
-                    <span class="badge {% if user_obj.company.is_verified %}badge-success{% else %}badge-warning{% endif %}">
-                        {% if user_obj.company.is_verified %}✓ Проверена{% else %}⏳ Не проверена{% endif %}
+                    <span class="badge {% if user_obj.is_verified %}badge-success{% else %}badge-warning{% endif %}">
+                        {% if user_obj.is_verified %}✓ Проверена{% else %}⏳ Не проверена{% endif %}
                     </span>
-                    {% if user_obj.role == 'entrepreneur' and not user_obj.company.is_verified %}
+                    {% if user_obj.role == 'entrepreneur' and not user_obj.is_verified %}
                     <form method="post" action="{% url 'dashboard:user_verify' user_obj.pk %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-success btn-sm">✓ Подтвердить</button>
