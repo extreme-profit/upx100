@@ -125,8 +125,9 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     ymaps.ready(function() {
-        var lat = {{ user_obj.company.latitude }};
-        var lng = {{ user_obj.company.longitude }};
+        // Преобразуем координаты в числа, заменяя запятую на точку если нужно
+        var lat = parseFloat("{{ user_obj.company.latitude|escapejs }}".replace(',', '.'));
+        var lng = parseFloat("{{ user_obj.company.longitude|escapejs }}".replace(',', '.'));
         
         var map = new ymaps.Map("map", {
             center: [lat, lng],
