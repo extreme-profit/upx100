@@ -206,7 +206,7 @@
     </div>
     
     <!-- Подключаем Yandex Maps API для интерактивной карты -->
-    <script src="https://api-maps.yandex.ru/2.1/?apikey={{ settings.YANDEX_MAPS_API_KEY }}&lang=ru_RU" type="text/javascript"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_api_key }}&lang=ru_RU" type="text/javascript"></script>
     
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -244,8 +244,8 @@
                 if (lngInput) lngInput.value = lng.toFixed(6);
             }
             
-            // Обработчик клика по карте
-            map.events.click(function(e) {
+            // Обработчик клика по карте - исправленный синтаксис
+            map.events.on('click', function(e) {
                 var coords = e.get('coords');
                 var lat = coords[0];
                 var lng = coords[1];
@@ -257,8 +257,8 @@
                 updateCoords(lat, lng);
             });
             
-            // Обработчик перетаскивания маркера
-            marker.events.dragend(function() {
+            // Обработчик перетаскивания маркера - исправленный синтаксис
+            marker.events.on('dragend', function() {
                 var coords = marker.geometry.getCoordinates();
                 var lat = coords[0];
                 var lng = coords[1];

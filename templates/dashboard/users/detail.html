@@ -121,7 +121,7 @@
 
 <!-- Подключаем Yandex Maps API для карты на странице админа -->
 {% if user_obj.company and user_obj.company.latitude and user_obj.company.longitude %}
-<script src="https://api-maps.yandex.ru/2.1/?apikey={{ settings.YANDEX_MAPS_API_KEY }}&lang=ru_RU" type="text/javascript"></script>
+<script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_api_key }}&lang=ru_RU" type="text/javascript"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     ymaps.ready(function() {
