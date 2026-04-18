@@ -171,13 +171,20 @@
                 <div class="form-group">
                     <label for="latitude">Широта</label>
                     <input type="text" id="latitude" name="latitude" class="form-control" placeholder="55.7558" step="0.000001">
-                    <small style="color: #64748b;">Можно заполнить позже на карте</small>
+                    <small style="color: #64748b;">Кликните по карте ниже или введите вручную</small>
                 </div>
                 <div class="form-group">
                     <label for="longitude">Долгота</label>
                     <input type="text" id="longitude" name="longitude" class="form-control" placeholder="37.6173" step="0.000001">
-                    <small style="color: #64748b;">Можно заполнить позже на карте</small>
+                    <small style="color: #64748b;">Кликните по карте ниже или введите вручную</small>
                 </div>
+            </div>
+            
+            <!-- Карта для выбора координат -->
+            <div class="form-group">
+                <label>📍 Расположение на карте</label>
+                <div id="map" style="height: 300px; width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 10px;"></div>
+                <small style="color: #64748b;">Кликните по карте чтобы установить координаты</small>
             </div>
             
             <div class="form-group">
@@ -197,5 +204,93 @@
             Уже есть аккаунт? <a href="{% url 'accounts:login' %}" style="color: #667eea; text-decoration: none; font-weight: 500;">Войти</a>
         </div>
     </div>
+    
+    <!-- Подключаем Leaflet (бесплатная карта OpenStreetMap, доступна в РФ) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Получаем поля координат
+        var latInput = document.getElementById('latitude');
+        var lngInput = document.getElementById('longitude');
+        
+        // Значения по умолчанию (Москва)
+        var defaultLat = 55.7558;
+        var defaultLng = 37.6173;
+        
+        // Получаем текущие значения или используем дефолтные
+        var currentLat = latInput && latInput.value ? parseFloat(latInput.value) : defaultLat;
+        var currentLng = lngInput && lngInput.value ? parseFloat(lngInput.value) : defaultLng;
+        
+        // Инициализируем карту
+        var map = L.map('map').setView([currentLat, currentLng], 10);
+        
+        // Добавляем слой OpenStreetMap (бесплатный, работает в РФ)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Создаем маркер
+        var marker = L.marker([currentLat, currentLng], {
+            draggable: true
+        }).addTo(map);
+        
+        // Функция обновления координат в полях формы
+        function updateCoords(lat, lng) {
+            if (latInput) latInput.value = lat.toFixed(6);
+            if (lngInput) lngInput.value = lng.toFixed(6);
+        }
+        
+        // Обработчик клика по карте
+        map.on('click', function(e) {
+            var lat = e.latlng.lat;
+            var lng = e.latlng.lng;
+            
+            // Перемещаем маркер
+            marker.setLatLng([lat, lng]);
+            
+            // Обновляем поля формы
+            updateCoords(lat, lng);
+        });
+        
+        // Обработчик перетаскивания маркера
+        marker.on('dragend', function(e) {
+            var lat = marker.getLatLng().lat;
+            var lng = marker.getLatLng().lng;
+            
+            // Обновляем поля формы
+            updateCoords(lat, lng);
+        });
+        
+        // Обработчики изменения полей формы (для синхронизации при ручном вводе)
+        if (latInput) {
+            latInput.addEventListener('change', function() {
+                var lat = parseFloat(this.value);
+                var lng = lngInput ? parseFloat(lngInput.value) : currentLng;
+                
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    var newLatLng = new L.LatLng(lat, lng);
+                    marker.setLatLng(newLatLng);
+                    map.setView(newLatLng, 13);
+                }
+            });
+        }
+        
+        if (lngInput) {
+            lngInput.addEventListener('change', function() {
+                var lat = latInput ? parseFloat(latInput.value) : currentLat;
+                var lng = parseFloat(this.value);
+                
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    var newLatLng = new L.LatLng(lat, lng);
+                    marker.setLatLng(newLatLng);
+                    map.setView(newLatLng, 13);
+                }
+            });
+        }
+    });
+    </script>
 </body>
 </html>
