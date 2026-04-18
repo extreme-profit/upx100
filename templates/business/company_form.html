@@ -165,11 +165,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (lngInput) lngInput.value = lng.toFixed(6);
         }
         
-        // Обработчик клика по карте - исправленный синтаксис для Yandex Maps API 2.1
+        // Обработчик клика по карте - приближение и установка маркера
         map.events.add('click', function(e) {
             var coords = e.get('coords');
             var lat = coords[0];
             var lng = coords[1];
+            
+            // Приближаем карту к месту клика
+            map.setCenter([lat, lng], 15, {duration: 300});
             
             // Перемещаем маркер
             marker.geometry.setCoordinates([lat, lng]);
