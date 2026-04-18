@@ -1,6 +1,8 @@
 from django import forms
 from django.utils import timezone
 from datetime import timedelta
+import os
+from django.conf import settings
 from .models import Company, Employee, Service, Payment
 from companies.models import Category, Subcategory
 
@@ -130,6 +132,48 @@ class CompanyForm(forms.ModelForm):
             'latitude': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
             'longitude': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Сохраняем текущие значения файлов для последующего удаления при замене
+        self._old_logo = None
+        self._old_photo = None
+        if self.instance.pk:
+            self._old_logo = self.instance.logo.name if self.instance.logo else None
+            self._old_photo = self.instance.photo.name if self.instance.photo else None
+    
+    def save(self, commit=True):
+        """Сохранение компании с удалением старых файлов при замене"""
+        instance = super().save(commit=False)
+        
+        # Получаем полный путь к медиа файлам
+        media_root = settings.MEDIA_ROOT
+        
+        # Удаляем старый логотип если он был заменен
+        if self._old_logo and self.instance.logo and self._old_logo != self.instance.logo.name:
+            old_path = os.path.join(media_root, self._old_logo)
+            if os.path.isfile(old_path):
+                os.remove(old_path)
+        elif not self.instance.logo and self._old_logo:
+            # Если поле очищено
+            old_path = os.path.join(media_root, self._old_logo)
+            if os.path.isfile(old_path):
+                os.remove(old_path)
+        
+        # Удаляем старое фото если оно было заменено
+        if self._old_photo and self.instance.photo and self._old_photo != self.instance.photo.name:
+            old_path = os.path.join(media_root, self._old_photo)
+            if os.path.isfile(old_path):
+                os.remove(old_path)
+        elif not self.instance.photo and self._old_photo:
+            # Если поле очищено
+            old_path = os.path.join(media_root, self._old_photo)
+            if os.path.isfile(old_path):
+                os.remove(old_path)
+        
+        if commit:
+            instance.save()
+        return instance
 
 
 class EmployeeForm(forms.ModelForm):
@@ -289,6 +333,12 @@ class ServiceForm(forms.ModelForm):
         # Получаем компанию из kwargs если есть
         self.company = kwargs.pop('company', None)
         
+        # Сохраняем текущее значение фото для последующего удаления при замене
+        self._old_photo = None
+        if kwargs.get('instance') and kwargs['instance'].pk:
+            self._old_photo = kwargs['instance'].photo.name if kwargs['instance'].photo else None
+
+        
         # Получаем категорию ДО вызова super().__init__()
         category_id = None
         
@@ -403,6 +453,19 @@ class ServiceForm(forms.ModelForm):
         service = super().save(commit=False)
         subcategory_id = self.cleaned_data.get('subcategory_id')
         category = self.cleaned_data.get('category')
+        # Удаляем старое фото если оно было заменено
+        if hasattr(self, '_old_photo') and self._old_photo:
+            media_root = settings.MEDIA_ROOT
+            if self.instance.photo and self._old_photo != self.instance.photo.name:
+                old_path = os.path.join(media_root, self._old_photo)
+                if os.path.isfile(old_path):
+                    os.remove(old_path)
+            elif not self.instance.photo:
+                # Если поле очищено
+                old_path = os.path.join(media_root, self._old_photo)
+                if os.path.isfile(old_path):
+                    os.remove(old_path)
+
         
         # Устанавливаем категорию и подкатегорию
         if category:
