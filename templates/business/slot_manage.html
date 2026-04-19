@@ -184,6 +184,16 @@
                     </div>
                 </div>
 
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="periodStart" class="form-label fw-bold">Начало периода</label>
+                        <input type="date" id="periodStart" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="periodEnd" class="form-label fw-bold">Конец периода</label>
+                        <input type="date" id="periodEnd" class="form-control" required>
+                    </div>
+                </div>
                 
                 <div class="mb-3">
                     <label class="form-label fw-bold">Действие</label>
@@ -399,6 +409,33 @@ function openModal() {
     if (currentCheckbox) {
         currentCheckbox.checked = true;
     }
+    
+    // Устанавливаем даты периода на основе текущей недели в сетке
+    const weekStart = getWeekStartDate(currentWeekOffset);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    
+    document.getElementById('periodStart').value = formatDateForInput(weekStart);
+    document.getElementById('periodEnd').value = formatDateForInput(weekEnd);
+}
+
+// Вспомогательная функция для получения даты начала недели по смещению
+function getWeekStartDate(offset) {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = воскресенье, 1 = понедельник, ...
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Смещение до понедельника
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday + (offset * 7));
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+}
+
+// Вспомогательная функция для форматирования даты в YYYY-MM-DD
+function formatDateForInput(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 
@@ -747,6 +784,8 @@ function applySchedule() {
     const startHourStr = document.getElementById('startHour').value;
     const endHourStr = document.getElementById('endHour').value;
     const action = document.querySelector('input[name="action"]:checked').value;
+    const periodStart = document.getElementById('periodStart').value;
+    const periodEnd = document.getElementById('periodEnd').value;
     
     // Получаем выбранных сотрудников из чекбоксов
     const selectedEmployees = [];
@@ -760,6 +799,11 @@ function applySchedule() {
 
     if (startHour > endHour || (startHour === endHour && startMinute >= endMinute)) {
         showNotification('Время начала должно быть меньше времени окончания', 'danger');
+        return;
+    }
+
+    if (!periodStart || !periodEnd) {
+        showNotification('Выберите даты начала и конца периода', 'danger');
         return;
     }
 
@@ -782,7 +826,8 @@ function applySchedule() {
             action: action,
             set_others_busy: setOthersBusy,
             employees: selectedEmployees,
-            week_offset: currentWeekOffset
+            period_start: periodStart,
+            period_end: periodEnd
         }),
     })
     .then(response => response.json())

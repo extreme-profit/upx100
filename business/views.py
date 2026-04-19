@@ -541,9 +541,10 @@ def slot_bulk_update_view(request, service_id):
     start_hour = int(data.get('start_hour', 9))
     end_hour = int(data.get('end_hour', 18))
     action = data.get('action')  # 'set_free', 'set_busy'
-    employee_id = data.get('employee')
+    employee_ids = data.get('employees', [])  # Список ID сотрудников
     set_others_busy = data.get('set_others_busy', False)  # Делать ли остальные слоты недоступными
-    week_offset = int(data.get('week_offset', 0))
+    period_start_str = data.get('period_start')
+    period_end_str = data.get('period_end')
     
     # Получаем интервал и длительность из сессии
     interval = request.session.get(f'slot_duration_{service_id}', service.duration)
@@ -554,8 +555,15 @@ def slot_bulk_update_view(request, service_id):
     if not duration:
         duration = 30  # Значение по умолчанию
     
-    today = timezone.now().date()
-    start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
+    # Определяем диапазон дат
+    if period_start_str and period_end_str:
+        period_start = datetime.strptime(period_start_str, '%Y-%m-%d').date()
+        period_end = datetime.strptime(period_end_str, '%Y-%m-%d').date()
+    else:
+        # Если даты не переданы, используем текущую неделю
+        today = timezone.now().date()
+        period_start = today - timedelta(days=today.weekday())
+        period_end = period_start + timedelta(days=6)
     
     # Определяем дни для обработки
     days_to_process = []
@@ -569,105 +577,121 @@ def slot_bulk_update_view(request, service_id):
     slots_created = 0
     slots_updated = 0
     
-    for weekday in days_to_process:
-        target_date = start_of_week + timedelta(days=weekday)
+    # Проходим по всем датам в диапазоне периода
+    current_date = period_start
+    while current_date <= period_end:
+        weekday = current_date.weekday()
         
-        # Генерируем слоты на основе интервала - последовательно от start_hour до end_hour
-        # Начинаем с start_hour:00 и двигаемся с шагом interval минут
-        current_time = datetime.combine(target_date, time(start_hour, 0))
-        end_time_limit = datetime.combine(target_date, time(end_hour, 0))
+        # Проверяем, нужно ли обрабатывать этот день недели
+        if weekday not in days_to_process:
+            current_date += timedelta(days=1)
+            continue
         
-        while current_time < end_time_limit:
-            start_time = current_time.time()
-            
-            # Вычисляем время окончания слота на основе длительности услуги
-            end_datetime = current_time + timedelta(minutes=duration)
-            end_time = end_datetime.time()
-            
-            # Если время окончания выходит за рамки end_hour, прекращаем
-            if end_datetime > end_time_limit:
-                break
-            
-            slot_filter = {
-                'service': service,
-                'date': target_date,
-                'start_time': start_time,
-            }
-            if employee_id:
-                slot_filter['employee_id'] = employee_id
-            
-            slot = ServiceTimeSlot.objects.filter(**slot_filter).first()
-            
-            # Определяем нужный статус
-            should_be_booked = (action == 'set_busy')
-            
-            if slot is None:
-                # Создаём новый слот
-                ServiceTimeSlot.objects.create(
-                    service=service,
-                    employee_id=employee_id if employee_id else None,
-                    date=target_date,
-                    start_time=start_time,
-                    end_time=end_time,
-                    is_booked=should_be_booked,
-                )
-                slots_created += 1
-            else:
-                # Обновляем существующий слот
-                if slot.is_booked != should_be_booked:
-                    slot.is_booked = should_be_booked
-                    if slot.is_booked:
-                        slot.booking = None
-                    slot.save()
-                    slots_updated += 1
-            
-            # Переходим к следующему слоту с шагом interval
-            current_time = current_time + timedelta(minutes=interval)
+        target_date = current_date
         
-        # Если нужно сделать остальные слоты недоступными (вне рабочего времени)
-        if set_others_busy and action == 'set_free':
-            # Проходим по всем возможным слотам вне рабочего диапазона
-            day_start = datetime.combine(target_date, time(0, 0))
-            day_end = datetime.combine(target_date, time(23, 59))
+        # Если employee_ids пустой, берем всех активных сотрудников услуги
+        if not employee_ids:
+            employees_to_process = list(service.employees.filter(is_active=True).values_list('pk', flat=True))
+        else:
+            employees_to_process = [int(eid) for eid in employee_ids]
+        
+        for emp_id in employees_to_process:
+            # Генерируем слоты на основе интервала - последовательно от start_hour до end_hour
+            # Начинаем с start_hour:00 и двигаемся с шагом interval минут
+            current_time = datetime.combine(target_date, time(start_hour, 0))
+            end_time_limit = datetime.combine(target_date, time(end_hour, 0))
             
-            current_time = day_start
-            while current_time <= day_end:
+            while current_time < end_time_limit:
                 start_time = current_time.time()
+                
+                # Вычисляем время окончания слота на основе длительности услуги
                 end_datetime = current_time + timedelta(minutes=duration)
+                end_time = end_datetime.time()
                 
-                # Проверяем, попадает ли слот в рабочее время
-                work_start = datetime.combine(target_date, time(start_hour, 0))
-                work_end = datetime.combine(target_date, time(end_hour, 0))
+                # Если время окончания выходит за рамки end_hour, прекращаем
+                if end_datetime > end_time_limit:
+                    break
                 
-                # Если слот полностью вне рабочего времени
-                if end_datetime <= work_start or current_time >= work_end:
-                    slot_filter = {
-                        'service': service,
-                        'date': target_date,
-                        'start_time': start_time,
-                    }
-                    if employee_id:
-                        slot_filter['employee_id'] = employee_id
-                    
-                    slot = ServiceTimeSlot.objects.filter(**slot_filter).first()
-                    
-                    if slot is None:
-                        ServiceTimeSlot.objects.create(
-                            service=service,
-                            employee_id=employee_id if employee_id else None,
-                            date=target_date,
-                            start_time=start_time,
-                            end_time=end_datetime.time(),
-                            is_booked=True,  # Делаем недоступным
-                        )
-                        slots_created += 1
-                    elif not slot.is_booked:
-                        slot.is_booked = True
-                        slot.booking = None
+                slot_filter = {
+                    'service': service,
+                    'date': target_date,
+                    'start_time': start_time,
+                    'employee_id': emp_id,
+                }
+                
+                slot = ServiceTimeSlot.objects.filter(**slot_filter).first()
+                
+                # Определяем нужный статус
+                should_be_booked = (action == 'set_busy')
+                
+                if slot is None:
+                    # Создаём новый слот
+                    ServiceTimeSlot.objects.create(
+                        service=service,
+                        employee_id=emp_id,
+                        date=target_date,
+                        start_time=start_time,
+                        end_time=end_time,
+                        is_booked=should_be_booked,
+                    )
+                    slots_created += 1
+                else:
+                    # Обновляем существующий слот
+                    if slot.is_booked != should_be_booked:
+                        slot.is_booked = should_be_booked
+                        if slot.is_booked:
+                            slot.booking = None
                         slot.save()
                         slots_updated += 1
                 
+                # Переходим к следующему слоту с шагом interval
                 current_time = current_time + timedelta(minutes=interval)
+            
+            # Если нужно сделать остальные слоты недоступными (вне рабочего времени)
+            if set_others_busy and action == 'set_free':
+                # Проходим по всем возможным слотам вне рабочего диапазона
+                day_start = datetime.combine(target_date, time(0, 0))
+                day_end = datetime.combine(target_date, time(23, 59))
+                
+                current_time = day_start
+                while current_time <= day_end:
+                    start_time = current_time.time()
+                    end_datetime = current_time + timedelta(minutes=duration)
+                    
+                    # Проверяем, попадает ли слот в рабочее время
+                    work_start = datetime.combine(target_date, time(start_hour, 0))
+                    work_end = datetime.combine(target_date, time(end_hour, 0))
+                    
+                    # Если слот полностью вне рабочего времени
+                    if end_datetime <= work_start or current_time >= work_end:
+                        slot_filter = {
+                            'service': service,
+                            'date': target_date,
+                            'start_time': start_time,
+                            'employee_id': emp_id,
+                        }
+                        
+                        slot = ServiceTimeSlot.objects.filter(**slot_filter).first()
+                        
+                        if slot is None:
+                            ServiceTimeSlot.objects.create(
+                                service=service,
+                                employee_id=emp_id,
+                                date=target_date,
+                                start_time=start_time,
+                                end_time=end_datetime.time(),
+                                is_booked=True,  # Делаем недоступным
+                            )
+                            slots_created += 1
+                        elif not slot.is_booked:
+                            slot.is_booked = True
+                            slot.booking = None
+                            slot.save()
+                            slots_updated += 1
+                    
+                    current_time = current_time + timedelta(minutes=interval)
+        
+        current_date += timedelta(days=1)
     
     return JsonResponse({
         'success': True,
