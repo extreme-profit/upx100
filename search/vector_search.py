@@ -1,20 +1,32 @@
 """
-Модуль для работы с векторным поиском услуг через TF-IDF + косинусное сходство
-Используется как легковесная альтернатива FAISS при ограниченных ресурсах
+Модуль для работы с векторным поиском услуг через FAISS + Sentence Transformers
+Полноценный семантический поиск на основе нейросетевых эмбеддингов
+Использует легковесную модель для работы в условиях ограниченной памяти
 """
 import pickle
 import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import faiss
+from sentence_transformers import SentenceTransformer
 from django.conf import settings
 from business.models import Service
 from .models import ServiceEmbedding
 
 
 # Глобальные переменные для кэширования
-_vectorizer = None
-_tfidf_matrix = None
+_model = None
+_index = None
 _service_ids = None
+_embeddings_map = None  # Маппинг id -> embedding для быстрых вычислений
+
+
+def get_model():
+    """Ленивая загрузка модели Sentence Transformer"""
+    global _model
+    if _model is None:
+        # Используем максимально легковесную мультиязычную модель
+        # paraphrase-multilingual-MiniLM-L12-v2 - компактная модель (~470MB)
+        _model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+    return _model
 
 
 def get_service_text(service):
@@ -35,10 +47,13 @@ def get_service_text(service):
 
 def build_vector_index():
     """
-    Строит TF-IDF индекс для всех активных услуг.
-    Сохраняет данные в базу данных и возвращает матрицу для поиска.
+    Строит FAISS индекс для всех активных услуг используя Sentence Transformers.
+    Сохраняет данные в базу данных и возвращает индекс для поиска.
+    Использует batch processing для экономии памяти.
     """
-    global _vectorizer, _tfidf_matrix, _service_ids
+    global _model, _index, _service_ids, _embeddings_map
+    
+    model = get_model()
     
     # Получаем все активные услуги проверенных компаний
     services = Service.objects.select_related('company', 'category', 'subcategory').filter(
@@ -58,56 +73,79 @@ def build_vector_index():
         texts.append(text)
         service_id_list.append(service.id)
     
-    # Создаем TF-IDF векторизатор
-    vectorizer = TfidfVectorizer(
-        max_features=5000,
-        ngram_range=(1, 2),  # Униграммы и биграммы
-        min_df=1,
-        stop_words=None  # Для русского языка лучше не использовать стандартные стоп-слова
-    )
+    # Генерируем эмбеддинги через Sentence Transformer с batch processing
+    # Используем небольшой размер батча для экономии памяти
+    batch_size = 8
+    all_embeddings = []
     
-    tfidf_matrix = vectorizer.fit_transform(texts)
+    for i in range(0, len(texts), batch_size):
+        batch_texts = texts[i:i+batch_size]
+        batch_embeddings = model.encode(batch_texts, convert_to_numpy=True, show_progress_bar=False)
+        all_embeddings.append(batch_embeddings)
     
-    # Сохраняем векторизатор и данные в базу
+    embeddings = np.vstack(all_embeddings)
+    
+    # Нормализуем эмбеддинги для косинусного сходства
+    faiss.normalize_L2(embeddings)
+    
+    # Создаем FAISS индекс (Inner Product для нормализованных векторов = косинусное сходство)
+    dimension = embeddings.shape[1]
+    index = faiss.IndexFlatIP(dimension)
+    index.add(embeddings.astype('float32'))
+    
+    # Сохраняем эмбеддинги и метаданные в базу данных
     ServiceEmbedding.objects.all().delete()  # Очищаем старые эмбеддинги
     
-    # Сохраняем сам векторизатор и матрицу
-    vectorizer_data = pickle.dumps(vectorizer)
-    matrix_data = pickle.dumps(tfidf_matrix)
-    
-    # Сохраняем как один большой объект (векторизатор + матрица)
-    combined_data = pickle.dumps({
-        'vectorizer': vectorizer,
-        'tfidf_matrix': tfidf_matrix,
-        'service_ids': service_id_list
-    })
-    
-    # Для совместимости сохраняем в первую запись
-    if services.exists():
-        first_service = services.first()
+    # Сохраняем каждый эмбеддинг отдельно
+    embeddings_data = []
+    for i, service_id in enumerate(service_id_list):
         embedding_obj = ServiceEmbedding(
-            service_id=first_service.id,
-            embedding=combined_data
+            service_id=service_id,
+            embedding=pickle.dumps({
+                'embedding': embeddings[i],
+                'index_position': i
+            })
         )
         embedding_obj.save()
+        embeddings_data.append({
+            'service_id': service_id,
+            'embedding': embeddings[i]
+        })
+    
+    # Сохраняем сам индекс и маппинг ID для быстрого доступа
+    index_data = pickle.dumps({
+        'index': index,
+        'service_ids': service_id_list,
+        'dimension': dimension
+    })
+    
+    # Сохраняем индекс в отдельную запись с фиктивным service_id (используем первый)
+    if services.exists():
+        first_service = services.first()
+        index_embedding = ServiceEmbedding(
+            service_id=first_service.id,
+            embedding=index_data
+        )
+        index_embedding.save()
     
     # Кэшируем в памяти
-    _vectorizer = vectorizer
-    _tfidf_matrix = tfidf_matrix
+    _model = model
+    _index = index
     _service_ids = service_id_list
+    _embeddings_map = {sid: embeddings[i] for i, sid in enumerate(service_id_list)}
     
-    return vectorizer, service_id_list, tfidf_matrix
+    return index, service_id_list, embeddings
 
 
 def load_vector_index():
     """
-    Загружает TF-IDF индекс из базы данных.
-    Возвращает векторизатор, матрицу и список ID услуг.
+    Загружает FAISS индекс из базы данных.
+    Возвращает индекс, список ID услуг и маппинг эмбеддингов.
     """
-    global _vectorizer, _tfidf_matrix, _service_ids
+    global _model, _index, _service_ids, _embeddings_map
     
-    if _vectorizer is not None and _tfidf_matrix is not None:
-        return _vectorizer, _service_ids, _tfidf_matrix
+    if _index is not None and _service_ids is not None:
+        return _index, _service_ids, _embeddings_map
     
     # Получаем сохраненные данные
     embeddings_qs = ServiceEmbedding.objects.all()
@@ -115,54 +153,62 @@ def load_vector_index():
     if not embeddings_qs.exists():
         return None, [], None
     
-    # Берем первую запись с комбинированными данными
-    first_embedding = embeddings_qs.first()
+    # Ищем запись с индексом (содержит ключ 'index')
+    index_record = None
+    service_records = []
     
-    try:
-        data = pickle.loads(first_embedding.embedding)
-        
-        if isinstance(data, dict) and 'vectorizer' in data:
-            _vectorizer = data['vectorizer']
-            _tfidf_matrix = data['tfidf_matrix']
-            _service_ids = data['service_ids']
-        else:
-            # Старый формат - только вектор
-            return None, [], None
-            
-    except Exception as e:
-        print(f"Ошибка загрузки индекса: {e}")
+    for emb in embeddings_qs:
+        try:
+            data = pickle.loads(emb.embedding)
+            if isinstance(data, dict) and 'index' in data:
+                index_record = data
+            elif isinstance(data, dict) and 'embedding' in data and 'index_position' in data:
+                service_records.append(data)
+        except Exception:
+            continue
+    
+    if index_record is None:
         return None, [], None
     
-    return _vectorizer, _service_ids, _tfidf_matrix
+    # Восстанавливаем индекс
+    _index = index_record['index']
+    _service_ids = index_record['service_ids']
+    
+    # Строим маппинг эмбеддингов
+    _embeddings_map = {}
+    for record in service_records:
+        _embeddings_map[record['service_id']] = record['embedding']
+    
+    # Загружаем модель
+    _model = get_model()
+    
+    return _index, _service_ids, _embeddings_map
 
 
 def search_similar(query, top_k=10):
     """
-    Выполняет семантический поиск по запросу.
+    Выполняет семантический поиск по запросу используя FAISS.
     Возвращает список ID услуг, отсортированных по релевантности.
     """
-    vectorizer, service_ids, tfidf_matrix = load_vector_index()
+    index, service_ids, embeddings_map = load_vector_index()
     
-    if vectorizer is None or tfidf_matrix is None or not service_ids:
+    if index is None or not service_ids:
         return []
     
-    # Векторизуем запрос
-    try:
-        query_vector = vectorizer.transform([query])
-    except Exception:
-        return []
+    model = get_model()
     
-    # Вычисляем косинусное сходство
-    similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()
+    # Генерируем эмбеддинг запроса
+    query_embedding = model.encode([query], convert_to_numpy=True)
+    faiss.normalize_L2(query_embedding)
     
-    # Получаем топ-k наиболее похожих
-    k = min(top_k, len(similarities))
-    top_indices = np.argsort(similarities)[::-1][:k]
+    # Ищем ближайшие соседи в FAISS
+    k = min(top_k, len(service_ids))
+    distances, indices = index.search(query_embedding.astype('float32'), k)
     
-    # Фильтруем только те, у которых similarity > 0
+    # Преобразуем результаты в список ID
     result_ids = []
-    for idx in top_indices:
-        if similarities[idx] > 0:
+    for i, idx in enumerate(indices[0]):
+        if idx < len(service_ids) and distances[0][i] > 0:  # Только положительные similarity
             result_ids.append(service_ids[idx])
     
     return result_ids
@@ -170,7 +216,8 @@ def search_similar(query, top_k=10):
 
 def invalidate_cache():
     """Очищает кэш индекса для принудительной перезагрузки"""
-    global _vectorizer, _tfidf_matrix, _service_ids
-    _vectorizer = None
-    _tfidf_matrix = None
+    global _model, _index, _service_ids, _embeddings_map
+    _model = None
+    _index = None
     _service_ids = None
+    _embeddings_map = None

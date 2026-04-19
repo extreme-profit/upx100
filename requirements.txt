@@ -16,8 +16,9 @@ celery==5.3.6
 # Image processing
 Pillow==10.3.0
 
-# FAISS for vector search (optional, requires compilation)
-# faiss-cpu==1.8.0  # Uncomment if needed
+# FAISS for vector search
+faiss-cpu==1.8.0
+sentence-transformers==2.7.0
 
 # Environment variables management
 python-decouple==3.8
