@@ -54,7 +54,7 @@
                     <p><strong>Цена:</strong> {{ service.price }} ₽</p>
                     <p><strong>Категория:</strong> {{ service.category.name }}</p>
                     {% if service.company %}
-                        <p><strong>Компания:</strong> {{ service.company.name }}</p>
+                        <p><strong>Компания:</strong> <a href="{% url 'business:company_public_profile' service.company.id %}">{{ service.company.name }}</a></p>
                         <p><strong>Адрес:</strong> {{ service.company.address }}</p>
                     {% endif %}
                     <a href="{% url 'client:service_detail' service.pk %}" class="btn btn--primary">Записаться</a>
@@ -90,19 +90,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // Добавление маркеров
             locations.forEach(loc => {
                 const placemark = new ymaps.Placemark([loc.lat, loc.lng], {
-                    balloonContentHeader: loc.name,
+                    balloonContentHeader: `<a href="/company/${loc.id}/">${loc.name}</a>`,
                     balloonContentBody: `<strong>${loc.address}</strong>`,
                     hintContent: loc.name
                 }, {
                     preset: 'islands#blueDotIcon'
                 });
                 
-                // Обработчик клика на метку - переход на страницу компании
+                // Обработчик клика на метку - открываем балун
                 placemark.events.add('click', function(e) {
-                    if (loc.url && loc.url !== '#') {
-                        // Открываем ссылку при клике на балун или саму метку
-                        window.location.href = loc.url;
-                    }
+                    this.balloon.open();
                 });
                 
                 map.geoObjects.add(placemark);

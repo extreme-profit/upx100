@@ -19,6 +19,20 @@ def subcategories_api_view(request):
     return JsonResponse([], safe=False)
 
 
+def company_public_profile_view(request, company_id):
+    """Публичный профиль компании (для клиентов)"""
+    company = get_object_or_404(Company, pk=company_id, is_verified=True)
+    services = company.services.filter(status='active').select_related('category', 'subcategory')
+    employees = company.employees.filter(is_active=True)
+    
+    context = {
+        'company': company,
+        'services': services,
+        'employees': employees,
+    }
+    return render(request, 'business/company_public_profile.html', context)
+
+
 @login_required
 def company_profile_view(request):
     """Просмотр профиля компании (для предпринимателя и сотрудника)"""

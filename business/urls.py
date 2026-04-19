@@ -7,7 +7,10 @@ urlpatterns = [
     # API для подкатегорий
     path('api/subcategories/', views.subcategories_api_view, name='subcategories_api'),
     
-    # Профиль компании
+    # Публичный профиль компании (для клиентов)
+    path('company/<int:company_id>/', views.company_public_profile_view, name='company_public_profile'),
+    
+    # Профиль компании (для предпринимателя и сотрудника)
     path('profile/', views.company_profile_view, name='company_profile'),
     path('profile/edit/', views.company_edit_view, name='company_edit'),
     
