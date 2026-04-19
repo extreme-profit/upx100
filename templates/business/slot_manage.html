@@ -47,11 +47,8 @@
                     <label for="employeeFilter" class="form-label fw-bold">Выберите сотрудника</label>
                     <select id="employeeFilter" class="form-select form-select-lg">
                         {% if employees %}
-                            <option value="{{ employees.first.pk }}">{{ employees.first.name }}</option>
                             {% for employee in employees %}
-                                {% if not forloop.first %}
-                                    <option value="{{ employee.pk }}">{{ employee.name }}</option>
-                                {% endif %}
+                                <option value="{{ employee.pk }}">{{ employee.name }}</option>
                             {% endfor %}
                         {% else %}
                             <option value="">Нет сотрудников</option>
