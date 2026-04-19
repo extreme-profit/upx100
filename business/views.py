@@ -410,8 +410,10 @@ def slot_get_grid_view(request, service_id):
         date__in=week_dates
     )
     
-    if employee_id:
+    # Если передан employee_id, фильтруем по нему
+    if employee_id and employee_id != '':
         slots_qs = slots_qs.filter(employee_id=employee_id)
+    # Если сотрудник не выбран (пустая строка), показываем все слоты услуги
     
     # Строим сетку: ключ - "weekday_hour", значение - статус
     grid = {}

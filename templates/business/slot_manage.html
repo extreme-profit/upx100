@@ -46,12 +46,11 @@
                 <div class="col-md-4">
                     <label for="employeeFilter" class="form-label fw-bold">Выберите сотрудника</label>
                     <select id="employeeFilter" class="form-select form-select-lg">
+                        <option value="">Все сотрудники / Без сотрудника</option>
                         {% if employees %}
                             {% for employee in employees %}
                                 <option value="{{ employee.pk }}">{{ employee.name }}</option>
                             {% endfor %}
-                        {% else %}
-                            <option value="">Нет сотрудников</option>
                         {% endif %}
                     </select>
                 </div>
@@ -490,12 +489,15 @@ document.addEventListener('DOMContentLoaded', function() {
         applyHideBusyFilter();
     });
     
-    // Первичная загрузка - устанавливаем текущего сотрудника из select
-    const employeeSelect = document.getElementById('employeeFilter');
-    if (employeeSelect && employeeSelect.options.length > 0 && employeeSelect.options[0].value) {
-        currentEmployee = employeeSelect.value;
-    }
+    // Первичная загрузка - НЕ устанавливаем сотрудника автоматически, ждём выбора пользователя
+    currentEmployee = '';  // По умолчанию показываем все слоты или без сотрудника
     loadGrid();
+    
+    // Устанавливаем первый элемент select как выбранный (пустое значение)
+    const employeeFilter = document.getElementById('employeeFilter');
+    if (employeeFilter && employeeFilter.options.length > 0) {
+        employeeFilter.selectedIndex = 0;
+    }
 });
 
 function loadGrid() {
@@ -542,8 +544,8 @@ function renderGrid(grid, weekDates, interval) {
     document.getElementById('weekRange').textContent = 
         `${startDate.getDate().toString().padStart(2, '0')}.${(startDate.getMonth()+1).toString().padStart(2, '0')} - ${endDate.getDate().toString().padStart(2, '0')}.${(endDate.getMonth()+1).toString().padStart(2, '0')}`;
     
-    const tbody = document.getElementById('gridBody');
-    tbody.innerHTML = '';
+    const gridBody = document.getElementById('gridBody');
+    gridBody.innerHTML = '';
     
     // Если интервал не передан, используем duration услуги по умолчанию
     if (!interval) {
@@ -626,8 +628,8 @@ function renderGrid(grid, weekDates, interval) {
     applyHideBusyFilter();
     
     // Показываем или скрываем таблицу в зависимости от наличия строк
-    const tbody = document.getElementById('gridBody');
-    if (tbody.children.length === 0) {
+    const gridBody = document.getElementById('gridBody');
+    if (gridBody.children.length === 0) {
         // Если после фильтрации нет строк, показываем сообщение
         document.getElementById('slotsGrid').style.display = 'none';
         showNoSlotsMessage();
@@ -655,8 +657,8 @@ function showNoSlotsMessage() {
 
 function applyHideBusyFilter() {
     const hideBusy = document.getElementById('hideBusyCheckbox').checked;
-    const tbody = document.getElementById('gridBody');
-    tbody.innerHTML = '';
+    const gridBody = document.getElementById('gridBody');
+    gridBody.innerHTML = '';
     
     if (!window.allGridRows) return;
     
@@ -665,12 +667,12 @@ function applyHideBusyFilter() {
         if (hideBusy) {
             // Показываем только строки, где есть хотя бы один свободный слот или слот с бронью
             if (tr.dataset.hasFreeOrBooking === 'true') {
-                tbody.appendChild(tr);
+                gridBody.appendChild(tr);
                 visibleCount++;
             }
         } else {
             // Показываем все строки
-            tbody.appendChild(tr);
+            gridBody.appendChild(tr);
             visibleCount++;
         }
     });
