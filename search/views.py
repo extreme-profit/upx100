@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q
+from django.conf import settings
 from business.models import Service, Company
 from companies.models import Category, Subcategory
 import json
@@ -52,6 +53,7 @@ def search_view(request):
         'categories': categories,
         'map_data': json.dumps(companies_with_coords),
         'has_map': len(companies_with_coords) > 0,
+        'yandex_maps_api_key': settings.YANDEX_MAPS_API_KEY,
     }
     
     return render(request, 'search/search.html', context)
