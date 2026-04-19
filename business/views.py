@@ -461,6 +461,7 @@ def slot_update_grid_view(request, service_id):
     minute = data.get('minute', 0)  # Получаем минуты (по умолчанию 0)
     action = data.get('action')  # 'toggle', 'set_free', 'set_busy'
     employee_id = data.get('employee')
+    week_offset = data.get('week_offset', 0)  # Смещение недели
     
     # Получаем интервал из сессии
     interval = request.session.get(f'slot_duration_{service_id}', service.duration)
@@ -470,9 +471,9 @@ def slot_update_grid_view(request, service_id):
     if weekday is None or hour is None:
         return JsonResponse({'error': 'Не указаны день или час'}, status=400)
     
-    # Вычисляем дату
+    # Вычисляем дату с учетом смещения недели
     today = timezone.now().date()
-    start_of_week = today - timedelta(days=today.weekday())
+    start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=int(week_offset))
     target_date = start_of_week + timedelta(days=int(weekday))
     
     start_time = time(int(hour), int(minute))

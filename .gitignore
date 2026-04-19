@@ -5,34 +5,27 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Directories
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
 .env
 .env.local
-.env.*
-venv/
-.venv/
-.envs/
+*.env.*
 
-# Logs
-*.log
-
-# Coverage
-.coverage
-coverage/
-htmlcov/
-
-# IDE
+# Editors
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# OS
-.DS_Store
-Thumbs.db
+# Dependencies
+.venv/
+venv/
+node_modules/
 
-# Build
-build/
+# Build artifacts
 dist/
-*.egg-info/
+build/
+target/
 ```
