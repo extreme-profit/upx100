@@ -127,6 +127,27 @@
                             </div>
                         </div>
                         
+                        <!-- Выбор сотрудников -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ form.employees.label }}</label>
+                            <div class="row">
+                                {% for employee in form.employees.field.queryset %}
+                                    <div class="col-md-3 mb-2">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" name="{{ form.employees.name }}" id="id_{{ form.employees.name }}_{{ forloop.counter0 }}" value="{{ employee.pk }}">
+                                            <label class="form-check-label" for="id_{{ form.employees.name }}_{{ forloop.counter0 }}">{{ employee.name }}</label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.employees.errors %}
+                                <div class="text-danger small mt-1">{{ form.employees.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-2">
+                                <i class="fas fa-info-circle me-1"></i>{{ form.employees.help_text }}
+                            </small>
+                        </div>
+                        
                         <div class="d-flex gap-2 mt-4">
                             <button type="submit" class="btn btn-primary btn-lg px-4">
                                 <i class="fas fa-plus me-2"></i>Создать слоты
