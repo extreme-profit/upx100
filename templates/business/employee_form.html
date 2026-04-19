@@ -16,12 +16,21 @@
                         {% csrf_token %}
                         
                         <div class="row g-4">
-                            <!-- ФИО -->
+                            <!-- Имя -->
                             <div class="col-md-6">
-                                <label for="id_name" class="form-label fw-bold"><i class="fas fa-user me-1 text-primary"></i>{{ form.name.label }}</label>
-                                {{ form.name }}
-                                {% if form.name.errors %}
-                                    <div class="text-danger mt-1">{{ form.name.errors }}</div>
+                                <label for="id_first_name" class="form-label fw-bold"><i class="fas fa-user me-1 text-primary"></i>{{ form.first_name.label }}</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger mt-1">{{ form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Фамилия -->
+                            <div class="col-md-6">
+                                <label for="id_last_name" class="form-label fw-bold"><i class="fas fa-user me-1 text-primary"></i>{{ form.last_name.label }}</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger mt-1">{{ form.last_name.errors }}</div>
                                 {% endif %}
                             </div>
 
