@@ -533,15 +533,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // Применение графика
     document.getElementById('applyScheduleBtn').addEventListener('click', applySchedule);
     
-    // Навигация по неделям
-    document.getElementById('prevWeekBtn').addEventListener('click', () => {
-        currentWeekOffset--;
-        loadGrid();
+    // Навигация по неделям (максимум ±3 недели от текущей)
+    const prevWeekBtn = document.getElementById('prevWeekBtn');
+    const nextWeekBtn = document.getElementById('nextWeekBtn');
+    
+    function updateNavButtons() {
+        prevWeekBtn.disabled = currentWeekOffset <= -3;
+        nextWeekBtn.disabled = currentWeekOffset >= 3;
+        if (prevWeekBtn.disabled) {
+            prevWeekBtn.classList.add('disabled', 'opacity-50');
+        } else {
+            prevWeekBtn.classList.remove('disabled', 'opacity-50');
+        }
+        if (nextWeekBtn.disabled) {
+            nextWeekBtn.classList.add('disabled', 'opacity-50');
+        } else {
+            nextWeekBtn.classList.remove('disabled', 'opacity-50');
+        }
+    }
+    
+    prevWeekBtn.addEventListener('click', () => {
+        if (currentWeekOffset > -3) {
+            currentWeekOffset--;
+            loadGrid();
+        }
     });
     
-    document.getElementById('nextWeekBtn').addEventListener('click', () => {
-        currentWeekOffset++;
-        loadGrid();
+    nextWeekBtn.addEventListener('click', () => {
+        if (currentWeekOffset < 3) {
+            currentWeekOffset++;
+            loadGrid();
+        }
     });
     
     // Обработчик чекбокса "Скрыть недоступные часы"
@@ -558,6 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentEmployee = '';
     }
     loadGrid();
+    updateNavButtons();
 });
 function loadGrid() {
     document.getElementById('gridLoading').style.display = 'block';
@@ -577,6 +600,7 @@ function loadGrid() {
             }
             
             renderGrid(data.grid, data.week_dates, data.interval);
+            updateNavButtons();
         })
         .catch(error => {
             console.error('Error:', error);
@@ -758,6 +782,7 @@ function toggleSlot(day, hour, minute = 0) {
             weekday: day,
             hour: hour,
             minute: minute,
+            week_offset: currentWeekOffset,
             action: 'toggle',
             employee: currentEmployee || null
         }),
