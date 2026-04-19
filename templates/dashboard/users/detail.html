@@ -70,7 +70,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Компания</h3>
-            {% if user_obj.role == 'entrepreneur' and not user_obj.is_verified %}
+            {% if user_obj.role == 'entrepreneur' and company and not company.is_verified %}
             <form method="post" action="{% url 'dashboard:user_verify' user_obj.pk %}" style="display: inline;">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-success btn-sm">✓ Подтвердить</button>
@@ -78,28 +78,28 @@
             {% endif %}
         </div>
         <div class="card-body">
-            {% if user_obj.company %}
+            {% if company %}
             <div style="text-align: center; padding: 20px 0;">
-                {% if user_obj.company.logo %}
-                <img src="{{ user_obj.company.logo.url }}" alt="{{ user_obj.company.name }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; margin-bottom: 16px;">
+                {% if company.logo %}
+                <img src="{{ company.logo.url }}" alt="{{ company.name }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; margin-bottom: 16px;">
                 {% endif %}
-                <h4 style="margin-bottom: 8px;">{{ user_obj.company.name }}</h4>
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">{{ user_obj.company.address }}</p>
+                <h4 style="margin-bottom: 8px;">{{ company.name }}</h4>
+                <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">{{ company.address }}</p>
                 
                 <!-- Статус верификации между описанием и картой -->
                 <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 20px;">
-                    <span class="badge {% if user_obj.is_verified %}badge-success{% else %}badge-warning{% endif %}">
-                        {% if user_obj.is_verified %}✓ Проверена{% else %}⏳ Не проверена{% endif %}
+                    <span class="badge {% if company.is_verified %}badge-success{% else %}badge-warning{% endif %}">
+                        {% if company.is_verified %}✓ Проверена{% else %}⏳ Не проверена{% endif %}
                     </span>
                 </div>
                 
                 <!-- Карта с расположением компании -->
-                {% if user_obj.company.latitude and user_obj.company.longitude %}
+                {% if company.latitude and company.longitude %}
                 <div style="margin-top: 16px;">
                     <h5 style="margin-bottom: 12px; text-align: left;">📍 Расположение на карте</h5>
                     <div id="map" style="height: 300px; width: 100%; border-radius: 8px; border: 1px solid #dee2e6;"></div>
                     <p style="font-size: 13px; color: #64748b; margin-top: 8px; text-align: left;">
-                        Координаты: {{ user_obj.company.latitude }}, {{ user_obj.company.longitude }}
+                        Координаты: {{ company.latitude }}, {{ company.longitude }}
                     </p>
                 </div>
                 {% endif %}
@@ -116,14 +116,14 @@
 </div>
 
 <!-- Подключаем Yandex Maps API для карты на странице админа -->
-{% if user_obj.company and user_obj.company.latitude and user_obj.company.longitude %}
+{% if company and company.latitude and company.longitude %}
 <script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_api_key }}&lang=ru_RU" type="text/javascript"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     ymaps.ready(function() {
         // Преобразуем координаты в числа, заменяя запятую на точку если нужно
-        var lat = parseFloat("{{ user_obj.company.latitude|escapejs }}".replace(',', '.'));
-        var lng = parseFloat("{{ user_obj.company.longitude|escapejs }}".replace(',', '.'));
+        var lat = parseFloat("{{ company.latitude|escapejs }}".replace(',', '.'));
+        var lng = parseFloat("{{ company.longitude|escapejs }}".replace(',', '.'));
         
         var map = new ymaps.Map("map", {
             center: [lat, lng],
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         var marker = new ymaps.Placemark([lat, lng], {
-            balloonContent: '{{ user_obj.company.name|escapejs }}'
+            balloonContent: '{{ company.name|escapejs }}'
         }, {
             preset: 'islands#blueCircleDotIcon'
         });

@@ -4,9 +4,10 @@ from .models import Company, Employee, ServiceCategory, Service, ServiceTimeSlot
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ['name', 'owner', 'address', 'created_at']
+    list_display = ['name', 'owner', 'address', 'is_verified', 'created_at']
     search_fields = ['name', 'owner__username', 'address']
     readonly_fields = ['created_at', 'updated_at']
+    list_filter = ['is_verified']
 
 
 @admin.register(Employee)
