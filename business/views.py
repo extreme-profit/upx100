@@ -24,11 +24,17 @@ def company_public_profile_view(request, company_id):
     company = get_object_or_404(Company, pk=company_id, is_verified=True)
     services = company.services.filter(status='active').select_related('category', 'subcategory')
     employees = company.employees.filter(is_active=True)
-    
+
+    # Преобразуем координаты в float для корректной передачи в JS
+    latitude = float(company.latitude) if company.latitude else None
+    longitude = float(company.longitude) if company.longitude else None
+
     context = {
         'company': company,
         'services': services,
         'employees': employees,
+        'latitude': latitude,
+        'longitude': longitude,
     }
     return render(request, 'business/company_public_profile.html', context)
 
