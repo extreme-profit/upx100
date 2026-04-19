@@ -37,11 +37,13 @@ class SearchQuery(models.Model):
 class ServiceEmbedding(models.Model):
     """Векторные эмбеддинги услуг для семантического поиска"""
     
-    service = models.OneToOneField(
+    service = models.ForeignKey(
         'business.Service',
         on_delete=models.CASCADE,
-        related_name='embedding',
-        verbose_name='Услуга'
+        related_name='embeddings',
+        verbose_name='Услуга',
+        null=True,
+        blank=True
     )
     embedding = models.BinaryField(
         verbose_name='Векторное представление'
@@ -56,7 +58,9 @@ class ServiceEmbedding(models.Model):
         verbose_name_plural = 'Векторы услуг'
     
     def __str__(self):
-        return f"Embedding for {self.service.name}"
+        if self.service:
+            return f"Embedding for {self.service.name}"
+        return f"Index storage (ID: {self.id})"
 
 
 class StaticPage(models.Model):

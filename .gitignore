@@ -5,9 +5,12 @@ __pycache__/
 *.pyo
 *.pyd
 *.py~
+*.py.class
 
-# Database
-db.sqlite3
+# Databases
+*.sqlite3
+*.db
+*.db-journal
 
 # Dependencies
 venv/
@@ -16,13 +19,13 @@ venv/
 .env.local
 *.env.*
 
-# Build artifacts
-dist/
-build/
-*.egg-info/
-
 # Logs
 *.log
+
+# Temporary files
+*.tmp
+*.temp
+*~
 
 # Coverage
 .coverage
@@ -35,7 +38,8 @@ htmlcov/
 *.swp
 *.swo
 
-# OS
-.DS_Store
-Thumbs.db
+# Build
+build/
+dist/
+*.egg-info/
 ```
