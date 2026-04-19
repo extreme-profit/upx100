@@ -4,6 +4,7 @@ from django.conf import settings
 from business.models import Service, Company
 from companies.models import Category, Subcategory
 import json
+from .vector_search import search_similar
 
 
 def search_view(request):
@@ -18,12 +19,42 @@ def search_view(request):
     )
     categories = Category.objects.all()
     
-    # Поиск по запросу
+    # Поиск по запросу с использованием векторного поиска
     if query:
-        services = services.filter(
-            Q(name__icontains=query) |
-            Q(description__icontains=query)
-        )
+        # Сначала пытаемся найти семантически похожие услуги
+        similar_service_ids = search_similar(query, top_k=20)
+        
+        if similar_service_ids:
+            # Получаем услуги найденные через векторный поиск
+            vector_services = Service.objects.filter(
+                id__in=similar_service_ids,
+                status='active',
+                company__is_verified=True
+            )
+            
+            # Также выполняем традиционный поиск по ключевым словам
+            keyword_services = services.filter(
+                Q(name__icontains=query) |
+                Q(description__icontains=query)
+            )
+            
+            # Объединяем результаты (векторный поиск в приоритете)
+            all_service_ids = list(vector_services.values_list('id', flat=True))
+            for service in keyword_services:
+                if service.id not in all_service_ids:
+                    all_service_ids.append(service.id)
+            
+            services = Service.objects.filter(
+                id__in=all_service_ids,
+                status='active',
+                company__is_verified=True
+            )
+        else:
+            # Если векторный поиск не дал результатов, используем традиционный
+            services = services.filter(
+                Q(name__icontains=query) |
+                Q(description__icontains=query)
+            )
     
     # Фильтр по категории
     if category_slug:
