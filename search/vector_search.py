@@ -126,14 +126,11 @@ def build_vector_index():
         'dimension': dimension
     })
     
-    # Сохраняем индекс в отдельную запись с фиктивным service_id (используем первый)
-    # Но НЕ используем OneToOne связь для этой записи, а создаем специальную запись
-    # Для этого временно отключаем проверку уникальности или используем update_or_create
-    index_embedding, created = ServiceEmbedding.objects.update_or_create(
-        service_id=-1,  # Специальный ID для хранения индекса
-        defaults={
-            'embedding': index_data
-        }
+    # Сохраняем индекс в отдельную запись БЕЗ привязки к услуге (service=None)
+    # Поле service nullable, поэтому можем сохранить None
+    index_embedding = ServiceEmbedding.objects.create(
+        service=None,  # Нет привязки к конкретной услуге
+        embedding=index_data
     )
     
     # Кэшируем в памяти
