@@ -12,7 +12,7 @@ def companies_list_view(request):
     subcategory_slug = request.GET.get('subcategory')
     
     # Показываем только проверенные компании
-    companies = Company.objects.filter(owner__is_verified=True)
+    companies = Company.objects.filter(is_verified=True)
     categories = Category.objects.all()
     
     if category_slug:
@@ -39,7 +39,7 @@ def companies_list_view(request):
 def company_detail_view(request, company_id):
     """Страница компании с услугами для клиентов"""
     # Проверяем что компания проверена
-    company = get_object_or_404(Company, pk=company_id, owner__is_verified=True)
+    company = get_object_or_404(Company, pk=company_id, is_verified=True)
     # Показываем только активные услуги
     services = company.services.filter(status='active').prefetch_related('employees', 'category', 'subcategory')
     
@@ -53,7 +53,7 @@ def company_detail_view(request, company_id):
 def service_detail_view(request, service_id):
     """Страница услуги с возможностью записи"""
     # Проверяем что услуга активна и компания проверена
-    service = get_object_or_404(Service, pk=service_id, status='active', company__owner__is_verified=True)
+    service = get_object_or_404(Service, pk=service_id, status='active', company__is_verified=True)
     
     # Получаем всех сотрудников услуги
     employees = service.employees.filter(is_active=True).prefetch_related('user')
@@ -115,7 +115,7 @@ def service_detail_view(request, service_id):
 def booking_create_view(request, service_id):
     """Создание бронирования"""
     # Проверяем что услуга активна и компания проверена
-    service = get_object_or_404(Service, pk=service_id, status='active', company__owner__is_verified=True)
+    service = get_object_or_404(Service, pk=service_id, status='active', company__is_verified=True)
     
     if request.method == 'POST':
         slot_id = request.POST.get('slot_id')
