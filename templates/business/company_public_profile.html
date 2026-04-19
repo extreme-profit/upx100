@@ -34,7 +34,7 @@
                             <p class="card-text text-muted">{{ service.description|truncatewords:15 }}</p>
                             <p class="card-text"><strong>Цена:</strong> {{ service.price }} ₽</p>
                             <p class="card-text"><small class="text-muted">Категория: {{ service.category.name }}</small></p>
-                            <a href="{% url 'client:service_detail' pk=service.pk %}" class="btn btn-primary">Записаться</a>
+                            <a href="{% url 'client:service_detail' service_id=service.pk %}" class="btn btn-primary">Записаться</a>
                         </div>
                     </div>
                 </div>
