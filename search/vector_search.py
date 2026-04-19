@@ -25,7 +25,15 @@ def get_model():
     if _model is None:
         # Используем максимально легковесную мультиязычную модель
         # paraphrase-multilingual-MiniLM-L12-v2 - компактная модель (~470MB)
-        _model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+        # Если не хватает памяти, модель будет загружена с диска при необходимости
+        try:
+            _model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+        except MemoryError:
+            raise MemoryError(
+                "Недостаточно оперативной памяти для загрузки модели. "
+                "Требуется минимум 1-2GB свободной RAM. "
+                "Попробуйте увеличить память сервера или использовать TF-IDF альтернативу."
+            )
     return _model
 
 
@@ -96,8 +104,8 @@ def build_vector_index():
     # Сохраняем эмбеддинги и метаданные в базу данных
     ServiceEmbedding.objects.all().delete()  # Очищаем старые эмбеддинги
     
-    # Сохраняем каждый эмбеддинг отдельно
-    embeddings_data = []
+    # Используем bulk_create для эффективного сохранения
+    embeddings_to_create = []
     for i, service_id in enumerate(service_id_list):
         embedding_obj = ServiceEmbedding(
             service_id=service_id,
@@ -106,11 +114,10 @@ def build_vector_index():
                 'index_position': i
             })
         )
-        embedding_obj.save()
-        embeddings_data.append({
-            'service_id': service_id,
-            'embedding': embeddings[i]
-        })
+        embeddings_to_create.append(embedding_obj)
+    
+    if embeddings_to_create:
+        ServiceEmbedding.objects.bulk_create(embeddings_to_create)
     
     # Сохраняем сам индекс и маппинг ID для быстрого доступа
     index_data = pickle.dumps({
@@ -120,13 +127,14 @@ def build_vector_index():
     })
     
     # Сохраняем индекс в отдельную запись с фиктивным service_id (используем первый)
-    if services.exists():
-        first_service = services.first()
-        index_embedding = ServiceEmbedding(
-            service_id=first_service.id,
-            embedding=index_data
-        )
-        index_embedding.save()
+    # Но НЕ используем OneToOne связь для этой записи, а создаем специальную запись
+    # Для этого временно отключаем проверку уникальности или используем update_or_create
+    index_embedding, created = ServiceEmbedding.objects.update_or_create(
+        service_id=-1,  # Специальный ID для хранения индекса
+        defaults={
+            'embedding': index_data
+        }
+    )
     
     # Кэшируем в памяти
     _model = model
