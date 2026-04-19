@@ -90,16 +90,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Добавление маркеров
             locations.forEach(loc => {
                 const placemark = new ymaps.Placemark([loc.lat, loc.lng], {
-                    balloonContentHeader: `<a href="/company/${loc.id}/">${loc.name}</a>`,
-                    balloonContentBody: `<strong>${loc.address}</strong>`,
+                    balloonContentHeader: `<a href="/company/${loc.id}/" style="text-decoration: none; color: #007bff; font-weight: bold;">${loc.name}</a>`,
+                    balloonContentBody: `<div style="margin-top: 10px;"><strong>${loc.address}</strong></div><div style="margin-top: 10px;"><a href="/company/${loc.id}/" class="btn btn-sm btn-primary">Подробнее</a></div>`,
                     hintContent: loc.name
                 }, {
                     preset: 'islands#blueDotIcon'
-                });
-                
-                // Обработчик клика на метку - открываем балун
-                placemark.events.add('click', function(e) {
-                    this.balloon.open();
                 });
                 
                 map.geoObjects.add(placemark);

@@ -70,15 +70,15 @@
     </div>
 
     <!-- Карта -->
-    {% if company.latitude and company.longitude %}
+    {% if company.latitude and company.longitude and company.latitude != 0 and company.longitude != 0 %}
     <div class="mb-4">
-        <h2>Наше местоположение</h2>
-        <div id="map" style="height: 400px; width: 100%;"></div>
+        <h2 class="mb-3">Наше местоположение</h2>
+        <div id="map" style="height: 450px; width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
     </div>
     {% endif %}
 </div>
 
-{% if company.latitude and company.longitude %}
+{% if company.latitude and company.longitude and company.latitude != 0 and company.longitude != 0 %}
 <script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_api_key }}&lang=ru_RU"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -88,12 +88,13 @@
             var myMap = new ymaps.Map("map", {
                 center: [{{ company.latitude }}, {{ company.longitude }}],
                 zoom: 16,
-                controls: ['zoomControl']
+                controls: ['zoomControl', 'fullscreenControl']
             });
 
             var myPlacemark = new ymaps.Placemark([{{ company.latitude }}, {{ company.longitude }}], {
                 hintContent: '{{ company.name }}',
-                balloonContent: '<strong>{{ company.name }}</strong><br>{{ company.address }}'
+                balloonContentHeader: '<strong>{{ company.name }}</strong>',
+                balloonContentBody: '{{ company.address }}'
             }, {
                 preset: 'islands#blueCircleDotIcon'
             });

@@ -1,1 +1,1 @@
-Nothing should be ignored based on the provided file changes, as they only include HTML template files which are source code files.
+Nothing should be ignored since the changes only include HTML template files, which are source files.
