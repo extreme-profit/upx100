@@ -46,12 +46,16 @@
                 <div class="col-md-4">
                     <label for="employeeFilter" class="form-label fw-bold">Выберите сотрудника</label>
                     <select id="employeeFilter" class="form-select form-select-lg">
-                        <option value="{{ employees.first.pk }}">{{ employees.first.name }}</option>
-                        {% for employee in employees %}
-                            {% if not forloop.first %}
-                                <option value="{{ employee.pk }}">{{ employee.name }}</option>
-                            {% endif %}
-                        {% endfor %}
+                        {% if employees %}
+                            <option value="{{ employees.first.pk }}">{{ employees.first.name }}</option>
+                            {% for employee in employees %}
+                                {% if not forloop.first %}
+                                    <option value="{{ employee.pk }}">{{ employee.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <option value="">Нет сотрудников</option>
+                        {% endif %}
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -484,7 +488,16 @@ document.addEventListener('DOMContentLoaded', function() {
         loadGrid();
     });
     
-    // Первичная загрузка
+    // Обработчик чекбокса "Скрыть недоступные часы"
+    document.getElementById('hideBusyCheckbox').addEventListener('change', function() {
+        applyHideBusyFilter();
+    });
+    
+    // Первичная загрузка - устанавливаем текущего сотрудника из select
+    const employeeSelect = document.getElementById('employeeFilter');
+    if (employeeSelect && employeeSelect.options.length > 0 && employeeSelect.options[0].value) {
+        currentEmployee = employeeSelect.value;
+    }
     loadGrid();
 });
 
@@ -615,7 +628,32 @@ function renderGrid(grid, weekDates, interval) {
     // Применяем фильтр и добавляем строки в таблицу
     applyHideBusyFilter();
     
-    document.getElementById('slotsGrid').style.display = 'table';
+    // Показываем или скрываем таблицу в зависимости от наличия строк
+    const tbody = document.getElementById('gridBody');
+    if (tbody.children.length === 0) {
+        // Если после фильтрации нет строк, показываем сообщение
+        document.getElementById('slotsGrid').style.display = 'none';
+        showNoSlotsMessage();
+    } else {
+        document.getElementById('noSlotsMessage')?.remove();
+        document.getElementById('slotsGrid').style.display = 'table';
+    }
+}
+
+function showNoSlotsMessage() {
+    // Удаляем существующее сообщение если есть
+    const existingMsg = document.getElementById('noSlotsMessage');
+    if (existingMsg) existingMsg.remove();
+    
+    // Создаём сообщение
+    const noSlotsDiv = document.createElement('div');
+    noSlotsDiv.id = 'noSlotsMessage';
+    noSlotsDiv.className = 'alert alert-warning m-4 text-center';
+    noSlotsDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>На этой неделе нет доступных слотов для отображения. Выберите другую неделю или измените параметры фильтрации.';
+    
+    // Вставляем после таблицы
+    const tableContainer = document.getElementById('slotsGrid').parentElement;
+    tableContainer.appendChild(noSlotsDiv);
 }
 
 function applyHideBusyFilter() {
@@ -625,23 +663,30 @@ function applyHideBusyFilter() {
     
     if (!window.allGridRows) return;
     
+    let visibleCount = 0;
     window.allGridRows.forEach(tr => {
         if (hideBusy) {
             // Показываем только строки, где есть хотя бы один свободный слот или слот с бронью
             if (tr.dataset.hasFreeOrBooking === 'true') {
                 tbody.appendChild(tr);
+                visibleCount++;
             }
         } else {
             // Показываем все строки
             tbody.appendChild(tr);
+            visibleCount++;
         }
     });
+    
+    // Показываем или скрываем таблицу в зависимости от наличия строк
+    if (visibleCount === 0) {
+        document.getElementById('slotsGrid').style.display = 'none';
+        showNoSlotsMessage();
+    } else {
+        document.getElementById('noSlotsMessage')?.remove();
+        document.getElementById('slotsGrid').style.display = 'table';
+    }
 }
-
-// Обработчик чекбокса "Скрыть недоступные часы"
-document.getElementById('hideBusyCheckbox').addEventListener('change', function() {
-    applyHideBusyFilter();
-});
 
 function toggleSlot(day, hour, minute = 0) {
     const url = `{% url 'business:slot_update_grid' service.pk %}`;

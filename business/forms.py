@@ -72,6 +72,14 @@ class ServiceTimeSlotGenerateForm(forms.Form):
         initial='18:00',
     )
     
+    employees = forms.ModelMultipleChoiceField(
+        queryset=Employee.objects.none(),
+        label='Сотрудники',
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        help_text='Выберите сотрудников для создания слотов. Если не выбрано ни одного, слоты будут созданы для всех сотрудников услуги.'
+    )
+    
     def __init__(self, *args, **kwargs):
         self.service = kwargs.pop('service', None)
         super().__init__(*args, **kwargs)
@@ -87,6 +95,9 @@ class ServiceTimeSlotGenerateForm(forms.Form):
             session_duration = kwargs.get('initial', {}).get('duration')
             if session_duration:
                 self.fields['duration'].initial = session_duration
+            
+            # Устанавливаем queryset для сотрудников - только привязанных к услуге
+            self.fields['employees'].queryset = self.service.employees.filter(is_active=True)
     
     def clean(self):
         cleaned_data = super().clean()

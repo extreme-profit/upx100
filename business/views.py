@@ -240,7 +240,20 @@ def service_edit_view(request, pk):
             # Сохраняем сотрудников
             employees = form.cleaned_data.get('employees')
             if employees is not None:
+                # Получаем текущих сотрудников до обновления
+                current_employees = set(service.employees.all())
+                new_employees = set(employees)
+                
+                # Находим сотрудников, которых убрали из услуги
+                removed_employees = current_employees - new_employees
+                
+                # Обновляем список сотрудников
                 service.employees.set(employees)
+                
+                # Удаляем все слоты для сотрудников, которых убрали из услуги
+                for employee in removed_employees:
+                    service.time_slots.filter(employee=employee).delete()
+                    
             messages.success(request, 'Услуга обновлена!')
             return redirect('business:service_list')
     else:
@@ -693,6 +706,13 @@ def slot_generate_view(request, service_id):
             end_time = form.cleaned_data['end_time']
             duration = form.cleaned_data['duration']
             weekdays = form.cleaned_data.get('weekdays', [])
+            selected_employees = form.cleaned_data.get('employees')
+            
+            # Если сотрудники не выбраны, используем всех сотрудников услуги
+            if not selected_employees:
+                employees_to_use = employees
+            else:
+                employees_to_use = selected_employees
             
             # Сохраняем длительность и время работы в сессии для использования в slot_manage
             request.session[f'slot_duration_{service_id}'] = duration
@@ -732,8 +752,8 @@ def slot_generate_view(request, service_id):
                         end_min = slot_end_minutes % 60
                         slot_end_time = time(end_hour, end_min)
                         
-                        # Создаем слот для каждого сотрудника
-                        for employee in employees:
+                        # Создаем слот для каждого выбранного сотрудника
+                        for employee in employees_to_use:
                             ServiceTimeSlot.objects.get_or_create(
                                 service=service,
                                 employee=employee,
@@ -751,7 +771,7 @@ def slot_generate_view(request, service_id):
                 
                 current_date += timedelta(days=1)
             
-            messages.success(request, f'Создано {slots_created} временных слотов для {employees.count()} сотрудников')
+            messages.success(request, f'Создано {slots_created} временных слотов для {employees_to_use.count()} сотрудников')
             return redirect('business:slot_manage', service_id=service_id)
     else:
         # Получаем значения из сессии для initial
