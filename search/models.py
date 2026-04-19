@@ -34,6 +34,31 @@ class SearchQuery(models.Model):
         return f"{self.query} ({self.results_count} результатов)"
 
 
+class ServiceEmbedding(models.Model):
+    """Векторные эмбеддинги услуг для семантического поиска"""
+    
+    service = models.OneToOneField(
+        'business.Service',
+        on_delete=models.CASCADE,
+        related_name='embedding',
+        verbose_name='Услуга'
+    )
+    embedding = models.BinaryField(
+        verbose_name='Векторное представление'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Дата обновления'
+    )
+    
+    class Meta:
+        verbose_name = 'Вектор услуги'
+        verbose_name_plural = 'Векторы услуг'
+    
+    def __str__(self):
+        return f"Embedding for {self.service.name}"
+
+
 class StaticPage(models.Model):
     """Статические страницы (О нас, Контакты и т.д.)"""
     
