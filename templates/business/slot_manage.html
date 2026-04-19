@@ -628,7 +628,6 @@ function renderGrid(grid, weekDates, interval) {
     applyHideBusyFilter();
     
     // Показываем или скрываем таблицу в зависимости от наличия строк
-    const gridBody = document.getElementById('gridBody');
     if (gridBody.children.length === 0) {
         // Если после фильтрации нет строк, показываем сообщение
         document.getElementById('slotsGrid').style.display = 'none';
