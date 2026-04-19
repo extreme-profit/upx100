@@ -1,1 +1,37 @@
-Nothing should be ignored since only a source file (`client/views.py`) was modified and there are no build artifacts, dependencies, or temporary files in the changes.
+# Compiled Python files
+*.pyc
+__pycache__/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+*.env.*
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Dependencies
+.venv/
+venv/
+node_modules/
+
+# Build artifacts
+dist/
+build/
+target/
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# Python cache
+.mypy_cache/
+.pytest_cache/
