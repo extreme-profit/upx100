@@ -384,6 +384,23 @@ function closeModal() {
     modal.style.display = 'none';
     document.body.style.overflow = ''; // Возвращаем прокрутку
 }
+// Глобальная функция открытия модального окна
+function openModal() {
+    const modal = document.getElementById('scheduleModal');
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Отключаем прокрутку фона
+    
+    // Сбрасываем все чекбоксы
+    const checkboxes = document.querySelectorAll('.modal-employee-checkbox');
+    checkboxes.forEach(cb => cb.checked = false);
+    
+    // Отмечаем только текущего сотрудника
+    const currentCheckbox = document.querySelector(`.modal-employee-checkbox[value="${currentEmployee}"]`);
+    if (currentCheckbox) {
+        currentCheckbox.checked = true;
+    }
+}
+
 
 document.addEventListener('DOMContentLoaded', function() {
     // Получаем элементы модального окна
@@ -393,22 +410,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelBtn = document.getElementById('cancelModalBtn');
     const overlay = document.getElementById('modalOverlay');
     
-
-        // Отмечаем только текущего сотрудника в чекбоксах
-        setupEmployeeCheckboxes();
-    }
-    
-    // Настройка чекбоксов сотрудников в модальном окне
-    function setupEmployeeCheckboxes() {
-        const checkboxes = document.querySelectorAll('.modal-employee-checkbox');
-        checkboxes.forEach(cb => {
-            if (cb.value === currentEmployee) {
-                cb.checked = true;
-            } else {
-                cb.checked = false;
-            }
-        });
-    }
     
     // Настройка значений времени в select с учетом интервала
     function setupTimeSelects() {
@@ -677,8 +678,8 @@ function showNoSlotsMessage() {
 
 function applyHideBusyFilter() {
     const hideBusy = document.getElementById('hideBusyCheckbox').checked;
-    const gridBody = document.getElementById('gridBody');
-    gridBody.innerHTML = '';
+    const gridBodyLocal = document.getElementById('gridBody');
+    gridBodyLocal.innerHTML = '';
     
     if (!window.allGridRows) return;
     
@@ -687,12 +688,12 @@ function applyHideBusyFilter() {
         if (hideBusy) {
             // Показываем только строки, где есть хотя бы один свободный слот или слот с бронью
             if (tr.dataset.hasFreeOrBooking === 'true') {
-                gridBody.appendChild(tr);
+                gridBodyLocal.appendChild(tr);
                 visibleCount++;
             }
         } else {
             // Показываем все строки
-            gridBody.appendChild(tr);
+            gridBodyLocal.appendChild(tr);
             visibleCount++;
         }
     });
