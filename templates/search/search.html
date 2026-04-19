@@ -90,8 +90,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Добавление маркеров
             locations.forEach(loc => {
                 const placemark = new ymaps.Placemark([loc.lat, loc.lng], {
-                    balloonContentHeader: `<a href="/company/${loc.id}/" style="text-decoration: none; color: #007bff; font-weight: bold;">${loc.name}</a>`,
-                    balloonContentBody: `<div style="margin-top: 10px;"><strong>${loc.address}</strong></div><div style="margin-top: 10px;"><a href="/company/${loc.id}/" class="btn btn-sm btn-primary">Подробнее</a></div>`,
+                    balloonContentHeader: `<a href="/business/company/${loc.id}/" style="text-decoration: none; color: #007bff; font-weight: bold;">${loc.name}</a>`,
+                    balloonContentBody: `<div><strong>${loc.address}</strong></div><div style="margin-top: 8px;"><a href="/business/company/${loc.id}/" class="btn btn-sm btn-primary">Подробнее</a></div>`,
                     hintContent: loc.name
                 }, {
                     preset: 'islands#blueDotIcon'
