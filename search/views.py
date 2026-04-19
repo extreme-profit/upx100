@@ -39,11 +39,12 @@ def search_view(request):
         if company.id not in seen_company_ids and company.latitude and company.longitude:
             seen_company_ids.add(company.id)
             companies_with_coords.append({
+                'id': company.id,
                 'name': company.name,
                 'address': company.address,
                 'lat': float(company.latitude),
                 'lng': float(company.longitude),
-                'url': f"/company/{company.id}/" if hasattr(company, 'id') else "#",
+                'url': f"/company/{company.id}/",
                 'logo': company.logo.url if company.logo else None,
             })
     
@@ -54,6 +55,7 @@ def search_view(request):
         'map_data': json.dumps(companies_with_coords),
         'has_map': len(companies_with_coords) > 0,
         'yandex_maps_api_key': settings.YANDEX_MAPS_API_KEY,
+        'company_url_name': 'business:company_public_profile',
     }
     
     return render(request, 'search/search.html', context)

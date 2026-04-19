@@ -16,7 +16,7 @@
                 {% if service.duration %}
                     <p style="color: #666;">⏱ Длительность: {{ service.duration }} минут</p>
                 {% endif %}
-                <p style="color: #666;">🏢 Компания: {{ service.company.name }}</p>
+                <p style="color: #666;">🏢 Компания: <a href="{% url 'business:company_public_profile' service.company.id %}" style="color: #007bff; text-decoration: none;">{{ service.company.name }}</a></p>
                 {% if service.description %}
                     <p style="color: #555; line-height: 1.6; margin-top: 20px;">{{ service.description }}</p>
                 {% endif %}

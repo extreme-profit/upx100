@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ company.name }} - Профиль компании{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Шапка компании -->
+    <div class="card mb-4">
+        <div class="card-body text-center">
+            {% if company.logo %}
+                <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="img-fluid rounded mb-3" style="max-height: 150px;">
+            {% endif %}
+            <h1 class="card-title">{{ company.name }}</h1>
+            <p class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ company.address }}</p>
+            {% if company.description %}
+                <p class="card-text">{{ company.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Услуги -->
+    <div class="mb-4">
+        <h2>Наши услуги</h2>
+        {% if services %}
+            <div class="row">
+                {% for service in services %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100">
+                        {% if service.image %}
+                            <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}" style="height: 200px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ service.name }}</h5>
+                            <p class="card-text text-muted">{{ service.description|truncatewords:15 }}</p>
+                            <p class="card-text"><strong>Цена:</strong> {{ service.price }} ₽</p>
+                            <p class="card-text"><small class="text-muted">Категория: {{ service.category.name }}</small></p>
+                            <a href="{% url 'client:service_detail' pk=service.pk %}" class="btn btn-primary">Записаться</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted">Услуги пока не добавлены.</p>
+        {% endif %}
+    </div>
+
+    <!-- Сотрудники -->
+    <div class="mb-4">
+        <h2>Наши сотрудники</h2>
+        {% if employees %}
+            <div class="row">
+                {% for employee in employees %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ employee.name }}</h5>
+                            <p class="card-text text-muted">{{ employee.position|default:"Специалист" }}</p>
+                            {% if employee.bio %}
+                                <p class="card-text">{{ employee.bio|truncatewords:10 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted">Сотрудники пока не добавлены.</p>
+        {% endif %}
+    </div>
+
+    <!-- Карта -->
+    {% if company.latitude and company.longitude %}
+    <div class="mb-4">
+        <h2>Наше местоположение</h2>
+        <div id="map" style="height: 400px; width: 100%;"></div>
+    </div>
+    {% endif %}
+</div>
+
+{% if company.latitude and company.longitude %}
+<script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_api_key }}&lang=ru_RU"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        ymaps.ready(init);
+        
+        function init() {
+            var myMap = new ymaps.Map("map", {
+                center: [{{ company.latitude }}, {{ company.longitude }}],
+                zoom: 16,
+                controls: ['zoomControl']
+            });
+
+            var myPlacemark = new ymaps.Placemark([{{ company.latitude }}, {{ company.longitude }}], {
+                hintContent: '{{ company.name }}',
+                balloonContent: '<strong>{{ company.name }}</strong><br>{{ company.address }}'
+            }, {
+                preset: 'islands#blueCircleDotIcon'
+            });
+
+            myMap.geoObjects.add(myPlacemark);
+            myMap.behaviors.disable('scrollZoom');
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}
