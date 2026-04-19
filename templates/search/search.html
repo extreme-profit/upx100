@@ -69,9 +69,8 @@
 </div>
 
 {% if has_map %}
-<!-- Подключение Leaflet CSS и JS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- Подключение Яндекс.Карт -->
+<script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_maps_api_key }}&lang=ru_RU" type="text/javascript"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -79,33 +78,47 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (locations.length > 0) {
         // Инициализация карты с центром в первой точке
-        const map = L.map('map').setView([locations[0].lat, locations[0].lng], 13);
+        ymaps.ready(init);
         
-        // Добавление слоя OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
-        }).addTo(map);
-        
-        // Добавление маркеров
-        locations.forEach(loc => {
-            const marker = L.marker([loc.lat, loc.lng]).addTo(map);
+        function init(){
+            const map = new ymaps.Map("map", {
+                center: [locations[0].lat, locations[0].lng],
+                zoom: 13,
+                controls: ['zoomControl', 'fullscreenControl']
+            });
             
-            let popupContent = `<div style="min-width: 200px;">`;
-            popupContent += `<strong>${loc.name}</strong><br>`;
-            popupContent += `<small>${loc.address}</small><br>`;
-            if (loc.url && loc.url !== '#') {
-                popupContent += `<a href="${loc.url}" style="display: inline-block; margin-top: 8px; padding: 4px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; font-size: 13px;">Подробнее</a>`;
+            // Добавление маркеров
+            locations.forEach(loc => {
+                const placemark = new ymaps.Placemark([loc.lat, loc.lng], {
+                    balloonContentHeader: loc.name,
+                    balloonContentBody: `<strong>${loc.address}</strong>`,
+                    hintContent: loc.name
+                }, {
+                    preset: 'islands#blueDotIcon'
+                });
+                
+                // Обработчик клика на метку - переход на страницу компании
+                placemark.events.add('click', function(e) {
+                    if (loc.url && loc.url !== '#') {
+                        // Открываем ссылку при клике на балун или саму метку
+                        window.location.href = loc.url;
+                    }
+                });
+                
+                map.geoObjects.add(placemark);
+            });
+            
+            // Масштабирование карты под все точки
+            if (locations.length > 1) {
+                const bounds = [];
+                locations.forEach(loc => {
+                    bounds.push([loc.lat, loc.lng]);
+                });
+                map.setBounds(bounds, {
+                    checkZoomRange: true,
+                    zoomMargin: 50
+                });
             }
-            popupContent += `</div>`;
-            
-            marker.bindPopup(popupContent);
-        });
-        
-        // Масштабирование карты под все точки
-        if (locations.length > 1) {
-            const group = new L.featureGroup(locations.map(l => L.marker([l.lat, l.lng])));
-            map.fitBounds(group.getBounds().pad(0.1));
         }
     }
 });
