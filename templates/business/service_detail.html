@@ -64,10 +64,6 @@
                             <label class="fw-bold text-muted"><i class="fas fa-ruble-sign me-2"></i>Цена:</label>
                             <p class="fs-4 text-success fw-bold">{{ service.price }} ₽</p>
                         </div>
-                        <div class="col-6">
-                            <label class="fw-bold text-muted"><i class="fas fa-clock me-2"></i>Длительность:</label>
-                            <p class="fs-5">{{ service.duration }} мин</p>
-                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="fw-bold text-muted"><i class="fas fa-folder me-2"></i>Категория:</label>
@@ -117,121 +113,6 @@
             </div>
         </div>
         
-        <!-- Временные слоты -->
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-success text-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Временные слоты</h5>
-                    <a href="{% url 'business:slot_manage' service.pk %}" class="btn btn-sm btn-light">
-                        <i class="fas fa-cog me-1"></i>Управление
-                    </a>
-                </div>
-                <div class="card-body">
-                    {% if time_slots %}
-                        <p class="text-muted mb-3"><i class="fas fa-info-circle me-1"></i>Ближайшие доступные слоты ({{ time_slots.count }}):</p>
-                        <div class="list-group shadow-sm">
-                            {% for slot in time_slots|slice:":10" %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center p-3">
-                                    <div>
-                                        <i class="fas fa-calendar-day text-primary me-2"></i>
-                                        <strong>{{ slot.date|date:"d.m.Y" }}</strong>
-                                        <span class="ms-2 text-muted">{{ slot.start_time|date:"H:i" }} - {{ slot.end_time|date:"H:i" }}</span>
-                                    </div>
-                                    <span class="badge bg-{% if slot.is_booked %}danger{% else %}success{% endif %} px-3 py-2">
-                                        <i class="fas fa-{% if slot.is_booked %}lock{% else %}unlock{% endif %} me-1"></i>
-                                        {% if slot.is_booked %}Занят{% else %}Свободен{% endif %}
-                                    </span>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        {% if time_slots.count > 10 %}
-                            <p class="text-muted mt-3"><i class="fas fa-ellipsis-h me-1"></i>... и еще {{ time_slots.count|add:"-10" }} слотов</p>
-                        {% endif %}
-                    {% else %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
-                            <h5 class="text-muted">Временные слоты еще не созданы</h5>
-                            <p class="text-muted">Создайте слоты для записи клиентов</p>
-                            <a href="{% url 'business:slot_generate' service.pk %}" class="btn btn-primary btn-lg">
-                                <i class="fas fa-plus me-2"></i>Создать слоты
-                            </a>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Бронирования -->
-    <div class="card shadow-sm border-0 mt-4">
-        <div class="card-header bg-info text-white py-3">
-            <h5 class="mb-0"><i class="fas fa-bookings me-2"></i>Бронирования</h5>
-        </div>
-        <div class="card-body p-0">
-            {% if bookings %}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="py-3"><i class="fas fa-user me-1"></i>Клиент</th>
-                            <th class="py-3"><i class="fas fa-phone me-1"></i>Телефон</th>
-                            <th class="py-3"><i class="fas fa-flag me-1"></i>Статус</th>
-                            <th class="py-3"><i class="fas fa-clock me-1"></i>Дата создания</th>
-                            <th class="py-3"><i class="fas fa-sticky-note me-1"></i>Комментарий</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for booking in bookings %}
-                        <tr class="align-middle">
-                            <td class="py-3 fw-bold">{{ booking.client_name }}</td>
-                            <td class="py-3">
-                                <a href="tel:{{ booking.client_phone }}" class="text-decoration-none">
-                                    <i class="fas fa-phone-alt text-success me-1"></i>{{ booking.client_phone }}
-                                </a>
-                            </td>
-                            <td class="py-3">
-                                <span class="badge bg-{% if booking.status == 'confirmed' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}info{% endif %} px-3 py-2">
-                                    <i class="fas fa-{% if booking.status == 'confirmed' %}check-circle{% elif booking.status == 'pending' %}clock{% elif booking.status == 'cancelled' %}times-circle{% else %}info-circle{% endif %} me-1"></i>
-                                    {{ booking.get_status_display }}
-                                </span>
-                            </td>
-                            <td class="py-3">{{ booking.created_at|date:"d.m.Y H:i" }}</td>
-                            <td class="py-3">{{ booking.notes|truncatechars:40|default:"—" }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
-                <h5 class="text-muted">Пока нет бронирований</h5>
-                <p class="text-muted">Как только клиенты начнут записываться, они появятся здесь</p>
-            </div>
-            {% endif %}
-        </div>
     </div>
 </div>
-
-<style>
-    .card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
-    
-    .card:hover {
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
-    }
-    
-    .badge {
-        font-weight: 500;
-    }
-    
-    .list-group-item {
-        transition: background-color 0.2s ease;
-    }
-    
-    .list-group-item:hover {
-        background-color: #f8f9fa;
-    }
-</style>
 {% endblock %}
