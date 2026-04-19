@@ -326,6 +326,7 @@ def subcategory_delete(request, pk):
 @admin_required
 def user_list(request):
     """Список пользователей"""
+    from business.models import Company
     users = User.objects.order_by('-date_joined')
     
     # Фильтры
@@ -342,12 +343,13 @@ def user_list(request):
         users = users.filter(is_active=False)
     
     if query:
+        # Поиск по email, имени, фамилии, телефону или названию компании
         users = users.filter(
             Q(email__icontains=query) |
             Q(first_name__icontains=query) |
             Q(last_name__icontains=query) |
             Q(phone__icontains=query) |
-            Q(company_name__icontains=query)
+            Q(company__name__icontains=query)
         )
     
     context = {
@@ -355,7 +357,7 @@ def user_list(request):
         'role_filter': role_filter,
         'status_filter': status_filter,
         'query': query,
-        'title': 'Пользователи / Компании',
+        'title': 'Пользователи',
     }
     return render(request, 'dashboard/users/list.html', context)
 
@@ -369,9 +371,18 @@ def user_detail(request, pk):
     from decouple import config
     yandex_api_key = config('YANDEX_MAPS_API_KEY', default='')
     
+    # Получаем компанию пользователя (если есть)
+    company = None
+    if user.role == 'entrepreneur':
+        try:
+            company = user.company
+        except Company.DoesNotExist:
+            pass
+    
     context = {
         'user_obj': user,
-        'title': f'{user.email} ({user.company_name or "Без названия"})',
+        'company': company,
+        'title': f'{user.email} ({company.name if company else "Без компании"})',
         'yandex_api_key': yandex_api_key,
     }
     return render(request, 'dashboard/users/detail.html', context)
@@ -392,7 +403,14 @@ def user_edit(request, pk):
         user.is_active = is_active
         user.save()
         
-        display_name = user.company_name or user.email
+        # Получаем название компании для отображения
+        display_name = user.email
+        if user.role == 'entrepreneur':
+            try:
+                display_name = user.company.name
+            except Company.DoesNotExist:
+                pass
+        
         messages.success(request, f'Пользователь "{display_name}" успешно обновлён')
         return redirect('dashboard:user_list')
     
@@ -417,7 +435,14 @@ def user_toggle_active(request, pk):
         user.is_active = not user.is_active
         user.save()
         
-        display_name = user.company_name or user.email
+        # Получаем название компании для отображения
+        display_name = user.email
+        if user.role == 'entrepreneur':
+            try:
+                display_name = user.company.name
+            except Company.DoesNotExist:
+                pass
+        
         status = 'разбанен' if user.is_active else 'забанен'
         messages.success(request, f'Пользователь "{display_name}" успешно {status}')
         
@@ -443,7 +468,14 @@ def user_change_role(request, pk):
             user.role = new_role
             user.save()
             
-            display_name = user.company_name or user.email
+            # Получаем название компании для отображения
+            display_name = user.email
+            if user.role == 'entrepreneur':
+                try:
+                    display_name = user.company.name
+                except Company.DoesNotExist:
+                    pass
+            
             messages.success(request, f'Роль пользователя "{display_name}" изменена с "{old_role}" на "{user.get_role_display()}"')
             
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -458,14 +490,18 @@ def user_change_role(request, pk):
 @admin_required
 def user_verify(request, pk):
     """Подтверждение компании предпринимателя (верификация)"""
+    from business.models import Company
     user = get_object_or_404(User, pk=pk)
     
     if request.method == 'POST':
         if user.role == 'entrepreneur':
-            user.is_verified = True
-            user.save()
-            display_name = user.company_name or user.email
-            messages.success(request, f'Компания "{display_name}" успешно проверена и верифицирована')
+            try:
+                company = user.company
+                company.is_verified = True
+                company.save()
+                messages.success(request, f'Компания "{company.name}" успешно проверена и верифицирована')
+            except Company.DoesNotExist:
+                messages.error(request, 'Компания не найдена')
         else:
             messages.error(request, 'Верифицировать можно только компанию предпринимателя')
         

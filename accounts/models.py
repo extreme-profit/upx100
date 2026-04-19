@@ -40,20 +40,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField('Роль', max_length=20, choices=ROLE_CHOICES, default='entrepreneur')
     
     # Стандартные флаги Django
-    is_staff = models.BooleanField('Статус сотрудника', default=False) # Доступ в стандартную админку (если нужно)
-    is_active = models.BooleanField('Активен', default=True) # Бан/разбан
+    is_staff = models.BooleanField('Статус сотрудника', default=False)
+    is_active = models.BooleanField('Активен', default=True)
     date_joined = models.DateTimeField('Дата регистрации', default=timezone.now)
-
-    # Поля компании (теперь пользователь == компания)
-    company_name = models.CharField('Название компании', max_length=100, blank=True)
-    company_description = models.TextField('Описание компании', blank=True)
-    company_address = models.CharField('Адрес', max_length=255, blank=True)
-    latitude = models.DecimalField('Широта', max_digits=9, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField('Долгота', max_digits=9, decimal_places=6, null=True, blank=True)
-    logo = models.ImageField('Логотип', upload_to='company_logos/', blank=True, null=True)
-    
-    # Верификация компании (модерация админом)
-    is_verified = models.BooleanField('Компания проверена', default=False)
 
     objects = UserManager()
 
@@ -61,13 +50,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     class Meta:
-        verbose_name = 'Пользователь / Компания'
-        verbose_name_plural = 'Пользователи / Компании'
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
 
     def __str__(self):
         role_label = dict(self.ROLE_CHOICES).get(self.role, self.role)
-        company_part = f" ({self.company_name})" if self.company_name else ""
-        return f"{self.email} [{role_label}]{company_part}"
+        return f"{self.email} [{role_label}]"
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}".strip() or self.email
@@ -87,8 +75,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_company(self):
         """Возвращает компанию пользователя (для предпринимателя или сотрудника)"""
         if self.role == 'entrepreneur':
-            if hasattr(self, 'company'):
+            # Компания предпринимателя связана через company.owner
+            try:
                 return self.company
+            except Company.DoesNotExist:
+                return None
         elif self.role == 'employee':
             employee_profile = self.get_employee_profile()
             if employee_profile:

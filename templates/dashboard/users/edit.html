@@ -15,7 +15,13 @@
                 <div class="user-avatar" style="width: 56px; height: 56px; font-size: 20px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">{{ user_obj.email|first|upper }}</div>
                 <div>
                     <h4 style="margin-bottom: 4px;">{{ user_obj.email }}</h4>
-                    <p style="color: #64748b; font-size: 13px;">{{ user_obj.company_name|default:"Без названия компании" }}</p>
+                    <p style="color: #64748b; font-size: 13px;">
+                        {% if user_obj.role == 'entrepreneur' and company %}
+                            {{ company.name }}
+                        {% else %}
+                            Без названия компании
+                        {% endif %}
+                    </p>
                 </div>
             </div>
 
