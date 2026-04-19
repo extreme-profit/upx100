@@ -1,1 +1,38 @@
-Nothing should be ignored based on the provided file changes. The only modified file is a template HTML file (`templates/business/slot_manage.html`), which is a source code file that should not be ignored. There are no build artifacts, dependencies, or temporary files in the changes.
+```
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Directories
+.env
+.env.local
+.env.*
+venv/
+.venv/
+.envs/
+
+# Logs
+*.log
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+build/
+dist/
+*.egg-info/
+```
