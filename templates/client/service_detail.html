@@ -28,13 +28,13 @@
     {% if employees %}
     <h2 style="margin-bottom: 20px;">Выберите специалиста</h2>
     <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 40px;">
-        <a href="{% url 'client:service_detail' service.pk %}" 
+        <a href="{% url 'client:service_detail' service_id=service.pk %}" 
            class="btn {% if not selected_employee %}btn--primary{% else %}btn--outline{% endif %}"
            style="min-width: 150px; text-align: center;">
             Все специалисты
         </a>
         {% for employee in employees %}
-            <a href="{% url 'client:service_detail' service.pk %}?employee_id={{ employee.pk }}" 
+            <a href="{% url 'client:service_detail' service_id=service.pk %}?employee_id={{ employee.pk }}" 
                class="btn {% if selected_employee == employee %}btn--primary{% else %}btn--outline{% endif %}"
                style="min-width: 150px; text-align: center;">
                 {{ employee.name|truncatechars:20 }}
@@ -60,7 +60,7 @@
                     </h3>
                     <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                         {% for slot in slots %}
-                            <a href="{% url 'client:booking_create' service.pk %}?slot_id={{ slot.pk }}" 
+                            <a href="{% url 'client:booking_create' service_id=slot.service.pk %}?slot_id={{ slot.pk }}" 
                                class="btn btn--outline"
                                style="min-width: 100px; text-align: center;"
                                onmouseover="this.style.background='#007bff'; this.style.color='white'"
@@ -86,7 +86,7 @@
             </p>
             <p style="color: #888; margin-top: 10px;">Пожалуйста, выберите другого специалиста или зайдите позже.</p>
             {% if selected_employee %}
-                <a href="{% url 'client:service_detail' service.pk %}" class="btn btn--primary" style="margin-top: 20px;">Показать всех специалистов</a>
+                <a href="{% url 'client:service_detail' service_id=service.pk %}" class="btn btn--primary" style="margin-top: 20px;">Показать всех специалистов</a>
             {% endif %}
         </div>
     {% endif %}
