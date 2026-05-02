@@ -18,7 +18,7 @@
             
             <div class="form-group">
                 <label class="form-label">Слаг (URL) *</label>
-                <input type="text" name="slug" class="form-control" value="{{ category.slug|default:'' }}" required placeholder="Например: krasota">
+                <input type="text" name="slug" id="category-slug" class="form-control" value="{{ category.slug|default:'' }}" required placeholder="Например: krasota">
                 <small style="color: #64748b; margin-top: 4px; display: block;">Латинские буквы, цифры и дефисы</small>
             </div>
             
@@ -42,4 +42,56 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Функция транслитерации
+    function transliterateToSlug(text) {
+        const translitMap = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd',
+            'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z', 'и': 'i',
+            'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n',
+            'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't',
+            'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch',
+            'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '',
+            'э': 'e', 'ю': 'yu', 'я': 'ya'
+        };
+        
+        let slug = '';
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            slug += translitMap[char.toLowerCase()] || char;
+        }
+        
+        slug = slug.toLowerCase();
+        slug = slug.replace(/[^a-z0-9-]/g, '-');
+        slug = slug.replace(/-+/g, '-');
+        slug = slug.replace(/^-|-$/g, '');
+        
+        return slug;
+    }
+    
+    // Автоматическое заполнение slug при вводе названия категории
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameInput = document.querySelector('input[name="name"]');
+        const slugInput = document.getElementById('category-slug');
+        let userEditedSlug = false;
+        
+        if (nameInput && slugInput) {
+            // Отслеживаем, редактировал ли пользователь slug вручную
+            slugInput.addEventListener('input', function() {
+                userEditedSlug = true;
+            });
+            
+            nameInput.addEventListener('input', function() {
+                // Автозаполняем slug только если пользователь не редактировал его вручную
+                // или если поле slug было пустым изначально
+                if (!userEditedSlug || slugInput.value === '') {
+                    slugInput.value = transliterateToSlug(nameInput.value);
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}
