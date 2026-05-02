@@ -160,15 +160,12 @@ def load_vector_index():
     
     # Ищем запись с индексом (содержит ключ 'index')
     index_record = None
-    service_records = []
     
     for emb in embeddings_qs:
         try:
             data = pickle.loads(emb.embedding)
             if isinstance(data, dict) and 'index' in data:
                 index_record = data
-            elif isinstance(data, dict) and 'embedding' in data and 'index_position' in data:
-                service_records.append(data)
         except Exception:
             continue
     
@@ -181,8 +178,14 @@ def load_vector_index():
     
     # Строим маппинг эмбеддингов
     _embeddings_map = {}
-    for record in service_records:
-        _embeddings_map[record['service_id']] = record['embedding']
+    for emb in embeddings_qs:
+        try:
+            data = pickle.loads(emb.embedding)
+            if isinstance(data, dict) and 'embedding' in data and 'index_position' in data:
+                if emb.service_id:  # Пропускаем запись индекса (у неё service_id=None)
+                    _embeddings_map[emb.service_id] = data['embedding']
+        except Exception:
+            continue
     
     # Загружаем модель
     _model = get_model()
