@@ -104,15 +104,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const locations = {{ map_data | safe }};
     
     if (locations.length > 0) {
+        // Центр карты по умолчанию (Москва)
+        let defaultCenter = [55.751244, 37.618423];
+        let defaultZoom = 10;
+        
         // Инициализация карты
         ymaps.ready(init);
         
         function init(){
-            // Центр карты по умолчанию (Москва)
-            let defaultCenter = [55.751244, 37.618423];
-            let defaultZoom = 10;
-            
-            // Запрос геолокации пользователя
+            // Запрос геолокации пользователя ПЕРЕД инициализацией карты
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     function(position) {
@@ -123,12 +123,28 @@ document.addEventListener('DOMContentLoaded', function() {
                         defaultCenter = [userLat, userLng];
                         defaultZoom = 12;
                         
-                        initMap(defaultCenter, defaultZoom, locations);
+                        initMap(defaultCenter, defaultZoom, locations, true);
                     },
                     function(error) {
                         // Если пользователь запретил доступ или произошла ошибка, используем центр по умолчанию
-                        console.log('Геолокация недоступна:', error);
-                        initMap(defaultCenter, defaultZoom, locations);
+                        let errorMsg = '';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMsg = 'Вы запретили доступ к геолокации. Разрешите его в настройках браузера (нажмите на значок замка в адресной строке).';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMsg = 'Информация о местоположении недоступна.';
+                                break;
+                            case error.TIMEOUT:
+                                errorMsg = 'Время ожидания истекло.';
+                                break;
+                            default:
+                                errorMsg = 'Произошла неизвестная ошибка.';
+                                break;
+                        }
+                        console.log('Геолокация недоступна:', error.code, errorMsg);
+                        showLocationError(errorMsg);
+                        initMap(defaultCenter, defaultZoom, locations, false);
                     },
                     {
                         enableHighAccuracy: true,
@@ -138,11 +154,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 );
             } else {
                 // Геолокация не поддерживается браузером
-                initMap(defaultCenter, defaultZoom, locations);
+                showLocationError('Ваш браузер не поддерживает геолокацию.');
+                initMap(defaultCenter, defaultZoom, locations, false);
             }
         }
         
-        function initMap(center, zoom, locations) {
+        function initMap(center, zoom, locations, hasUserLocation) {
             const map = new ymaps.Map("map", {
                 center: center,
                 zoom: zoom,
@@ -162,8 +179,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 map.geoObjects.add(placemark);
             });
             
+            // Если есть геолокация пользователя, добавляем зеленый маркер
+            if (hasUserLocation) {
+                const userPlacemark = new ymaps.Placemark(center, {
+                    balloonContentHeader: 'Ваше местоположение',
+                    hintContent: 'Вы находитесь здесь'
+                }, {
+                    preset: 'islands#greenDotIcon'
+                });
+                map.geoObjects.add(userPlacemark);
+            }
+            
             // Масштабирование карты под все точки (если точек больше одной и нет геолокации)
-            if (locations.length > 1 && zoom === 10) {
+            if (locations.length > 1 && !hasUserLocation) {
                 const bounds = [];
                 locations.forEach(loc => {
                     bounds.push([loc.lat, loc.lng]);
@@ -173,39 +201,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     zoomMargin: 50
                 });
             }
-            
-            // Запрашиваем геолокацию пользователя после инициализации карты
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        const userLat = position.coords.latitude;
-                        const userLng = position.coords.longitude;
-                        
-                        // Центрируем карту на местоположении пользователя с зумом ~12-13
-                        map.setCenter([userLat, userLng], 12);
-                        
-                        // Добавляем маркер пользователя
-                        const userPlacemark = new ymaps.Placemark([userLat, userLng], {
-                            balloonContentHeader: 'Ваше местоположение',
-                            hintContent: 'Вы находитесь здесь'
-                        }, {
-                            preset: 'islands#greenDotIcon'
-                        });
-                        map.geoObjects.add(userPlacemark);
-                    },
-                    function(error) {
-                        console.log('Геолокация недоступна:', error);
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 5000,
-                        maximumAge: 0
-                    }
-                );
-            }
         }
     }
 });
+
+function showLocationError(message) {
+    // Создаём или находим элемент для отображения ошибки
+    let errorDiv = document.getElementById('geo-error');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'geo-error';
+        errorDiv.style.cssText = 'background: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 12px; border-radius: 4px; margin: 20px 0; display: none;';
+        const container = document.querySelector('.container');
+        if (container) {
+            container.insertBefore(errorDiv, container.firstChild);
+        }
+    }
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
 </script>
 {% endif %}
 {% endblock %}
