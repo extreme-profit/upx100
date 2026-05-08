@@ -3,76 +3,69 @@
 {% block title %}{{ company.name }} - Профиль компании{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container" style="padding: 40px 0;">
     <!-- Шапка компании -->
-    <div class="card mb-4">
-        <div class="card-body text-center">
+    <div class="card" style="margin-bottom: 30px; padding: 30px; background: #f8f9fa; border-radius: 10px;">
+        <div style="text-align: center;">
             {% if company.logo %}
-                <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="img-fluid rounded mb-3" style="max-height: 150px;">
+                <img src="{{ company.logo.url }}" alt="{{ company.name }}" style="max-width: 150px; border-radius: 50%; margin-bottom: 20px;">
             {% endif %}
-            <h1 class="card-title">{{ company.name }}</h1>
-            <p class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ company.address }}</p>
+            <h1 style="margin-bottom: 15px;">{{ company.name }}</h1>
+            <p style="color: #666; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                {{ company.address }}
+            </p>
             {% if company.description %}
-                <p class="card-text">{{ company.description }}</p>
+                <p style="color: #555; line-height: 1.6; margin-top: 20px;">{{ company.description }}</p>
             {% endif %}
         </div>
     </div>
 
     <!-- Услуги -->
-    <div class="mb-4">
-        <h2>Наши услуги</h2>
-        {% if services %}
-            <div class="row">
-                {% for service in services %}
-                <div class="col-md-6 col-lg-4 mb-3">
-                    <div class="card h-100">
-                        {% if service.image %}
-                            <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}" style="height: 200px; object-fit: cover;">
-                        {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title">{{ service.name }}</h5>
-                            <p class="card-text text-muted">{{ service.description|truncatewords:15 }}</p>
-                            <p class="card-text"><strong>Цена:</strong> {{ service.price }} ₽</p>
-                            <p class="card-text"><small class="text-muted">Категория: {{ service.category.name }}</small></p>
-                            <a href="{% url 'client:service_detail' service_id=service.pk %}" class="btn btn-primary">Записаться</a>
-                        </div>
-                    </div>
+    <h2 style="margin-bottom: 20px;">Наши услуги</h2>
+    {% if services %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px;">
+            {% for service in services %}
+            <div class="card">
+                {% if service.image %}
+                    <img src="{{ service.image.url }}" alt="{{ service.name }}" style="width: 100%; height: 200px; object-fit: cover;" class="card__image">
+                {% endif %}
+                <div class="card__content">
+                    <h3 class="card__title">{{ service.name }}</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">{{ service.description|truncatewords:15 }}</p>
+                    <p style="font-size: 20px; font-weight: bold; color: #28a745; margin-bottom: 10px;">{{ service.price }} ₽</p>
+                    <p style="font-size: 13px; color: #888; margin-bottom: 15px;">Категория: {{ service.category.name }}</p>
+                    <a href="{% url 'client:service_detail' service_id=service.pk %}" class="btn btn--primary">Записаться</a>
                 </div>
-                {% endfor %}
             </div>
-        {% else %}
-            <p class="text-muted">Услуги пока не добавлены.</p>
-        {% endif %}
-    </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: #666; padding: 20px; background: #f8f9fa; border-radius: 10px;">Услуги пока не добавлены.</p>
+    {% endif %}
 
     <!-- Сотрудники -->
-    <div class="mb-4">
-        <h2>Наши сотрудники</h2>
-        {% if employees %}
-            <div class="row">
-                {% for employee in employees %}
-                <div class="col-md-6 col-lg-4 mb-3">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">{{ employee.name }}</h5>
-                            <p class="card-text text-muted">{{ employee.position|default:"Специалист" }}</p>
-                            {% if employee.bio %}
-                                <p class="card-text">{{ employee.bio|truncatewords:10 }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+    <h2 style="margin-bottom: 20px; margin-top: 40px;">Наши сотрудники</h2>
+    {% if employees %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+            {% for employee in employees %}
+            <div class="card" style="padding: 20px; text-align: center;">
+                <h3 style="margin-bottom: 10px;">{{ employee.name }}</h3>
+                <p style="color: #666; margin-bottom: 10px;">{{ employee.position|default:"Специалист" }}</p>
+                {% if employee.bio %}
+                    <p style="color: #888; font-size: 14px;">{{ employee.bio|truncatewords:10 }}</p>
+                {% endif %}
             </div>
-        {% else %}
-            <p class="text-muted">Сотрудники пока не добавлены.</p>
-        {% endif %}
-    </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: #666; padding: 20px; background: #f8f9fa; border-radius: 10px;">Сотрудники пока не добавлены.</p>
+    {% endif %}
 
     <!-- Карта -->
     {% if latitude and longitude %}
-    <div class="mb-4">
-        <h2 class="mb-3">Наше местоположение</h2>
+    <div style="margin-top: 40px;">
+        <h2 style="margin-bottom: 20px;">Наше местоположение</h2>
         <div id="map" style="height: 450px; width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
     </div>
     {% endif %}

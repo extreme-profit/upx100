@@ -25,7 +25,7 @@
             {% for category in categories %}
                 <a href="?category={{ category.slug }}{% if query %}&q={{ query }}{% endif %}" 
                    class="btn btn--outline"
-                   style="{% if category.slug == request.GET.category %}background: #007bff; color: white;{% endif %}">
+                   style="{% if category.slug == request.GET.category %}background: #007bff; color: white; border-color: #007bff;{% endif %}">
                     {{ category.name }}
                 </a>
             {% endfor %}
@@ -40,13 +40,13 @@
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <a href="?category={{ request.GET.category }}{% if query %}&q={{ query }}{% endif %}" 
                class="btn btn--sm btn--outline"
-               style="{% if not request.GET.subcategory %}background: #28a745; color: white;{% endif %}">
+               style="{% if not request.GET.subcategory %}background: #28a745; color: white; border-color: #28a745;{% endif %}">
                 Все
             </a>
             {% for subcat in selected_subcategories %}
                 <a href="?category={{ request.GET.category }}&subcategory={{ subcat.slug }}{% if query %}&q={{ query }}{% endif %}" 
                    class="btn btn--sm btn--outline"
-                   style="{% if request.GET.subcategory == subcat.slug %}background: #28a745; color: white;{% endif %}">
+                   style="{% if request.GET.subcategory == subcat.slug %}background: #28a745; color: white; border-color: #28a745;{% endif %}">
                     {{ subcat.name }}
                 </a>
             {% endfor %}
