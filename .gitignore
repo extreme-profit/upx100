@@ -1,1 +1,45 @@
-Nothing should be ignored based on the provided file changes. The only modified file is a template HTML file (`templates/search/search.html`), which is a source file that should be tracked in version control. No build artifacts, dependencies, temporary files, or other ignorable content were detected in the changes.
+```
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django specific
+*.log
+local_settings.py
+db.sqlite3
+media/
+staticfiles/
+
+# Environment
+.env
+.env.local
+.env.*
+
+# Dependencies
+venv/
+.venv/
+env/
+.ENV/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+.coverage
+htmlcov/
+coverage/
+
+# Build
+dist/
+build/
+*.egg-info/
+```
