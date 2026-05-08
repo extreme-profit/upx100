@@ -17,31 +17,45 @@
             </a>
             <nav class="header__nav">
                 <a href="{% url 'home' %}" class="header__nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-                    <span class="nav-icon">🏠</span> Главная
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                    </span> Главная
                 </a>
                 <a href="{% url 'search:search' %}" class="header__nav-link {% if request.resolver_match.url_name == 'search' %}active{% endif %}">
-                    <span class="nav-icon">🔍</span> Поиск услуг
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    </span> Поиск услуг
                 </a>
                 <a href="{% url 'about' %}" class="header__nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">
-                    <span class="nav-icon">ℹ️</span> О нас
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    </span> О нас
                 </a>
                 {% if user.is_authenticated %}
                     {% if user.is_entrepreneur %}
                         <a href="{% url 'business:company_profile' %}" class="header__nav-link">
-                            <span class="nav-icon">💼</span> ЛК Предпринимателя
+                            <span class="nav-icon">
+                                <svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+                            </span> ЛК Предпринимателя
                         </a>
                     {% endif %}
                     {% if user.is_superuser or user.role == 'admin' %}
                         <a href="{% url 'dashboard:home' %}" class="header__nav-link">
-                            <span class="nav-icon">⚙️</span> Админ-панель
+                            <span class="nav-icon">
+                                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                            </span> Админ-панель
                         </a>
                     {% endif %}
                     <a href="{% url 'accounts:logout' %}" class="header__nav-link header__nav-link--accent">
-                        <span class="nav-icon">🚪</span> Выход ({{ user.username }})
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+                        </span> Выход ({{ user.username }})
                     </a>
                 {% else %}
                     <a href="{% url 'accounts:login' %}" class="header__nav-link header__nav-link--btn">
-                        <span class="nav-icon">👤</span> Вход
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        </span> Вход
                     </a>
                 {% endif %}
             </nav>
@@ -83,11 +97,23 @@
             </div>
             <div class="footer__section">
                 <h3>Контакты</h3>
-                <a href="mailto:info@upx100.ru">info@upx100.ru</a>
-                <a href="tel:+79990000000">+7 (999) 000-00-00</a>
+                <a href="mailto:info@upx100.ru">
+                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;display:inline-block;fill:currentColor;margin-right:5px;"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                    info@upx100.ru
+                </a>
+                <a href="tel:+79990000000">
+                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;display:inline-block;fill:currentColor;margin-right:5px;"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                    +7 (999) 000-00-00
+                </a>
                 <div style="margin-top: 15px;">
-                    <a href="#" style="display: inline-block; margin-right: 10px;">📱 Telegram</a>
-                    <a href="#" style="display: inline-block;">📷 Instagram</a>
+                    <a href="#" style="display: inline-block; margin-right: 10px;">
+                        <svg viewBox="0 0 24 24" style="width:18px;height:18px;vertical-align:middle;display:inline-block;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.93 1.23-5.46 3.62-.51.35-.98.52-1.4.51-.46-.01-1.35-.26-2.01-.48-.81-.27-1.44-.42-1.38-.88.03-.24.37-.49 1.03-.75 4.04-1.76 6.74-2.92 8.09-3.48 3.85-1.6 4.64-1.89 5.17-1.89.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.13-.03.26z"/></svg>
+                        Telegram
+                    </a>
+                    <a href="#" style="display: inline-block;">
+                        <svg viewBox="0 0 24 24" style="width:18px;height:18px;vertical-align:middle;display:inline-block;fill:currentColor;"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>
+                        Instagram
+                    </a>
                 </div>
             </div>
         </div>
@@ -100,7 +126,8 @@
     <div id="cookie-banner" class="cookie-banner">
         <div class="container cookie-banner__inner">
             <p class="cookie-banner__text">
-                🍪 Мы используем файлы cookie для улучшения работы сайта и анализа трафика. 
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px;vertical-align:middle;display:inline-block;fill:currentColor;margin-right:5px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                Мы используем файлы cookie для улучшения работы сайта и анализа трафика. 
                 Продолжая использовать сайт, вы соглашаетесь с нашей 
                 <a href="{% url 'cookie_policy' %}" target="_blank">политикой использования cookie</a>.
             </p>

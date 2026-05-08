@@ -149,10 +149,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 controls: ['zoomControl', 'fullscreenControl', 'geolocationControl']
             });
             
-            // Добавление маркеров
+            // Добавление маркеров компаний
             locations.forEach(loc => {
                 const placemark = new ymaps.Placemark([loc.lat, loc.lng], {
-                    balloonContentHeader: `<a href="/business/company/${loc.id}/" style="text-decoration: none; color: #007bff; font-weight: bold;">${loc.name}</a>`,
+                    balloonContentHeader: `<a href="/business/company/${loc.id}/" style="text-decoration: none; color: var(--blue); font-weight: bold;">${loc.name}</a>`,
                     balloonContentBody: `<div><strong>${loc.address}</strong></div><div style="margin-top: 8px;"><a href="/business/company/${loc.id}/" class="btn btn-sm btn-primary">Подробнее</a></div>`,
                     hintContent: loc.name
                 }, {
@@ -172,6 +172,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     checkZoomRange: true,
                     zoomMargin: 50
                 });
+            }
+            
+            // Запрашиваем геолокацию пользователя после инициализации карты
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        
+                        // Центрируем карту на местоположении пользователя с зумом ~12-13
+                        map.setCenter([userLat, userLng], 12);
+                        
+                        // Добавляем маркер пользователя
+                        const userPlacemark = new ymaps.Placemark([userLat, userLng], {
+                            balloonContentHeader: 'Ваше местоположение',
+                            hintContent: 'Вы находитесь здесь'
+                        }, {
+                            preset: 'islands#greenDotIcon'
+                        });
+                        map.geoObjects.add(userPlacemark);
+                    },
+                    function(error) {
+                        console.log('Геолокация недоступна:', error);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    }
+                );
             }
         }
     }
