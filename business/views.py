@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta, datetime, time
 from django.http import JsonResponse
+from decouple import config
 from .models import Company, Employee, Service, ServiceCategory, ServiceTimeSlot, Booking, Payment
 from .forms import CompanyForm, EmployeeForm, ServiceForm, ServiceTimeSlotGenerateForm
 from companies.models import Category, Subcategory
@@ -28,6 +29,9 @@ def company_public_profile_view(request, company_id):
     # Преобразуем координаты в float для корректной передачи в JS
     latitude = float(company.latitude) if company.latitude else None
     longitude = float(company.longitude) if company.longitude else None
+    
+    # Получаем API ключ Яндекс.Карт
+    yandex_api_key = config('YANDEX_MAPS_API_KEY', default='')
 
     context = {
         'company': company,
@@ -35,6 +39,7 @@ def company_public_profile_view(request, company_id):
         'employees': employees,
         'latitude': latitude,
         'longitude': longitude,
+        'yandex_api_key': yandex_api_key,
     }
     return render(request, 'business/company_public_profile.html', context)
 

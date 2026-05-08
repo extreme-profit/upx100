@@ -1,45 +1,30 @@
 ```
-# Python cache
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Django specific
+# Logs and temp files
 *.log
-local_settings.py
-db.sqlite3
-media/
-staticfiles/
+*.tmp
 
 # Environment
 .env
 .env.local
-.env.*
-
-# Dependencies
-venv/
-.venv/
-env/
-.ENV/
+*.env.*
 
 # Editors
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# OS
-.DS_Store
-Thumbs.db
+# Dependencies
+.venv/
+venv/
+node_modules/
 
-# Coverage
-.coverage
-htmlcov/
-coverage/
-
-# Build
+# Build artifacts
 dist/
 build/
-*.egg-info/
+target/
 ```
