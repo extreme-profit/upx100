@@ -26,10 +26,6 @@ def company_public_profile_view(request, company_id):
     services = company.services.filter(status='active').select_related('category', 'subcategory')
     employees = company.employees.filter(is_active=True)
 
-    # Преобразуем координаты в float для корректной передачи в JS
-    latitude = float(company.latitude) if company.latitude else None
-    longitude = float(company.longitude) if company.longitude else None
-    
     # Получаем API ключ Яндекс.Карт
     yandex_api_key = config('YANDEX_MAPS_API_KEY', default='')
 
@@ -37,8 +33,8 @@ def company_public_profile_view(request, company_id):
         'company': company,
         'services': services,
         'employees': employees,
-        'latitude': latitude,
-        'longitude': longitude,
+        'latitude': f"{company.latitude:.6f}" if company.latitude else None,
+        'longitude': f"{company.longitude:.6f}" if company.longitude else None,
         'yandex_api_key': yandex_api_key,
     }
     return render(request, 'business/company_public_profile.html', context)
