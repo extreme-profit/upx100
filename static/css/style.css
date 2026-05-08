@@ -6,6 +6,8 @@
     --color-text: #4C4C4C;
     --color-bg: #ffffff;
     --color-border: #e0e0e0;
+    --color-dark: #1a1a2e;
+    --color-accent: #e94560;
 }
 
 * {
@@ -40,8 +42,8 @@ a:hover {
 
 /* Шапка */
 .header {
-    background-color: var(--color-white);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, var(--color-dark) 0%, #16213e 100%);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -55,23 +57,153 @@ a:hover {
 }
 
 .header__logo {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: bold;
-    color: var(--color-blue);
+    color: var(--color-white);
+    transition: transform 0.3s ease;
+}
+
+.header__logo:hover {
+    transform: scale(1.05);
+}
+
+.header__logo-text {
+    background: linear-gradient(135deg, var(--color-blue), var(--color-green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header__logo-accent {
+    color: var(--color-accent);
+    -webkit-text-fill-color: var(--color-accent);
 }
 
 .header__nav {
     display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.header__nav-link {
+    color: var(--color-white);
+    font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.header__nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-blue);
+    transform: translateY(-2px);
+}
+
+.header__nav-link.active {
+    background: var(--color-blue);
+    color: var(--color-white);
+}
+
+.header__nav-link--accent {
+    background: rgba(233, 69, 96, 0.2);
+    color: var(--color-accent);
+}
+
+.header__nav-link--accent:hover {
+    background: var(--color-accent);
+    color: var(--color-white);
+}
+
+.header__nav-link--btn {
+    background: var(--color-blue);
+    color: var(--color-white);
+}
+
+.header__nav-link--btn:hover {
+    background: #1a6fd1;
+    color: var(--color-white);
+}
+
+.nav-icon {
+    font-size: 18px;
+}
+
+.header__mobile-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+}
+
+.header__mobile-toggle span {
+    width: 25px;
+    height: 3px;
+    background: var(--color-white);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.header__mobile-toggle--active span:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px);
+}
+
+.header__mobile-toggle--active span:nth-child(2) {
+    opacity: 0;
+}
+
+.header__mobile-toggle--active span:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* Cookie banner */
+.cookie-banner {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--color-dark) 0%, #16213e 100%);
+    color: var(--color-white);
+    padding: 20px 0;
+    z-index: 9999;
+    transition: bottom 0.5s ease;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.cookie-banner--visible {
+    bottom: 0;
+}
+
+.cookie-banner__inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 20px;
 }
 
-.header__nav a {
-    color: var(--color-text);
-    font-weight: 500;
+.cookie-banner__text {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.5;
 }
 
-.header__nav a:hover {
+.cookie-banner__text a {
     color: var(--color-blue);
+    text-decoration: underline;
+}
+
+.cookie-banner__text a:hover {
+    color: var(--color-green);
+}
+
+.cookie-banner__btn {
+    white-space: nowrap;
+    padding: 12px 30px;
 }
 
 /* Кнопки */
@@ -279,21 +411,37 @@ a:hover {
 
 /* Адаптивность */
 @media (max-width: 768px) {
-    .header__inner {
-        flex-direction: column;
-        gap: 15px;
+    .header__mobile-toggle {
+        display: flex;
     }
-    
+
     .header__nav {
-        flex-wrap: wrap;
-        justify-content: center;
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        gap: 5px;
+        padding: 20px 0;
     }
-    
+
+    .header__nav--mobile-open {
+        display: flex;
+    }
+
+    .header__nav-link {
+        justify-content: center;
+        width: 100%;
+    }
+
     .hero__title {
         font-size: 32px;
     }
-    
+
     .cards-grid {
         grid-template-columns: 1fr;
+    }
+
+    .cookie-banner__inner {
+        flex-direction: column;
+        text-align: center;
     }
 }

@@ -7,7 +7,22 @@ from accounts.models import User
 from companies.models import Category
 from business.models import Service
 from utils.slug_utils import transliterate_to_slug
+from datetime import datetime
 
+
+
+
+def about_view(request):
+    """Страница 'О нас'"""
+    return render(request, 'about.html')
+
+
+def cookie_policy_view(request):
+    """Страница политики cookie"""
+    context = {
+        'now': datetime.now()
+    }
+    return render(request, 'cookie_policy.html', context)
 
 def home_view(request):
     """Главная страница сайта"""

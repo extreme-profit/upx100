@@ -12,23 +12,44 @@
     <!-- Шапка -->
     <header class="header">
         <div class="container header__inner">
-            <a href="{% url 'home' %}" class="header__logo">upx100.ru</a>
+            <a href="{% url 'home' %}" class="header__logo">
+                <span class="header__logo-text">upx100<span class="header__logo-accent">.ru</span></span>
+            </a>
             <nav class="header__nav">
-                <a href="{% url 'home' %}">Главная</a>
-                <a href="{% url 'search:search' %}">Поиск услуг</a>
-                <a href="#">О нас</a>
+                <a href="{% url 'home' %}" class="header__nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <span class="nav-icon">🏠</span> Главная
+                </a>
+                <a href="{% url 'search:search' %}" class="header__nav-link {% if request.resolver_match.url_name == 'search' %}active{% endif %}">
+                    <span class="nav-icon">🔍</span> Поиск услуг
+                </a>
+                <a href="{% url 'about' %}" class="header__nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">
+                    <span class="nav-icon">ℹ️</span> О нас
+                </a>
                 {% if user.is_authenticated %}
                     {% if user.is_entrepreneur %}
-                        <a href="{% url 'business:company_profile' %}">ЛК Предпринимателя</a>
+                        <a href="{% url 'business:company_profile' %}" class="header__nav-link">
+                            <span class="nav-icon">💼</span> ЛК Предпринимателя
+                        </a>
                     {% endif %}
                     {% if user.is_superuser or user.role == 'admin' %}
-                        <a href="{% url 'dashboard:home' %}">Админ-панель</a>
+                        <a href="{% url 'dashboard:home' %}" class="header__nav-link">
+                            <span class="nav-icon">⚙️</span> Админ-панель
+                        </a>
                     {% endif %}
-                    <a href="{% url 'accounts:logout' %}">Выход ({{ user.username }})</a>
+                    <a href="{% url 'accounts:logout' %}" class="header__nav-link header__nav-link--accent">
+                        <span class="nav-icon">🚪</span> Выход ({{ user.username }})
+                    </a>
                 {% else %}
-                    <a href="{% url 'accounts:login' %}">Вход</a>
+                    <a href="{% url 'accounts:login' %}" class="header__nav-link header__nav-link--btn">
+                        <span class="nav-icon">👤</span> Вход
+                    </a>
                 {% endif %}
             </nav>
+            <button class="header__mobile-toggle" aria-label="Меню">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
     </header>
 
@@ -51,16 +72,23 @@
             <div class="footer__section">
                 <h3>upx100.ru</h3>
                 <p>Платформа для поиска и записи на услуги</p>
+                <p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">Ваш надёжный помощник в мире услуг</p>
             </div>
             <div class="footer__section">
                 <h3>Разделы</h3>
                 <a href="{% url 'home' %}">Главная</a>
                 <a href="{% url 'search:search' %}">Поиск услуг</a>
-                <a href="#">О нас</a>
+                <a href="{% url 'about' %}">О нас</a>
+                <a href="{% url 'cookie_policy' %}">Cookie политика</a>
             </div>
             <div class="footer__section">
                 <h3>Контакты</h3>
                 <a href="mailto:info@upx100.ru">info@upx100.ru</a>
+                <a href="tel:+79990000000">+7 (999) 000-00-00</a>
+                <div style="margin-top: 15px;">
+                    <a href="#" style="display: inline-block; margin-right: 10px;">📱 Telegram</a>
+                    <a href="#" style="display: inline-block;">📷 Instagram</a>
+                </div>
             </div>
         </div>
         <div class="container footer__bottom">
@@ -68,6 +96,50 @@
         </div>
     </footer>
 
+    <!-- Cookie уведомление -->
+    <div id="cookie-banner" class="cookie-banner">
+        <div class="container cookie-banner__inner">
+            <p class="cookie-banner__text">
+                🍪 Мы используем файлы cookie для улучшения работы сайта и анализа трафика. 
+                Продолжая использовать сайт, вы соглашаетесь с нашей 
+                <a href="{% url 'cookie_policy' %}" target="_blank">политикой использования cookie</a>.
+            </p>
+            <button id="cookie-accept" class="btn btn--green cookie-banner__btn">Принять</button>
+        </div>
+    </div>
+
     {% block extra_js %}{% endblock %}
+    
+    <script>
+        // Мобильное меню
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileToggle = document.querySelector('.header__mobile-toggle');
+            const headerNav = document.querySelector('.header__nav');
+            
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', function() {
+                    headerNav.classList.toggle('header__nav--mobile-open');
+                    this.classList.toggle('header__mobile-toggle--active');
+                });
+            }
+            
+            // Cookie banner
+            const cookieBanner = document.getElementById('cookie-banner');
+            const cookieAccept = document.getElementById('cookie-accept');
+            
+            if (!localStorage.getItem('cookiesAccepted')) {
+                setTimeout(function() {
+                    cookieBanner.classList.add('cookie-banner--visible');
+                }, 1000);
+            }
+            
+            if (cookieAccept) {
+                cookieAccept.addEventListener('click', function() {
+                    localStorage.setItem('cookiesAccepted', 'true');
+                    cookieBanner.classList.remove('cookie-banner--visible');
+                });
+            }
+        });
+    </script>
 </body>
 </html>

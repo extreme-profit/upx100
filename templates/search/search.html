@@ -21,7 +21,7 @@
     {% if categories %}
     <div style="margin: 20px 0;">
         <h3>Категории:</h3>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
             {% for category in categories %}
                 <a href="?category={{ category.slug }}{% if query %}&q={{ query }}{% endif %}" 
                    class="btn btn--outline"
@@ -33,6 +33,25 @@
                 <a href="?{% if query %}q={{ query }}{% endif %}" class="btn btn--outline">Сбросить фильтр</a>
             {% endif %}
         </div>
+        
+        <!-- Подкатегории -->
+        {% if selected_subcategories %}
+        <h4 style="margin-top: 20px;">Подкатегории:</h4>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="?category={{ request.GET.category }}{% if query %}&q={{ query }}{% endif %}" 
+               class="btn btn--sm btn--outline"
+               style="{% if not request.GET.subcategory %}background: #28a745; color: white;{% endif %}">
+                Все
+            </a>
+            {% for subcat in selected_subcategories %}
+                <a href="?category={{ request.GET.category }}&subcategory={{ subcat.slug }}{% if query %}&q={{ query }}{% endif %}" 
+                   class="btn btn--sm btn--outline"
+                   style="{% if request.GET.subcategory == subcat.slug %}background: #28a745; color: white;{% endif %}">
+                    {{ subcat.name }}
+                </a>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
     {% endif %}
     
@@ -85,14 +104,49 @@ document.addEventListener('DOMContentLoaded', function() {
     const locations = {{ map_data | safe }};
     
     if (locations.length > 0) {
-        // Инициализация карты с центром в первой точке
+        // Инициализация карты
         ymaps.ready(init);
         
         function init(){
+            // Центр карты по умолчанию (Москва)
+            let defaultCenter = [55.751244, 37.618423];
+            let defaultZoom = 10;
+            
+            // Запрос геолокации пользователя
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        
+                        // Если пользователь разрешил доступ к геопозиции, центрируем карту на нём
+                        defaultCenter = [userLat, userLng];
+                        defaultZoom = 12;
+                        
+                        initMap(defaultCenter, defaultZoom, locations);
+                    },
+                    function(error) {
+                        // Если пользователь запретил доступ или произошла ошибка, используем центр по умолчанию
+                        console.log('Геолокация недоступна:', error);
+                        initMap(defaultCenter, defaultZoom, locations);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                // Геолокация не поддерживается браузером
+                initMap(defaultCenter, defaultZoom, locations);
+            }
+        }
+        
+        function initMap(center, zoom, locations) {
             const map = new ymaps.Map("map", {
-                center: [locations[0].lat, locations[0].lng],
-                zoom: 13,
-                controls: ['zoomControl', 'fullscreenControl']
+                center: center,
+                zoom: zoom,
+                controls: ['zoomControl', 'fullscreenControl', 'geolocationControl']
             });
             
             // Добавление маркеров
@@ -108,8 +162,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 map.geoObjects.add(placemark);
             });
             
-            // Масштабирование карты под все точки
-            if (locations.length > 1) {
+            // Масштабирование карты под все точки (если точек больше одной и нет геолокации)
+            if (locations.length > 1 && zoom === 10) {
                 const bounds = [];
                 locations.forEach(loc => {
                     bounds.push([loc.lat, loc.lng]);

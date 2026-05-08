@@ -11,6 +11,7 @@ def search_view(request):
     """Страница поиска услуг"""
     query = request.GET.get('q', '')
     category_slug = request.GET.get('category', '')
+    subcategory_slug = request.GET.get('subcategory', '')
     
     # Берём только активные услуги проверенных компаний
     services = Service.objects.select_related('company').filter(
@@ -57,9 +58,15 @@ def search_view(request):
             )
     
     # Фильтр по категории
+    selected_subcategories = []
     if category_slug:
         subcategories = Subcategory.objects.filter(category__slug=category_slug)
+        selected_subcategories = list(subcategories)
         services = services.filter(subcategory__in=subcategories)
+        
+        # Если выбрана подкатегория, фильтруем ещё по ней
+        if subcategory_slug:
+            services = services.filter(subcategory__slug=subcategory_slug)
     
     # Получаем уникальные компании из найденных услуг для карты
     companies_with_coords = []
@@ -83,6 +90,9 @@ def search_view(request):
         'query': query,
         'services': services,
         'categories': categories,
+        'selected_category': category_slug,
+        'selected_subcategory': subcategory_slug,
+        'selected_subcategories': selected_subcategories,
         'map_data': json.dumps(companies_with_coords),
         'has_map': len(companies_with_coords) > 0,
         'yandex_maps_api_key': settings.YANDEX_MAPS_API_KEY,
