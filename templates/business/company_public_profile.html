@@ -72,9 +72,14 @@
 </div>
 
 {% if latitude and longitude %}
-<script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_api_key }}&lang=ru_RU"></script>
+<script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_api_key }}&lang=ru_RU" type="text/javascript"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        if (typeof ymaps === 'undefined') {
+            console.error('Yandex Maps API не загрузился');
+            return;
+        }
+        
         ymaps.ready(init);
         
         function init() {
@@ -87,7 +92,7 @@
             var myPlacemark = new ymaps.Placemark([{{ latitude }}, {{ longitude }}], {
                 hintContent: '{{ company.name }}',
                 balloonContentHeader: '<strong>{{ company.name }}</strong>',
-                balloonContentBody: '{{ company.address }}'
+                balloonContentBody: '{{ company.address|escapejs }}'
             }, {
                 preset: 'islands#blueCircleDotIcon'
             });
