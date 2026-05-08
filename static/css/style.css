@@ -115,12 +115,12 @@ a:hover {
 }
 
 .header__nav-link--btn {
-    background: var(--blue);
+    background: #28a745;
     color: var(--color-white);
 }
 
 .header__nav-link--btn:hover {
-    background: var(--blue-hover);
+    background: #168830;
     color: var(--color-white);
 }
 
