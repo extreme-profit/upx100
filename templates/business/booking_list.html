@@ -9,13 +9,10 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <h2 class="mb-0 text-primary"><i class="fas fa-calendar-check me-2"></i>Бронирования</h2>
-                <a href="{% url 'business:company_profile' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>В панель
-                </a>
             </div>
         </div>
     </div>
-    
+
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
@@ -24,33 +21,26 @@
             </div>
         {% endfor %}
     {% endif %}
-    
+
     <!-- Фильтры -->
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-light py-3">
-            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Фильтры</h5>
-        </div>
         <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <label for="status_filter" class="form-label fw-bold">Статус</label>
-                    <select name="status" id="status_filter" class="form-select form-select-lg">
-                        <option value="">Все статусы</option>
-                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Ожидают подтверждения</option>
-                        <option value="confirmed" {% if request.GET.status == 'confirmed' %}selected{% endif %}>Подтверждены</option>
-                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Отменены</option>
-                        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Выполнены</option>
-                    </select>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary btn-lg w-100">
-                        <i class="fas fa-search me-2"></i>Применить
-                    </button>
-                </div>
+            <form method="get" class="row g-3" style="display: flex; gap: 10px;">
+                <label for="status_filter" class="form-label fw-bold" style="align-self: center;">Статус</label>
+                <select name="status" id="status_filter" class="form-select form-select-lg">
+                    <option value="">Все статусы</option>
+                    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Ожидают подтверждения</option>
+                    <option value="confirmed" {% if request.GET.status == 'confirmed' %}selected{% endif %}>Подтверждены</option>
+                    <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Отменены</option>
+                    <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Выполнены</option>
+                </select>
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="fas fa-search me-2"></i>Применить
+                </button>
             </form>
         </div>
     </div>
-    
+
     <!-- Список бронирований -->
     <div class="card shadow-sm border-0">
         <div class="card-header bg-primary text-white py-3">
@@ -76,11 +66,17 @@
                     </thead>
                     <tbody>
                         {% for item in bookings_with_slots %}
-                        {% with booking=item.booking slot_time=item.time slot_date=item.date %}
+                        {% with booking=item.booking slot_time=item.time slot_date=item.date employee_name=item.employee_name %}
                         <tr class="align-middle">
                             <td class="py-3 fw-bold">{{ booking.client_name }}</td>
                             <td class="py-3">{{ booking.service.name }}</td>
-                            <td class="py-3">{{ booking.service.employee.name|default:"—" }}</td>
+                            <td class="py-3 px-3">
+                                {% if employee_name %}
+                                    {{ employee_name }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
                             <td class="py-3">
                                 {% if slot_date and slot_time %}
                                     <span class="text-primary fw-bold">
@@ -118,10 +114,10 @@
                                 {% if booking.status == 'pending' %}
                                     <div class="btn-group" role="group">
                                         <a href="{% url 'business:booking_confirm' booking.pk %}" class="btn btn-sm btn-success" title="Подтвердить">
-                                            <i class="fas fa-check"></i>
+                                            ✓
                                         </a>
                                         <a href="{% url 'business:booking_cancel' booking.pk %}" class="btn btn-sm btn-danger" title="Отменить">
-                                            <i class="fas fa-times"></i>
+                                            ✗
                                         </a>
                                     </div>
                                 {% elif booking.status == 'confirmed' %}
@@ -153,20 +149,20 @@
     .table tbody tr {
         transition: all 0.2s ease;
     }
-    
+
     .table tbody tr:hover {
         background-color: #f8f9fa;
         transform: scale(1.01);
     }
-    
+
     .badge {
         font-weight: 500;
     }
-    
+
     .card {
         transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     }
-    
+
     .card:hover {
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
     }

@@ -3,7 +3,6 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 
-
 class Company(models.Model):
     """Модель компании (предпринимателя)"""
     owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='company')
@@ -75,25 +74,15 @@ class ServiceCategory(models.Model):
 
 class Service(models.Model):
     """Модель услуги"""
-    STATUS_CHOICES = [
-        ('draft', 'Черновик'),
-        ('active', 'Активна'),
-        ('inactive', 'Неактивна (неоплата)'),
-        ('pending_payment', 'Ожидает оплаты'),
-    ]
-    
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='services', verbose_name="Компания")
-    category = models.ForeignKey('companies.Category', on_delete=models.SET_NULL, null=True, blank=True, 
-                                  related_name='business_services', verbose_name="Категория")
-    subcategory = models.ForeignKey('companies.Subcategory', on_delete=models.SET_NULL, null=True, blank=True, 
-                                  related_name='business_services', verbose_name="Подкатегория")
+    category = models.ForeignKey('companies.Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='business_services', verbose_name="Категория")
+    subcategory = models.ForeignKey('companies.Subcategory', on_delete=models.SET_NULL, null=True, blank=True, related_name='business_services', verbose_name="Подкатегория")
     employees = models.ManyToManyField(Employee, related_name='services', verbose_name="Сотрудники")
     name = models.CharField(max_length=200, verbose_name="Название услуги")
     description = models.TextField(blank=True, verbose_name="Описание")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена (руб)")
     duration = models.PositiveIntegerField(help_text="Длительность в минутах", verbose_name="Длительность (мин)", null=True, blank=True)
     photo = models.ImageField(upload_to='service_photos/', blank=True, null=True, verbose_name="Фото услуги")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', verbose_name="Статус")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -108,7 +97,30 @@ class Service(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.company.name})"
-    
+
+    @property
+    def status(self):
+        """Вычисляемый статус услуги на основе даты оплаты"""
+        if not self.payment_due_date:
+            return 'draft'  # Если нет даты оплаты - черновик
+
+        now = timezone.now()
+
+        if now > self.payment_due_date:
+            return 'inactive'  # Оплата истекла
+        else:
+            return 'active'  # Активна
+
+    @property
+    def status_display(self):
+        """Отображаемое название статуса"""
+        status_map = {
+            'draft': 'Черновик',
+            'active': 'Активна',
+            'inactive': 'Неактивна (оплата истекла)',
+        }
+        return status_map.get(self.status, self.status)
+
     def is_paid(self):
         """Проверка активности оплаты"""
         if self.status == 'active' and self.payment_due_date:
@@ -181,34 +193,41 @@ class Payment(models.Model):
         ('failed', 'Ошибка оплаты'),
         ('refunded', 'Возврат'),
     ]
-    
+
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='payments', verbose_name="Услуга")
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма (руб)")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="Статус")
     payment_date = models.DateTimeField(null=True, blank=True, verbose_name="Дата оплаты")
     transaction_id = models.CharField(max_length=100, blank=True, verbose_name="ID транзакции")
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         verbose_name = "Платеж"
         verbose_name_plural = "Платежи"
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"Платеж {self.amount} руб. для {self.service.name} ({self.get_status_display()})"
-    
+
     def mark_as_paid(self):
         """Обработка успешной оплаты"""
         if self.status == 'success':
             return
-        
+
         self.status = 'success'
         self.payment_date = timezone.now()
         self.save()
-        
+
         # Обновляем услугу
         service = self.service
         service.last_payment_date = self.payment_date
-        service.payment_due_date = self.payment_date + timedelta(days=30)  # Оплата на месяц
-        service.status = 'active'
+
+        # Проверяем, есть ли уже активная оплата
+        if service.payment_due_date and service.payment_due_date > timezone.now():
+            # Если оплата еще активна, продлеваем на 30 дней от текущей даты окончания
+            service.payment_due_date = service.payment_due_date + timedelta(days=30)
+        else:
+            # Если оплата истекла или её нет, устанавливаем новую дату окончания
+            service.payment_due_date = self.payment_date + timedelta(days=30)
+
         service.save()

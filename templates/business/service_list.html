@@ -19,7 +19,6 @@
                             <th>Фото</th>
                             <th>Название</th>
                             <th>Категория</th>
-                            <th>Сотрудник</th>
                             <th>Цена</th>
                             <th>Статус</th>
                             <th>Действия</th>
@@ -37,22 +36,45 @@
                             </td>
                             <td>{{ service.name }}</td>
                             <td>{{ service.category.name|default:"—" }}</td>
-                            <td>{{ service.employee.name|default:"Не назначен" }}</td>
                             <td>{{ service.price }} ₽</td>
                             <td>
                                 <span class="badge badge-{% if service.status == 'active' %}success{% elif service.status == 'pending_payment' %}warning{% elif service.status == 'inactive' %}danger{% else %}secondary{% endif %}">
-                                    {{ service.get_status_display }}
+                                    {{ service.status_display }}
                                 </span>
                             </td>
                             <td>
                                 <div class="actions-cell">
-                                    <a href="{% url 'business:service_detail' service.pk %}" class="action-btn edit" title="Просмотр">👁</a>
+                                    <a href="{% url 'business:service_detail' service.pk %}" class="action-btn edit" title="Просмотр">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </a>
                                     {% if user.role != 'employee' %}
-                                    <a href="{% url 'business:service_edit' service.pk %}" class="action-btn edit" title="Редактировать">✏</a>
+                                    <a href="{% url 'business:service_edit' service.pk %}" class="action-btn edit" title="Редактировать">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
+                                    </a>
                                     {% endif %}
-                                    <a href="{% url 'business:slot_manage' service.pk %}" class="action-btn edit" style="background: #dbeafe; color: #1e40af;" title="Слоты">📅</a>
+                                    <a href="{% url 'business:slot_manage' service.pk %}" class="action-btn edit" style="background: #dbeafe; color: #1e40af;" title="Слоты">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                            <line x1="16" y1="2" x2="16" y2="6"/>
+                                            <line x1="8" y1="2" x2="8" y2="6"/>
+                                            <line x1="3" y1="10" x2="21" y2="10"/>
+                                        </svg>
+                                    </a>
                                     {% if user.role != 'employee' %}
-                                    <a href="{% url 'business:service_delete' service.pk %}" class="action-btn delete" title="Удалить" onclick="confirmDelete(event, '{% url 'business:service_delete' service.pk %}')">🗑</a>
+                                    <a href="{% url 'business:service_delete' service.pk %}" class="action-btn delete" title="Удалить" onclick="confirmDelete(event, '{% url 'business:service_delete' service.pk %}')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            <line x1="10" y1="11" x2="10" y2="17"/>
+                                            <line x1="14" y1="11" x2="14" y2="17"/>
+                                        </svg>
+                                    </a>
                                     {% endif %}
                                 </div>
                             </td>
@@ -74,10 +96,6 @@
             </div>
             {% endif %}
         </div>
-    </div>
-    
-    <div style="margin-top: 24px;">
-        <a href="{% url 'business:company_profile' %}" class="btn btn-secondary">← Назад в панель</a>
     </div>
     
     <script>

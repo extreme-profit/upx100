@@ -2,14 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models import Count, Q
-from django.http import JsonResponse
 from accounts.models import User
 from companies.models import Category
 from business.models import Service
-from utils.slug_utils import transliterate_to_slug
 from datetime import datetime
-
-
+from django.utils import timezone
 
 
 def about_view(request):
@@ -24,15 +21,16 @@ def cookie_policy_view(request):
     }
     return render(request, 'cookie_policy.html', context)
 
+
 def home_view(request):
     """Главная страница сайта"""
     categories = Category.objects.all()[:6]
-    # Берём активные услуги из бизнес-модели, у которых компания проверена
     services = Service.objects.select_related('company').filter(
-        status='active',
+        payment_due_date__gt=timezone.now(),  # Оплата активна
+        payment_due_date__isnull=False,  # Есть дата оплаты
         company__is_verified=True
     ).order_by('-created_at')[:6]
-    
+
     context = {
         'categories': categories,
         'services': services,

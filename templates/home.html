@@ -47,7 +47,7 @@
                 <h3 class="card__title">{{ service.name }}</h3>
                 <p class="card__price">{{ service.price }} ₽</p>
                 <p>{{ service.company.name }}</p>
-                <a href="{% url 'business:service_detail' service.pk %}" class="btn btn--blue" style="margin-top: 15px; width: 100%;">Записаться</a>
+                <a href="{% url 'client:service_detail' service_id=service.pk %}" class="btn btn--blue" style="margin-top: 15px; width: 100%;">Записаться</a>
             </div>
         </div>
         {% empty %}

@@ -31,18 +31,20 @@
     {% if companies %}
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; margin-top: 30px;">
             {% for company in companies %}
-                <div class="card" style="padding: 20px; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
-                    {% if company.logo %}
-                        <img src="{{ company.logo.url }}" alt="{{ company.name }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%; margin-bottom: 15px;">
-                    {% endif %}
-                    <h3 style="margin-bottom: 10px;">{{ company.name }}</h3>
-                    {% if company.description %}
-                        <p style="color: #666; margin-bottom: 15px;">{{ company.description|truncatewords:15 }}</p>
-                    {% endif %}
-                    {% if company.address %}
-                        <p style="font-size: 14px; color: #888;">📍 {{ company.address }}</p>
-                    {% endif %}
-                    <a href="{% url 'client:company_detail' company.pk %}" class="btn btn--primary" style="margin-top: 15px; width: 100%;">Посмотреть услуги</a>
+                <div class="company-card">
+                    <div class="company-card__content">
+                        {% if company.logo %}
+                            <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="company-card__logo">
+                        {% endif %}
+                        <h3 class="company-card__title">{{ company.name }}</h3>
+                        {% if company.description %}
+                            <p class="company-card__description">{{ company.description|truncatewords:15 }}</p>
+                        {% endif %}
+                        {% if company.address %}
+                            <p class="company-card__address">📍 {{ company.address }}</p>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'client:company_detail' company.pk %}" class="company-card__btn">Посмотреть услуги</a>
                 </div>
             {% endfor %}
         </div>
@@ -52,4 +54,91 @@
         </div>
     {% endif %}
 </div>
+
+<style>
+    .company-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 24px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        border: 1px solid #e9ecef;
+    }
+
+    .company-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .company-card__content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .company-card__logo {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 50%;
+        margin-bottom: 16px;
+        border: 2px solid #f0f0f0;
+    }
+
+    .company-card__title {
+        margin: 0 0 8px 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1a1a2e;
+    }
+
+    .company-card__description {
+        color: #6c757d;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin: 0 0 12px 0;
+        flex-shrink: 0;
+    }
+
+    .company-card__address {
+        font-size: 0.875rem;
+        color: #868e96;
+        margin: 0 0 12px 0;
+    }
+
+    .company-card__spacer {
+        flex: 1;
+    }
+
+    .company-card__btn {
+        display: block;
+        width: 100%;
+        padding: 10px 16px;
+        background: #007bff;
+        color: #fff;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: background 0.2s ease, transform 0.15s ease;
+        margin-top: 12px;
+        flex-shrink: 0;
+        border: none;
+        cursor: pointer;
+    }
+
+    .company-card__btn:hover {
+        background: #0069d9;
+        color: #fff;
+        text-decoration: none;
+        transform: scale(1.02);
+    }
+
+    .company-card__btn:active {
+        transform: scale(0.98);
+    }
+</style>
 {% endblock %}

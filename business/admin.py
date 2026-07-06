@@ -26,7 +26,7 @@ class ServiceCategoryAdmin(admin.ModelAdmin):
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
     list_display = ['name', 'company', 'category', 'get_employees_list', 'price', 'duration', 'status', 'payment_due_date']
-    list_filter = ['status', 'company', 'category']
+    list_filter = ['company', 'category']
     search_fields = ['name', 'company__name', 'description']
     readonly_fields = ['created_at', 'updated_at']
     filter_horizontal = ['employees']

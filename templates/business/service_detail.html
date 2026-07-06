@@ -10,11 +10,9 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h2 class="mb-0 text-primary"><i class="fas fa-concierge-bell me-2"></i>{{ service.name }}</h2>
                 <div>
-                    {% if not service.is_paid %}
-                        <a href="{% url 'business:payment_process' service.pk %}" class="btn btn-warning btn-lg">
-                            <i class="fas fa-credit-card me-2"></i>Оплатить
-                        </a>
-                    {% endif %}
+                    <a href="{% url 'business:payment_process' service.pk %}" class="btn btn-warning btn-lg">
+                        <i class="fas fa-credit-card me-2"></i>Оплатить
+                    </a>
                     <a href="{% url 'business:service_edit' service.pk %}" class="btn btn-primary btn-lg">
                         <i class="fas fa-edit me-2"></i>Редактировать
                     </a>
@@ -28,15 +26,6 @@
             </div>
         </div>
     </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
-                <i class="fas fa-info-circle me-2"></i>{{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
     
     <div class="row g-4">
         <!-- Информация об услуге -->
@@ -52,31 +41,31 @@
                         </div>
                     {% endif %}
                     <div class="mb-3">
-                        <label class="fw-bold text-muted"><i class="fas fa-tag me-2"></i>Название:</label>
+                        <label class="fw-bold text-muted"><b>Название:</b></label>
                         <p class="fs-5">{{ service.name }}</p>
                     </div>
                     <div class="mb-3">
-                        <label class="fw-bold text-muted"><i class="fas fa-align-left me-2"></i>Описание:</label>
+                        <label class="fw-bold text-muted"><b>Описание:</b></label>
                         <p>{{ service.description|default:"Не указано"|linebreaks }}</p>
                     </div>
                     <div class="row mb-3">
                         <div class="col-6">
-                            <label class="fw-bold text-muted"><i class="fas fa-ruble-sign me-2"></i>Цена:</label>
+                            <label class="fw-bold text-muted"><b>Цена:</b></label>
                             <p class="fs-4 text-success fw-bold">{{ service.price }} ₽</p>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="fw-bold text-muted"><i class="fas fa-folder me-2"></i>Категория:</label>
+                        <label class="fw-bold text-muted"><b>Категория:</b></label>
                         <p>{{ service.category.name|default:"—" }}</p>
                     </div>
                     {% if service.subcategory %}
                     <div class="mb-3">
-                        <label class="fw-bold text-muted"><i class="fas fa-folder-open me-2"></i>Подкатегория:</label>
+                        <label class="fw-bold text-muted"><b>Подкатегория:</b></label>
                         <p>{{ service.subcategory.name }}</p>
                     </div>
                     {% endif %}
                     <div class="mb-3">
-                        <label class="fw-bold text-muted"><i class="fas fa-user-tie me-2"></i>Сотрудники:</label>
+                        <label class="fw-bold text-muted"><b>Сотрудники:</b></label>
                         <p>
                             {% if service.employees.all %}
                                 {% for employee in service.employees.all %}
@@ -88,22 +77,14 @@
                         </p>
                     </div>
                     <div class="mb-3">
-                        <label class="fw-bold text-muted"><i class="fas fa-flag me-2"></i>Статус:</label>
-                        <span class="badge bg-{% if service.status == 'active' %}success{% elif service.status == 'pending_payment' %}warning{% elif service.status == 'inactive' %}danger{% else %}secondary{% endif %} px-3 py-2 fs-6">
-                            <i class="fas fa-{% if service.status == 'active' %}check-circle{% elif service.status == 'pending_payment' %}clock{% elif service.status == 'inactive' %}times-circle{% else %}info-circle{% endif %} me-1"></i>
-                            {{ service.get_status_display }}
-                        </span>
+                        <label class="fw-bold text-muted"><b>Статус:</b></label>
+                        <p>{{ service.status_display }}</p>
                     </div>
                     <div class="mb-3">
-                        <label class="fw-bold text-muted"><i class="fas fa-calendar-check me-2"></i>Оплата до:</label>
+                        <label class="fw-bold text-muted"><b>Оплачено до:</b></label>
                         <p>
                             {% if service.payment_due_date %}
                                 {{ service.payment_due_date|date:"d.m.Y" }}
-                                {% if not service.is_paid %}
-                                    <span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i>ИСТЕКЛО</span>
-                                {% else %}
-                                    <span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Оплачено</span>
-                                {% endif %}
                             {% else %}
                                 —
                             {% endif %}

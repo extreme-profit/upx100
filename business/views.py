@@ -2,9 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.db.models import Q
 from datetime import timedelta, datetime, time
 from django.http import JsonResponse
 from decouple import config
+
 from .models import Company, Employee, Service, ServiceCategory, ServiceTimeSlot, Booking, Payment
 from .forms import CompanyForm, EmployeeForm, ServiceForm, ServiceTimeSlotGenerateForm
 from companies.models import Category, Subcategory
@@ -55,7 +57,10 @@ def company_profile_view(request):
     services = company.services.all()
     bookings = Booking.objects.filter(service__company=company).order_by('-created_at')[:10]
     pending_bookings_count = Booking.objects.filter(service__company=company, status='pending').count()
-    services_pending_count = company.services.filter(status='pending_payment').count()
+    services_pending_count = company.services.filter(
+        Q(payment_due_date__isnull=True) |  # Нет даты оплаты - черновик
+        Q(payment_due_date__lt=timezone.now())  # Дата оплаты истекла
+    ).count()
     
     context = {
         'company': company,
@@ -214,7 +219,6 @@ def service_create_view(request):
         if form.is_valid():
             service = form.save(commit=False)
             service.company = company
-            service.status = 'pending_payment'
             service.save()
             # Сохраняем сотрудников
             employees = form.cleaned_data.get('employees')
@@ -255,8 +259,6 @@ def service_edit_view(request, pk):
         form = ServiceForm(request.POST, request.FILES, instance=service, company=company)
         if form.is_valid():
             service = form.save(commit=False)
-            if service.status == 'inactive':
-                service.status = 'pending_payment'
             service.save()
             # Сохраняем сотрудников
             employees = form.cleaned_data.get('employees')
@@ -865,16 +867,18 @@ def payment_process_view(request, pk):
     except (Company.DoesNotExist, Service.DoesNotExist):
         messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
-    
-    # Получаем или создаем платеж для услуги
-    # Сначала проверяем, есть ли уже успешный платеж
-    success_payment = Payment.objects.filter(service=service, status='success').first()
-    if success_payment:
-        messages.info(request, 'Услуга уже оплачена')
-        return redirect('business:service_detail', pk=service.pk)
+
+    # Проверяем, активна ли услуга
+    if service.status == 'active':
+        messages.info(request,
+                      f'Услуга активна до {service.payment_due_date.strftime("%d.%m.%Y")}. Для продления нажмите "Оплатить"')
 
     # Пытаемся получить существующий неоплаченный платеж
-    payment = Payment.objects.filter(service=service).exclude(status='success').first()
+    payment = Payment.objects.filter(
+        service=service,
+        status='pending'
+    ).first()
+
     if not payment:
         # Создаем новый платеж
         payment = Payment.objects.create(
@@ -883,20 +887,19 @@ def payment_process_view(request, pk):
             status='pending'
         )
 
-    # Если уже оплачено (проверка на всякий случай), перенаправляем на детальную страницу
-    if payment.status == 'success':
-        messages.info(request, 'Услуга уже оплачена')
-        return redirect('business:service_detail', pk=service.pk)
-    
-    # Здесь должна быть интеграция с платежной системой
-    # Для демонстрации просто помечаем как оплаченный
-    
     if request.method == 'POST':
         payment.mark_as_paid()
-        messages.success(request, 'Оплата прошла успешно! Услуга активирована.')
+        messages.success(request, 'Оплата прошла успешно! Услуга активирована/продлена.')
         return redirect('business:service_detail', pk=payment.service.pk)
-    
-    return render(request, 'business/payment_process.html', {'payment': payment})
+
+    # Определяем тип оплаты для отображения
+    payment_type = 'продление' if service.status == 'active' else 'активация'
+
+    return render(request, 'business/payment_process.html', {
+        'payment': payment,
+        'payment_type': payment_type,
+        'service': service,
+    })
 
 
 @login_required
@@ -912,10 +915,10 @@ def booking_list_view(request):
     if not company:
         messages.error(request, 'Компания не найдена')
         return redirect('home')
-    
+
     # Получаем статус из GET параметров для фильтрации
     status_filter = request.GET.get('status')
-    
+
     # Для сотрудников фильтруем только по услугам, к которым они привязаны
     if request.user.role == 'employee':
         employee_profile = request.user.get_employee_profile()
@@ -927,34 +930,39 @@ def booking_list_view(request):
         else:
             bookings = Booking.objects.none()
     else:
-        bookings = Booking.objects.filter(service__company=company).select_related('service', 'service__category', 'service__subcategory').order_by('-created_at')
-    
+        bookings = Booking.objects.filter(service__company=company).select_related('service', 'service__category',
+                                                                                   'service__subcategory').order_by(
+            '-created_at')
+
     # Применяем фильтр по статусу если указан
     if status_filter:
         bookings = bookings.filter(status=status_filter)
-    
+
     # Получаем информацию о временных слотах для каждого бронирования
     bookings_with_slots = []
     for booking in bookings:
         slot = booking.time_slots.first()
         booking_time = None
         booking_date = None
+        employee_name = None
         if slot:
             booking_time = slot.start_time
             booking_date = slot.date
+            # Получаем имя сотрудника из слота
+            if slot.employee:
+                employee_name = slot.employee.name
         bookings_with_slots.append({
             'booking': booking,
             'time': booking_time,
             'date': booking_date,
+            'employee_name': employee_name,  # Добавляем имя сотрудника
         })
-    
+
     return render(request, 'business/booking_list.html', {
         'bookings_with_slots': bookings_with_slots,
         'company': company,
         'selected_status': status_filter,
     })
-
-
 
 
 @login_required

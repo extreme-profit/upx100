@@ -4,8 +4,7 @@
 {% block title %}Сотрудники | Панель предпринимателя{% endblock %}
 
 {% block content %}
-<div class="content-area">
-    <div class="row mb-4">
+<div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <h2 class="mb-0 text-primary"><i class="fas fa-users me-2"></i>Сотрудники</h2>
@@ -15,7 +14,7 @@
             </div>
         </div>
     </div>
-    
+
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
@@ -24,7 +23,7 @@
             </div>
         {% endfor %}
     {% endif %}
-    
+
     <!-- Список сотрудников -->
     <div class="card shadow-sm border-0">
         <div class="card-header bg-primary text-white py-3">
@@ -76,12 +75,20 @@
                             </td>
                             <td class="py-3"><span class="badge bg-secondary px-3 py-2">{{ employee.services.count }}</span></td>
                             <td class="py-3 text-center">
-                                <div class="btn-group" role="group">
+                                <div class="btn-group" role="group" style="display: flex; gap: 5px;">
                                     <a href="{% url 'business:employee_edit' employee.pk %}" class="btn btn-sm btn-outline-primary" title="Редактировать">
-                                        <i class="fas fa-edit"></i>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
                                     </a>
                                     <a href="{% url 'business:employee_delete' employee.pk %}" class="btn btn-sm btn-outline-danger" title="Удалить" onclick="return confirm('Вы уверены, что хотите удалить этого сотрудника?')">
-                                        <i class="fas fa-trash"></i>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            <line x1="10" y1="11" x2="10" y2="17"/>
+                                            <line x1="14" y1="11" x2="14" y2="17"/>
+                                        </svg>
                                     </a>
                                 </div>
                             </td>
@@ -102,7 +109,6 @@
             {% endif %}
         </div>
     </div>
-</div>
 
 <style>
     .table tbody tr {

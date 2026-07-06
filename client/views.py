@@ -10,23 +10,33 @@ def companies_list_view(request):
     """Список всех компаний для клиентов"""
     category_slug = request.GET.get('category')
     subcategory_slug = request.GET.get('subcategory')
-    
+
     # Показываем только проверенные компании
     companies = Company.objects.filter(is_verified=True)
     categories = Category.objects.all()
-    
+
     if category_slug:
+        # Фильтруем компании по услугам с активной оплатой
         companies = companies.filter(
             services__category__slug=category_slug,
-            services__status='active'
+            services__payment_due_date__gt=timezone.now(),  # Оплата активна
+            services__payment_due_date__isnull=False  # Есть дата оплаты
         ).distinct()
-        
+
         # Если выбрана подкатегория, фильтруем ещё по ней
         if subcategory_slug:
             companies = companies.filter(
                 services__subcategory__slug=subcategory_slug
             ).distinct()
-    
+
+    # Для отображения количества активных услуг у каждой компании
+    for company in companies:
+        company.active_services_count = Service.objects.filter(
+            company=company,
+            payment_due_date__gt=timezone.now(),
+            payment_due_date__isnull=False
+        ).count()
+
     context = {
         'companies': companies,
         'categories': categories,
@@ -41,7 +51,11 @@ def company_detail_view(request, company_id):
     # Проверяем что компания проверена
     company = get_object_or_404(Company, pk=company_id, is_verified=True)
     # Показываем только активные услуги
-    services = company.services.filter(status='active').prefetch_related('employees', 'category', 'subcategory')
+    services = company.services.filter(
+        payment_due_date__gt=timezone.now(),  # Оплата активна
+        payment_due_date__isnull=False,  # Есть дата оплаты
+        company__is_verified=True  # Компания проверена
+    ).prefetch_related('employees', 'category', 'subcategory')
     
     context = {
         'company': company,
@@ -52,8 +66,13 @@ def company_detail_view(request, company_id):
 
 def service_detail_view(request, service_id):
     """Страница услуги с возможностью записи"""
-    # Проверяем что услуга активна и компания проверена
-    service = get_object_or_404(Service, pk=service_id, status='active', company__is_verified=True)
+    service = get_object_or_404(
+        Service.objects.select_related('company'),
+        pk=service_id,
+        payment_due_date__gt=timezone.now(),  # Оплата активна
+        payment_due_date__isnull=False,  # Есть дата оплаты
+        company__is_verified=True  # Компания проверена
+    )
     
     # Получаем всех сотрудников услуги
     employees = service.employees.filter(is_active=True).prefetch_related('user')
@@ -115,7 +134,13 @@ def service_detail_view(request, service_id):
 def booking_create_view(request, service_id):
     """Создание бронирования"""
     # Проверяем что услуга активна и компания проверена
-    service = get_object_or_404(Service, pk=service_id, status='active', company__is_verified=True)
+    service = get_object_or_404(
+        Service.objects.select_related('company'),
+        pk=service_id,
+        payment_due_date__gt=timezone.now(),  # Оплата активна
+        payment_due_date__isnull=False,  # Есть дата оплаты
+        company__is_verified=True  # Компания проверена
+    )
     
     if request.method == 'POST':
         slot_id = request.POST.get('slot_id')

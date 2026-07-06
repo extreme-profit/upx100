@@ -121,8 +121,6 @@
                             <tr>
                                 <th>Название</th>
                                 <th>Цена</th>
-                                <th>Длительность</th>
-                                <th>Сотрудник</th>
                                 <th>Статус</th>
                                 <th>Оплата до</th>
                                 <th>Действия</th>
@@ -133,11 +131,9 @@
                             <tr>
                                 <td>{{ service.name }}</td>
                                 <td>{{ service.price }} ₽</td>
-                                <td>{{ service.duration }} мин</td>
-                                <td>{{ service.employee.name|default:"Не назначен" }}</td>
                                 <td>
                                     <span class="badge badge-{% if service.status == 'active' %}success{% elif service.status == 'pending_payment' %}warning{% elif service.status == 'inactive' %}danger{% else %}secondary{% endif %}">
-                                        {{ service.get_status_display }}
+                                        {{ service.status_display }}
                                     </span>
                                 </td>
                                 <td>

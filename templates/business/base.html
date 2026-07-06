@@ -32,6 +32,7 @@
             position: fixed;
             height: 100vh;
             overflow-y: auto;
+            z-index: 5;
         }
         
         .sidebar-header {
@@ -112,32 +113,13 @@
             align-items: center;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 1;
         }
         
         .topbar-title {
             font-size: 24px;
             font-weight: 600;
             color: #1e293b;
-        }
-        
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .user-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: #2563eb;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 14px;
         }
         
         .content-area {
@@ -558,7 +540,13 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h1>🏢 upx100</h1>
+                <h1>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                    upx100
+                </h1>
                 <p>{% if user.role == 'employee' %}Панель сотрудника{% else %}Панель предпринимателя{% endif %}</p>
             </div>
             
@@ -592,7 +580,7 @@
                 
                 <div class="nav-section">
                     <div class="nav-section-title">Компания</div>
-                    <a href="{% url 'business:company_edit' %}" class="nav-link {% if 'company' in request.resolver_match.url_name %}active{% endif %}">
+                    <a href="{% url 'business:company_edit' %}" class="nav-link {% if request.resolver_match.url_name == 'company_edit' %}active{% endif %}">
                         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
                         Профиль компании
                     </a>
@@ -641,10 +629,6 @@
         <main class="main-content">
             <div class="topbar">
                 <h2 class="topbar-title">{% if user.role == 'employee' %}{{ title|default:"Панель сотрудника" }}{% else %}{{ title|default:"Панель предпринимателя" }}{% endif %}</h2>
-                <div class="user-menu">
-                    <div class="user-avatar">{{ user.username|first|upper }}</div>
-                    <span style="font-size: 14px; color: #64748b;">{{ user.username }}</span>
-                </div>
             </div>
             
             <div class="content-area">

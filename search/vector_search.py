@@ -8,6 +8,7 @@ import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
 from django.conf import settings
+from django.utils import timezone
 from business.models import Service
 from .models import ServiceEmbedding
 
@@ -49,7 +50,7 @@ def get_service_text(service):
         parts.append(service.category.name)
     if service.subcategory:
         parts.append(service.subcategory.name)
-    
+
     return ' '.join(filter(None, parts))
 
 
@@ -60,50 +61,52 @@ def build_vector_index():
     Использует batch processing для экономии памяти.
     """
     global _model, _index, _service_ids, _embeddings_map
-    
+
     model = get_model()
-    
+
     # Получаем все активные услуги проверенных компаний
+    # Используем дату оплаты вместо status
     services = Service.objects.select_related('company', 'category', 'subcategory').filter(
-        status='active',
+        payment_due_date__gt=timezone.now(),  # Оплата активна
+        payment_due_date__isnull=False,       # Есть дата оплаты
         company__is_verified=True
     )
-    
+
     if not services.exists():
         return None, [], None
-    
+
     # Генерируем тексты
     texts = []
     service_id_list = []
-    
+
     for service in services:
         text = get_service_text(service)
         texts.append(text)
         service_id_list.append(service.id)
-    
+
     # Генерируем эмбеддинги через Sentence Transformer с batch processing
     # Используем небольшой размер батча для экономии памяти
     batch_size = 8
     all_embeddings = []
-    
+
     for i in range(0, len(texts), batch_size):
         batch_texts = texts[i:i+batch_size]
         batch_embeddings = model.encode(batch_texts, convert_to_numpy=True, show_progress_bar=False)
         all_embeddings.append(batch_embeddings)
-    
+
     embeddings = np.vstack(all_embeddings)
-    
+
     # Нормализуем эмбеддинги для косинусного сходства
     faiss.normalize_L2(embeddings)
-    
+
     # Создаем FAISS индекс (Inner Product для нормализованных векторов = косинусное сходство)
     dimension = embeddings.shape[1]
     index = faiss.IndexFlatIP(dimension)
     index.add(embeddings.astype('float32'))
-    
+
     # Сохраняем эмбеддинги и метаданные в базу данных
     ServiceEmbedding.objects.all().delete()  # Очищаем старые эмбеддинги
-    
+
     # Используем bulk_create для эффективного сохранения
     embeddings_to_create = []
     for i, service_id in enumerate(service_id_list):
@@ -115,30 +118,30 @@ def build_vector_index():
             })
         )
         embeddings_to_create.append(embedding_obj)
-    
+
     if embeddings_to_create:
         ServiceEmbedding.objects.bulk_create(embeddings_to_create)
-    
+
     # Сохраняем сам индекс и маппинг ID для быстрого доступа
     index_data = pickle.dumps({
         'index': index,
         'service_ids': service_id_list,
         'dimension': dimension
     })
-    
+
     # Сохраняем индекс в отдельную запись БЕЗ привязки к услуге (service=None)
     # Поле service nullable, поэтому можем сохранить None
     index_embedding = ServiceEmbedding.objects.create(
         service=None,  # Нет привязки к конкретной услуге
         embedding=index_data
     )
-    
+
     # Кэшируем в памяти
     _model = model
     _index = index
     _service_ids = service_id_list
     _embeddings_map = {sid: embeddings[i] for i, sid in enumerate(service_id_list)}
-    
+
     return index, service_id_list, embeddings
 
 
@@ -148,19 +151,19 @@ def load_vector_index():
     Возвращает индекс, список ID услуг и маппинг эмбеддингов.
     """
     global _model, _index, _service_ids, _embeddings_map
-    
+
     if _index is not None and _service_ids is not None:
         return _index, _service_ids, _embeddings_map
-    
+
     # Получаем сохраненные данные
     embeddings_qs = ServiceEmbedding.objects.all()
-    
+
     if not embeddings_qs.exists():
         return None, [], None
-    
+
     # Ищем запись с индексом (содержит ключ 'index')
     index_record = None
-    
+
     for emb in embeddings_qs:
         try:
             data = pickle.loads(emb.embedding)
@@ -168,14 +171,14 @@ def load_vector_index():
                 index_record = data
         except Exception:
             continue
-    
+
     if index_record is None:
         return None, [], None
-    
+
     # Восстанавливаем индекс
     _index = index_record['index']
     _service_ids = index_record['service_ids']
-    
+
     # Строим маппинг эмбеддингов
     _embeddings_map = {}
     for emb in embeddings_qs:
@@ -186,10 +189,10 @@ def load_vector_index():
                     _embeddings_map[emb.service_id] = data['embedding']
         except Exception:
             continue
-    
+
     # Загружаем модель
     _model = get_model()
-    
+
     return _index, _service_ids, _embeddings_map
 
 
@@ -199,26 +202,26 @@ def search_similar(query, top_k=10):
     Возвращает список ID услуг, отсортированных по релевантности.
     """
     index, service_ids, embeddings_map = load_vector_index()
-    
+
     if index is None or not service_ids:
         return []
-    
+
     model = get_model()
-    
+
     # Генерируем эмбеддинг запроса
     query_embedding = model.encode([query], convert_to_numpy=True)
     faiss.normalize_L2(query_embedding)
-    
+
     # Ищем ближайшие соседи в FAISS
     k = min(top_k, len(service_ids))
     distances, indices = index.search(query_embedding.astype('float32'), k)
-    
+
     # Преобразуем результаты в список ID
     result_ids = []
     for i, idx in enumerate(indices[0]):
         if idx < len(service_ids) and distances[0][i] > 0:  # Только положительные similarity
             result_ids.append(service_ids[idx])
-    
+
     return result_ids
 
 
