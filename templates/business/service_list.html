@@ -11,6 +11,7 @@
         {% endif %}
     </div>
     <div class="card-body">
+            <p>Публикация услуг бесплатна. За каждую услугу с хотя бы одной подтверждённой заявкой за календарный месяц начисляется 100 ₽. Счёт появится в следующем месяце, срок оплаты — 5 число включительно.</p>
             {% if services %}
             <div class="table-responsive">
                 <table>
@@ -38,7 +39,7 @@
                             <td>{{ service.category.name|default:"—" }}</td>
                             <td>{{ service.price }} ₽</td>
                             <td>
-                                <span class="badge badge-{% if service.status == 'active' %}success{% elif service.status == 'pending_payment' %}warning{% elif service.status == 'inactive' %}danger{% else %}secondary{% endif %}">
+                                <span class="badge badge-{% if service.status == 'active' %}success{% elif service.status == 'pending_verification' %}warning{% elif service.status == 'inactive' %}danger{% else %}secondary{% endif %}">
                                     {{ service.status_display }}
                                 </span>
                             </td>

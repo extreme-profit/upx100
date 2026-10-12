@@ -1,0 +1,22 @@
+{% extends 'business/base.html' %}
+{% block title %}Счета{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header"><h3>Ежемесячные счета</h3></div>
+    <div class="card-body">
+        <p>Публикация услуг бесплатна. Если за календарный месяц по услуге была хотя бы одна подтверждённая заявка,
+            за неё начисляется 100 ₽. Счёт выставляется в следующем месяце; оплатить нужно до конца 5 числа.</p>
+        <table>
+            <thead><tr><th>Месяц</th><th>Услуг</th><th>Сумма</th><th>Оплатить до</th><th>Статус</th><th></th></tr></thead>
+            <tbody>{% for invoice in invoices %}
+                <tr>
+                    <td>{{ invoice.period|date:"m.Y" }}</td><td>{{ invoice.items.count }}</td>
+                    <td>{{ invoice.amount }} ₽</td><td>{{ invoice.due_date|date:"d.m.Y" }}</td>
+                    <td>{{ invoice.get_status_display }}{% if invoice.is_overdue %} — просрочен{% endif %}</td>
+                    <td><a href="{% url 'business:invoice_detail' invoice.pk %}">Открыть счёт</a></td>
+                </tr>
+            {% empty %}<tr><td colspan="6">Счетов пока нет.</td></tr>{% endfor %}</tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
