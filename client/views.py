@@ -4,6 +4,9 @@ from django.utils import timezone
 from datetime import timedelta
 from business.models import Company, Service, ServiceTimeSlot, Booking, Employee
 from companies.models import Category
+from django.core.exceptions import ValidationError
+from .forms import BookingForm
+from business.booking_workflow import create_booking
 
 
 def companies_list_view(request):
@@ -12,15 +15,14 @@ def companies_list_view(request):
     subcategory_slug = request.GET.get('subcategory')
 
     # Показываем только проверенные компании
-    companies = Company.objects.filter(is_verified=True)
+    companies = Company.objects.filter(is_verified=True, is_blocked=False, owner__is_active=True)
     categories = Category.objects.all()
 
     if category_slug:
-        # Фильтруем компании по услугам с активной оплатой
+        # Публикация бесплатна; архивные услуги не участвуют в фильтрах.
         companies = companies.filter(
             services__category__slug=category_slug,
-            services__payment_due_date__gt=timezone.now(),  # Оплата активна
-            services__payment_due_date__isnull=False  # Есть дата оплаты
+            services__is_archived=False,
         ).distinct()
 
         # Если выбрана подкатегория, фильтруем ещё по ней
@@ -31,10 +33,8 @@ def companies_list_view(request):
 
     # Для отображения количества активных услуг у каждой компании
     for company in companies:
-        company.active_services_count = Service.objects.filter(
+        company.active_services_count = Service.objects.visible().filter(
             company=company,
-            payment_due_date__gt=timezone.now(),
-            payment_due_date__isnull=False
         ).count()
 
     context = {
@@ -49,11 +49,9 @@ def companies_list_view(request):
 def company_detail_view(request, company_id):
     """Страница компании с услугами для клиентов"""
     # Проверяем что компания проверена
-    company = get_object_or_404(Company, pk=company_id, is_verified=True)
+    company = get_object_or_404(Company, pk=company_id, is_verified=True, is_blocked=False, owner__is_active=True)
     # Показываем только активные услуги
-    services = company.services.filter(
-        payment_due_date__gt=timezone.now(),  # Оплата активна
-        payment_due_date__isnull=False,  # Есть дата оплаты
+    services = company.services.visible().filter(
         company__is_verified=True  # Компания проверена
     ).prefetch_related('employees', 'category', 'subcategory')
     
@@ -67,10 +65,8 @@ def company_detail_view(request, company_id):
 def service_detail_view(request, service_id):
     """Страница услуги с возможностью записи"""
     service = get_object_or_404(
-        Service.objects.select_related('company'),
+        Service.objects.visible().select_related('company'),
         pk=service_id,
-        payment_due_date__gt=timezone.now(),  # Оплата активна
-        payment_due_date__isnull=False,  # Есть дата оплаты
         company__is_verified=True  # Компания проверена
     )
     
@@ -87,7 +83,7 @@ def service_detail_view(request, service_id):
             pass
     
     # Получаем доступные слоты на ближайшие 14 дней
-    today = timezone.now().date()
+    today = timezone.localdate()
     end_date = today + timedelta(days=14)
     now = timezone.now()
     
@@ -133,66 +129,50 @@ def service_detail_view(request, service_id):
 
 def booking_create_view(request, service_id):
     """Создание бронирования"""
-    # Проверяем что услуга активна и компания проверена
+    # Проверяем публикацию и отсутствие блокировки предпринимателя.
     service = get_object_or_404(
-        Service.objects.select_related('company'),
+        Service.objects.visible().select_related('company'),
         pk=service_id,
-        payment_due_date__gt=timezone.now(),  # Оплата активна
-        payment_due_date__isnull=False,  # Есть дата оплаты
         company__is_verified=True  # Компания проверена
     )
     
     if request.method == 'POST':
-        slot_id = request.POST.get('slot_id')
-        client_name = request.POST.get('client_name')
-        client_phone = request.POST.get('client_phone')
-        client_email = request.POST.get('client_email')
-        notes = request.POST.get('notes', '')
-        
-        if not slot_id or not client_name or not client_phone:
-            messages.error(request, 'Заполните обязательные поля')
-            return redirect('client:service_detail', service_id=service.pk)
-        
-        try:
-            slot = ServiceTimeSlot.objects.get(pk=slot_id, service=service, is_booked=False)
-        except ServiceTimeSlot.DoesNotExist:
-            messages.error(request, 'Выбранное время уже занято')
-            return redirect('client:service_detail', service_id=service.pk)
-        
-        # Создаем бронирование
-        booking = Booking.objects.create(
-            service=service,
-            client_name=client_name,
-            client_phone=client_phone,
-            client_email=client_email,
-            notes=notes,
-            status='pending'
-        )
-        
-        # Помечаем слот как забронированный
-        slot.is_booked = True
-        slot.booking = booking
-        slot.save()
-        
-        messages.success(request, 'Ваша заявка на запись успешно создана! Мы свяжемся с вами для подтверждения.')
-        return redirect('client:booking_success', booking_id=booking.pk)
+        form = BookingForm(request.POST)
+        if form.is_valid():
+            try:
+                booking = create_booking(service.pk, form.cleaned_data)
+            except (ServiceTimeSlot.DoesNotExist, Service.DoesNotExist, ValidationError):
+                messages.error(request, 'Выбранное время недоступно. Выберите другое.')
+                return redirect('client:service_detail', service_id=service.pk)
+            request.session['last_booking_id'] = booking.pk
+            messages.success(request, 'Заявка отправлена! Решение предпринимателя придёт на вашу почту.')
+            return redirect('client:booking_success', booking_id=booking.pk)
+    else:
+        form = BookingForm()
     
     # GET запрос - показываем форму
-    slot_id = request.GET.get('slot_id')
+    slot_id = request.POST.get('slot_id') if request.method == 'POST' else request.GET.get('slot_id')
     slot = None
     if slot_id:
-        slot = get_object_or_404(ServiceTimeSlot, pk=slot_id, service=service, is_booked=False)
+        try:
+            slot = get_object_or_404(ServiceTimeSlot, pk=slot_id, service=service, is_booked=False)
+        except (ValueError, TypeError):
+            slot = None
     
     context = {
         'service': service,
         'slot': slot,
         'employee': slot.employee if slot and slot.employee else None,
+        'form': form,
     }
     return render(request, 'client/booking_form.html', context)
 
 
 def booking_success_view(request, booking_id):
     """Страница успешного бронирования"""
+    from django.http import Http404
+    if request.session.get('last_booking_id') != booking_id:
+        raise Http404
     booking = get_object_or_404(Booking, pk=booking_id)
     context = {'booking': booking}
     return render(request, 'client/booking_success.html', context)

@@ -31,7 +31,7 @@
                     <option value="">Все статусы</option>
                     <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Ожидают подтверждения</option>
                     <option value="confirmed" {% if request.GET.status == 'confirmed' %}selected{% endif %}>Подтверждены</option>
-                    <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Отменены</option>
+                    <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Отклонены</option>
                     <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Выполнены</option>
                 </select>
                 <button type="submit" class="btn btn-primary btn-lg w-100">
@@ -113,12 +113,8 @@
                             <td class="py-3 text-center">
                                 {% if booking.status == 'pending' %}
                                     <div class="btn-group" role="group">
-                                        <a href="{% url 'business:booking_confirm' booking.pk %}" class="btn btn-sm btn-success" title="Подтвердить">
-                                            ✓
-                                        </a>
-                                        <a href="{% url 'business:booking_cancel' booking.pk %}" class="btn btn-sm btn-danger" title="Отменить">
-                                            ✗
-                                        </a>
+                                        {% if user.role == 'entrepreneur' %}<form method="post" action="{% url 'business:booking_confirm' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-success" title="Подтвердить">Принять</button></form>{% endif %}
+                                        {% if user.role == 'entrepreneur' %}<form method="post" action="{% url 'business:booking_cancel' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-danger" title="Отменить">Отклонить</button></form>{% endif %}
                                     </div>
                                 {% elif booking.status == 'confirmed' %}
                                     <span class="text-muted"><i class="fas fa-check-double text-success"></i> Подтверждено</span>

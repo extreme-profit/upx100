@@ -74,6 +74,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def get_company(self):
         """Возвращает компанию пользователя (для предпринимателя или сотрудника)"""
+        from business.models import Company
         if self.role == 'entrepreneur':
             # Компания предпринимателя связана через company.owner
             try:
@@ -85,4 +86,3 @@ class User(AbstractBaseUser, PermissionsMixin):
             if employee_profile:
                 return employee_profile.company
         return None
-

@@ -15,9 +15,7 @@ def search_view(request):
     subcategory_slug = request.GET.get('subcategory', '')
 
     # Базовый queryset: только активные услуги проверенных компаний
-    base_services = Service.objects.select_related('company').filter(
-        payment_due_date__gt=timezone.now(),
-        payment_due_date__isnull=False,
+    base_services = Service.objects.visible().select_related('company').filter(
         company__is_verified=True
     )
     categories = Category.objects.all()

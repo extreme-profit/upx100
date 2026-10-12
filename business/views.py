@@ -5,11 +5,17 @@ from django.utils import timezone
 from django.db.models import Q
 from datetime import timedelta, datetime, time
 from django.http import JsonResponse
+from django.http import HttpResponseForbidden
+from django.conf import settings
+from django.views.decorators.http import require_POST
 from decouple import config
 
 from .models import Company, Employee, Service, ServiceCategory, ServiceTimeSlot, Booking, Payment
 from .forms import CompanyForm, EmployeeForm, ServiceForm, ServiceTimeSlotGenerateForm
 from companies.models import Category, Subcategory
+from .models import MonthlyInvoice
+from .booking_workflow import decide_booking
+from .billing import mark_stub_paid
 
 
 @login_required
@@ -24,8 +30,8 @@ def subcategories_api_view(request):
 
 def company_public_profile_view(request, company_id):
     """Публичный профиль компании (для клиентов)"""
-    company = get_object_or_404(Company, pk=company_id, is_verified=True)
-    services = company.services.filter(status='active').select_related('category', 'subcategory')
+    company = get_object_or_404(Company, pk=company_id, is_verified=True, is_blocked=False, owner__is_active=True)
+    services = company.services.visible().select_related('category', 'subcategory')
     employees = company.employees.filter(is_active=True)
 
     # Получаем API ключ Яндекс.Карт
@@ -54,13 +60,10 @@ def company_profile_view(request):
         return redirect('business:employee_dashboard')
     
     employees = company.employees.all()
-    services = company.services.all()
+    services = company.services.filter(is_archived=False)
     bookings = Booking.objects.filter(service__company=company).order_by('-created_at')[:10]
     pending_bookings_count = Booking.objects.filter(service__company=company, status='pending').count()
-    services_pending_count = company.services.filter(
-        Q(payment_due_date__isnull=True) |  # Нет даты оплаты - черновик
-        Q(payment_due_date__lt=timezone.now())  # Дата оплаты истекла
-    ).count()
+    services_pending_count = company.invoices.filter(status='pending').count()
     
     context = {
         'company': company,
@@ -192,11 +195,11 @@ def service_list_view(request):
     if request.user.role == 'employee':
         employee_profile = request.user.get_employee_profile()
         if employee_profile:
-            services = employee_profile.services.all().select_related('category')
+            services = employee_profile.services.filter(is_archived=False).select_related('category')
         else:
             services = Service.objects.none()
     else:
-        services = company.services.all().select_related('category')
+        services = company.services.filter(is_archived=False).select_related('category')
     
     return render(request, 'business/service_list.html', {'services': services, 'company': company})
 
@@ -224,7 +227,7 @@ def service_create_view(request):
             employees = form.cleaned_data.get('employees')
             if employees:
                 service.employees.set(employees)
-            messages.success(request, 'Услуга создана! Теперь оплатите её для публикации.')
+            messages.success(request, 'Услуга создана бесплатно! Она доступна клиентам после проверки компании.')
             return redirect('business:service_detail', pk=service.pk)
     else:
         form = ServiceForm(company=company)
@@ -305,7 +308,8 @@ def service_delete_view(request, pk):
         return redirect('business:service_list')
     
     if request.method == 'POST':
-        service.delete()
+        service.is_archived = True
+        service.save(update_fields=['is_archived', 'updated_at'])
         messages.success(request, 'Услуга удалена!')
         return redirect('business:service_list')
     
@@ -860,45 +864,37 @@ def slot_toggle_view(request, pk):
 
 @login_required
 def payment_process_view(request, pk):
-    """Обработка платежа (имитация)"""
-    try:
-        company = request.user.company
-        service = company.services.get(pk=pk)
-    except (Company.DoesNotExist, Service.DoesNotExist):
-        messages.error(request, 'Услуга не найдена')
-        return redirect('business:service_list')
+    # Старые ссылки на оплату публикации ведут к ежемесячным счетам.
+    return redirect('business:invoice_list')
 
-    # Проверяем, активна ли услуга
-    if service.status == 'active':
-        messages.info(request,
-                      f'Услуга активна до {service.payment_due_date.strftime("%d.%m.%Y")}. Для продления нажмите "Оплатить"')
 
-    # Пытаемся получить существующий неоплаченный платеж
-    payment = Payment.objects.filter(
-        service=service,
-        status='pending'
-    ).first()
+@login_required
+def invoice_list_view(request):
+    if request.user.role != 'entrepreneur':
+        return HttpResponseForbidden('Счета доступны только предпринимателю')
+    company = request.user.get_company()
+    if not company:
+        return redirect('business:company_edit')
+    return render(request, 'business/invoice_list.html', {
+        'invoices': company.invoices.prefetch_related('items'),
+    })
 
-    if not payment:
-        # Создаем новый платеж
-        payment = Payment.objects.create(
-            service=service,
-            amount=service.price,
-            status='pending'
-        )
 
+@login_required
+def invoice_detail_view(request, pk):
+    if request.user.role != 'entrepreneur':
+        return HttpResponseForbidden('Счета доступны только предпринимателю')
+    invoice = get_object_or_404(
+        MonthlyInvoice.objects.prefetch_related('items'), pk=pk, company__owner=request.user,
+    )
     if request.method == 'POST':
-        payment.mark_as_paid()
-        messages.success(request, 'Оплата прошла успешно! Услуга активирована/продлена.')
-        return redirect('business:service_detail', pk=payment.service.pk)
-
-    # Определяем тип оплаты для отображения
-    payment_type = 'продление' if service.status == 'active' else 'активация'
-
+        if not settings.PAYMENT_STUB_ENABLED:
+            return HttpResponseForbidden('Демонстрационная оплата отключена')
+        mark_stub_paid(invoice)
+        messages.success(request, 'Демонстрационная оплата подтверждена. Деньги не списывались.')
+        return redirect('business:invoice_detail', pk=pk)
     return render(request, 'business/payment_process.html', {
-        'payment': payment,
-        'payment_type': payment_type,
-        'service': service,
+        'invoice': invoice, 'stub_enabled': settings.PAYMENT_STUB_ENABLED,
     })
 
 
@@ -1005,77 +1001,28 @@ def employee_dashboard_view(request):
     }
     return render(request, 'business/employee_dashboard.html', context)
 
+def _booking_decision(request, pk, decision):
+    if request.user.role != 'entrepreneur':
+        return HttpResponseForbidden('Решение принимает предприниматель')
+    company = request.user.get_company()
+    if not company:
+        return HttpResponseForbidden('Компания не найдена')
+    get_object_or_404(Booking, pk=pk, service__company=company)
+    booking, changed = decide_booking(pk, company, decision)
+    if changed:
+        messages.success(request, 'Заявка принята.' if decision == 'confirmed' else 'Заявка отклонена.')
+    else:
+        messages.info(request, 'По этой заявке решение уже принято.')
+    return redirect('business:booking_list')
+
+
 @login_required
+@require_POST
 def booking_confirm_view(request, pk):
-    """Подтверждение бронирования (для предпринимателя или сотрудника)"""
-    # Проверяем для предпринимателя
-    try:
-        company = request.user.company
-        booking = Booking.objects.get(pk=pk, service__company=company)
-        booking.status = 'confirmed'
-        booking.save()
-        messages.success(request, 'Бронирование подтверждено!')
-        return redirect('business:booking_list')
-    except (Company.DoesNotExist, Booking.DoesNotExist):
-        pass
-    
-    # Проверяем для сотрудника
-    if request.user.role == 'employee':
-        try:
-            employee_profile = request.user.get_employee_profile()
-            booking = Booking.objects.get(
-                pk=pk,
-                service__employees=employee_profile
-            )
-            booking.status = 'confirmed'
-            booking.save()
-            messages.success(request, 'Бронирование подтверждено!')
-            return redirect('business:booking_list')
-        except (Employee.DoesNotExist, Booking.DoesNotExist):
-            pass
-    
-    messages.error(request, 'Бронирование не найдено')
-    return redirect('business:booking_list')
+    return _booking_decision(request, pk, 'confirmed')
 
 
 @login_required
+@require_POST
 def booking_cancel_view(request, pk):
-    """Отмена бронирования (для предпринимателя или сотрудника)"""
-    # Проверяем для предпринимателя
-    try:
-        company = request.user.company
-        booking = Booking.objects.get(pk=pk, service__company=company)
-        booking.status = 'cancelled'
-        if booking.time_slots.exists():
-            for slot in booking.time_slots.all():
-                slot.is_booked = False
-                slot.booking = None
-                slot.save()
-        booking.save()
-        messages.success(request, 'Бронирование отменено!')
-        return redirect('business:booking_list')
-    except (Company.DoesNotExist, Booking.DoesNotExist):
-        pass
-    
-    # Проверяем для сотрудника
-    if request.user.role == 'employee':
-        try:
-            employee_profile = request.user.get_employee_profile()
-            booking = Booking.objects.get(
-                pk=pk,
-                service__employees=employee_profile
-            )
-            booking.status = 'cancelled'
-            if booking.time_slots.exists():
-                for slot in booking.time_slots.all():
-                    slot.is_booked = False
-                    slot.booking = None
-                    slot.save()
-            booking.save()
-            messages.success(request, 'Бронирование отменено!')
-            return redirect('business:booking_list')
-        except (Employee.DoesNotExist, Booking.DoesNotExist):
-            pass
-    
-    messages.error(request, 'Бронирование не найдено')
-    return redirect('business:booking_list')
+    return _booking_decision(request, pk, 'cancelled')

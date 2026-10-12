@@ -36,6 +36,8 @@ urlpatterns = [
     path('slots/<int:pk>/toggle/', views.slot_toggle_view, name='slot_toggle'),
     
     # Оплата
+    path('invoices/', views.invoice_list_view, name='invoice_list'),
+    path('invoices/<int:pk>/', views.invoice_detail_view, name='invoice_detail'),
     path('payments/<int:pk>/process/', views.payment_process_view, name='payment_process'),
     path('payments/success/', views.payment_success_view, name='payment_success'),
     

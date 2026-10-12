@@ -79,6 +79,13 @@
         </div>
         <div class="card-body">
             {% if company %}
+            <p>Блокировка услуг скрывает все текущие и будущие услуги и запрещает новые заявки. Доступ предпринимателя к ЛК и счетам сохраняется.</p>
+            <form method="post" action="{% url 'dashboard:user_toggle_services' user_obj.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn {% if company.is_blocked %}btn-success{% else %}btn-danger{% endif %}">
+                    {% if company.is_blocked %}Разблокировать услуги{% else %}Заблокировать все услуги{% endif %}
+                </button>
+            </form>
             <div style="text-align: center; padding: 20px 0;">
                 {% if company.logo %}
                 <img src="{{ company.logo.url }}" alt="{{ company.name }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; margin-bottom: 16px;">

@@ -25,9 +25,7 @@ def cookie_policy_view(request):
 def home_view(request):
     """Главная страница сайта"""
     categories = Category.objects.all()[:6]
-    services = Service.objects.select_related('company').filter(
-        payment_due_date__gt=timezone.now(),  # Оплата активна
-        payment_due_date__isnull=False,  # Есть дата оплаты
+    services = Service.objects.visible().select_related('company').filter(
         company__is_verified=True
     ).order_by('-created_at')[:6]
 
@@ -500,6 +498,18 @@ def user_change_role(request, pk):
         return redirect('dashboard:user_list')
     
     return redirect('dashboard:user_list')
+
+
+@admin_required
+def user_toggle_services(request, pk):
+    """Ручные санкции: скрыть услуги, сохранив доступ к ЛК и счетам."""
+    from business.models import Company
+    company = get_object_or_404(Company, owner_id=pk, owner__role='entrepreneur')
+    if request.method == 'POST':
+        company.is_blocked = not company.is_blocked
+        company.save(update_fields=['is_blocked', 'updated_at'])
+        messages.success(request, 'Все услуги предпринимателя скрыты.' if company.is_blocked else 'Услуги разблокированы.')
+    return redirect('dashboard:user_detail', pk=pk)
 
 
 @admin_required

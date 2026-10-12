@@ -62,18 +62,18 @@ def build_vector_index():
     """
     global _model, _index, _service_ids, _embeddings_map
 
-    model = get_model()
-
     # Получаем все активные услуги проверенных компаний
-    # Используем дату оплаты вместо status
-    services = Service.objects.select_related('company', 'category', 'subcategory').filter(
-        payment_due_date__gt=timezone.now(),  # Оплата активна
-        payment_due_date__isnull=False,       # Есть дата оплаты
+    # Публикация бесплатна; блокировка владельца действует и на новые услуги.
+    services = Service.objects.visible().select_related('company', 'category', 'subcategory').filter(
         company__is_verified=True
     )
 
     if not services.exists():
+        ServiceEmbedding.objects.all().delete()
+        _index, _service_ids, _embeddings_map = None, [], None
         return None, [], None
+
+    model = get_model()
 
     # Генерируем тексты
     texts = []
@@ -190,9 +190,6 @@ def load_vector_index():
         except Exception:
             continue
 
-    # Загружаем модель
-    _model = get_model()
-
     return _index, _service_ids, _embeddings_map
 
 
@@ -206,6 +203,9 @@ def search_similar(query, top_k=10):
     if index is None or not service_ids:
         return []
 
+    visible_ids = set(Service.objects.visible().filter(pk__in=service_ids).values_list('pk', flat=True))
+    if not visible_ids:
+        return []
     model = get_model()
 
     # Генерируем эмбеддинг запроса
@@ -213,14 +213,16 @@ def search_similar(query, top_k=10):
     faiss.normalize_L2(query_embedding)
 
     # Ищем ближайшие соседи в FAISS
-    k = min(top_k, len(service_ids))
+    k = len(service_ids)
     distances, indices = index.search(query_embedding.astype('float32'), k)
 
     # Преобразуем результаты в список ID
     result_ids = []
     for i, idx in enumerate(indices[0]):
-        if idx < len(service_ids) and distances[0][i] > 0:  # Только положительные similarity
+        if 0 <= idx < len(service_ids) and distances[0][i] > 0 and service_ids[idx] in visible_ids:
             result_ids.append(service_ids[idx])
+            if len(result_ids) >= top_k:
+                break
 
     return result_ids
 

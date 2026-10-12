@@ -3,7 +3,7 @@
 {% block title %}Панель предпринимателя{% endblock %}
 
 {% block content %}
-    
+
     {% if not company %}
         <div class="message warning">
             <h4>Профиль компании не создан</h4>
@@ -11,6 +11,9 @@
             <a href="{% url 'business:company_edit' %}" class="btn btn-primary">Создать профиль компании</a>
         </div>
     {% else %}
+        {% if company.is_blocked %}
+            <div class="message warning">Ваши услуги скрыты администратором. Доступ к заявкам и счетам сохранён.</div>
+        {% endif %}
         <!-- Карточка компании -->
         <div class="card">
             <div class="card-header">
@@ -25,7 +28,7 @@
                     {% endif %}
                     <div style="flex: 1;">
                         <p><strong>Адрес:</strong> {{ company.address }}</p>
-                        <p><strong>Описание:</strong> {{ company.description|default:"Не указано" }}</p>
+                        <p><a href="{% url 'business:invoice_list' %}">Ежемесячные счета</a></p><p><strong>Описание:</strong> {{ company.description|default:"Не указано" }}</p>
                         <div class="mt-3" style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
                             <a href="{% url 'business:company_edit' %}" class="btn btn-sm btn-outline-primary">Редактировать профиль</a>
                             <a href="{% url 'business:employee_list' %}" class="btn btn-sm btn-outline-secondary">Сотрудники</a>
@@ -36,7 +39,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Статистика -->
         <div class="stats-grid">
             <div class="stat-card" style="border-left: 4px solid #2563eb;">
@@ -52,11 +55,11 @@
                 <div class="stat-value">{{ pending_bookings_count }}</div>
             </div>
             <div class="stat-card" style="border-left: 4px solid #d97706;">
-                <div class="stat-label">Требуют оплаты</div>
+                <div class="stat-label">Неоплаченных счетов</div>
                 <div class="stat-value">{{ services_pending_count }}</div>
             </div>
         </div>
-        
+
         <!-- Последние бронирования -->
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -89,8 +92,8 @@
                                 <td>{{ booking.created_at|date:"d.m.Y H:i" }}</td>
                                 <td>
                                     {% if booking.status == 'pending' %}
-                                        <a href="{% url 'business:booking_confirm' booking.pk %}" class="btn btn-sm btn-success">✓</a>
-                                        <a href="{% url 'business:booking_cancel' booking.pk %}" class="btn btn-sm btn-danger">✗</a>
+                                        {% if user.role == 'entrepreneur' %}<form method="post" action="{% url 'business:booking_confirm' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-success">Принять</button></form>{% endif %}
+                                        {% if user.role == 'entrepreneur' %}<form method="post" action="{% url 'business:booking_cancel' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">Отклонить</button></form>{% endif %}
                                     {% endif %}
                                 </td>
                             </tr>
@@ -106,7 +109,7 @@
                 {% endif %}
             </div>
         </div>
-        
+
         <!-- Услуги -->
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -122,7 +125,7 @@
                                 <th>Название</th>
                                 <th>Цена</th>
                                 <th>Статус</th>
-                                <th>Оплата до</th>
+                                <th>Публикация</th>
                                 <th>Действия</th>
                             </tr>
                         </thead>
@@ -137,19 +140,13 @@
                                     </span>
                                 </td>
                                 <td>
-                                    {% if service.payment_due_date %}
-                                        {{ service.payment_due_date|date:"d.m.Y" }}
-                                    {% else %}
-                                        -
-                                    {% endif %}
+                                    Бесплатная
                                 </td>
                                 <td>
                                     <div class="actions-cell">
                                         <a href="{% url 'business:service_detail' service.pk %}" class="action-btn edit" title="Просмотр">👁</a>
                                         <a href="{% url 'business:service_edit' service.pk %}" class="action-btn edit" title="Редактировать">✏</a>
-                                        {% if service.status != 'active' %}
-                                        <a href="{% url 'business:payment_process' service.pk %}" class="action-btn edit" style="background: #dcfce7; color: #166534;" title="Оплатить">💳</a>
-                                        {% endif %}
+
                                     </div>
                                 </td>
                             </tr>
