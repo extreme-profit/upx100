@@ -6,9 +6,10 @@
     <title>{% block title %}upx100.ru - Платформа для поиска и записи на услуги{% endblock %}</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/refresh.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="public-site">
     <!-- Шапка -->
     <header class="header">
         <div class="container header__inner">

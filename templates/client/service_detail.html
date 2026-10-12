@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container" style="padding: 40px 0;">
     <!-- Информация об услуге -->
-    <div style="margin-bottom: 40px; padding: 30px; background: #f8f9fa; border-radius: 10px;">
+    <div class="service-summary">
         <div style="display: flex; gap: 30px; flex-wrap: wrap;">
             {% if service.photo %}
                 <img src="{{ service.photo.url }}" alt="{{ service.name }}" style="width: 300px; height: 250px; object-fit: cover; border-radius: 8px;">
@@ -69,7 +69,7 @@
     {% if slots_by_date %}
         <div style="display: grid; gap: 20px;">
             {% for date_str, slots in slots_by_date.items %}
-                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
+                <div class="availability-day">
                     <h3 style="margin-bottom: 15px; color: #333;">
                         {% if date_str == today_str %}Сегодня, {% elif date_str == tomorrow_str %}Завтра, {% endif %}{{ date_str|date:"d.m.Y" }}
                     </h3>
