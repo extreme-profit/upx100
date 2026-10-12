@@ -7,6 +7,8 @@ from companies.models import Category
 from django.core.exceptions import ValidationError
 from .forms import BookingForm
 from business.booking_workflow import create_booking
+from django.core.paginator import Paginator
+from django.db.models import Max, Q
 
 
 def companies_list_view(request):
@@ -82,20 +84,28 @@ def service_detail_view(request, service_id):
         except Employee.DoesNotExist:
             pass
     
-    # Получаем доступные слоты на ближайшие 14 дней
+    # Недели отсчитываются от сегодняшнего дня, по семь дней на страницу.
     today = timezone.localdate()
-    end_date = today + timedelta(days=14)
     now = timezone.now()
     
     time_slots_qs = ServiceTimeSlot.objects.filter(
         service=service,
-        date__range=(today, end_date),
+        date__gte=today,
         is_booked=False
-    ).select_related('employee').order_by('date', 'start_time')
+    ).filter(
+        Q(employee__isnull=True) | Q(employee__is_active=True)
+    ).select_related('employee__user').order_by('date', 'start_time')
     
     # Фильтруем по сотруднику если выбран
     if selected_employee:
         time_slots_qs = time_slots_qs.filter(employee=selected_employee)
+
+    last_date = time_slots_qs.aggregate(last_date=Max('date'))['last_date'] or today
+    week_count = (last_date - today).days // 7 + 1
+    week_page = Paginator(range(week_count), 1).get_page(request.GET.get('week', 1))
+    week_start = today + timedelta(days=(week_page.number - 1) * 7)
+    week_end = week_start + timedelta(days=6)
+    time_slots_qs = time_slots_qs.filter(date__range=(week_start, week_end))
     
     # Фильтруем прошедшие слоты
     filtered_slots = []
@@ -107,14 +117,14 @@ def service_detail_view(request, service_id):
     # Группируем слоты по датам
     slots_by_date = {}
     for slot in filtered_slots:
-        date_str = slot.date.strftime('%Y-%m-%d')
+        date_str = slot.date
         if date_str not in slots_by_date:
             slots_by_date[date_str] = []
         slots_by_date[date_str].append(slot)
     
     # Даты для отображения "Сегодня" и "Завтра"
-    today_str = today.strftime('%Y-%m-%d')
-    tomorrow_str = (today + timedelta(days=1)).strftime('%Y-%m-%d')
+    today_str = today
+    tomorrow_str = today + timedelta(days=1)
     
     context = {
         'service': service,
@@ -123,6 +133,9 @@ def service_detail_view(request, service_id):
         'slots_by_date': slots_by_date,
         'today_str': today_str,
         'tomorrow_str': tomorrow_str,
+        'week_page': week_page,
+        'week_start': week_start,
+        'week_end': week_end,
     }
     return render(request, 'client/service_detail.html', context)
 

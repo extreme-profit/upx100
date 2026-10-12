@@ -29,18 +29,18 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Выбор сотрудника -->
     {% if employees %}
     <h2 style="margin-bottom: 20px;">Выберите специалиста</h2>
     <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 40px;">
-        <a href="{% url 'client:service_detail' service_id=service.pk %}" 
+        <a href="{% url 'client:service_detail' service_id=service.pk %}?week={{ week_page.number }}"
            class="btn {% if not selected_employee %}btn--primary{% else %}btn--outline{% endif %}"
            style="min-width: 150px; text-align: center;">
             Все специалисты
         </a>
         {% for employee in employees %}
-            <a href="{% url 'client:service_detail' service_id=service.pk %}?employee_id={{ employee.pk }}" 
+            <a href="{% url 'client:service_detail' service_id=service.pk %}?employee_id={{ employee.pk }}&amp;week={{ week_page.number }}"
                class="btn {% if selected_employee == employee %}btn--primary{% else %}btn--outline{% endif %}"
                style="min-width: 150px; text-align: center;">
                 {{ employee.name|truncatechars:20 }}
@@ -48,7 +48,7 @@
         {% endfor %}
     </div>
     {% endif %}
-    
+
     <!-- Выбор времени записи -->
     <h2 style="margin-bottom: 20px;">
         Выберите удобное время
@@ -56,17 +56,26 @@
             <span style="font-size: 16px; color: #666; font-weight: normal;">для специалиста: {{ selected_employee.name }}</span>
         {% endif %}
     </h2>
-    
+    <nav aria-label="Недели записи" style="display: flex; flex-wrap: wrap; align-items: center; gap: 15px; margin-bottom: 20px;">
+        {% if week_page.has_previous %}
+            <a class="btn btn--outline" href="?week={{ week_page.previous_page_number }}{% if selected_employee %}&amp;employee_id={{ selected_employee.pk }}{% endif %}">← Предыдущая неделя</a>
+        {% endif %}
+        <span aria-current="page">{{ week_start|date:"d.m.Y" }} — {{ week_end|date:"d.m.Y" }}</span>
+        {% if week_page.has_next %}
+            <a class="btn btn--outline" href="?week={{ week_page.next_page_number }}{% if selected_employee %}&amp;employee_id={{ selected_employee.pk }}{% endif %}">Следующая неделя →</a>
+        {% endif %}
+    </nav>
+
     {% if slots_by_date %}
         <div style="display: grid; gap: 20px;">
             {% for date_str, slots in slots_by_date.items %}
                 <div style="border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
                     <h3 style="margin-bottom: 15px; color: #333;">
-                        {% if date_str == today_str %}Сегодня{% elif date_str == tomorrow_str %}Завтра{% else %}{{ date_str|date:"d.m.Y" }}{% endif %}
+                        {% if date_str == today_str %}Сегодня, {% elif date_str == tomorrow_str %}Завтра, {% endif %}{{ date_str|date:"d.m.Y" }}
                     </h3>
                     <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                         {% for slot in slots %}
-                            <a href="{% url 'client:booking_create' service_id=slot.service.pk %}?slot_id={{ slot.pk }}" 
+                            <a href="{% url 'client:booking_create' service_id=slot.service.pk %}?slot_id={{ slot.pk }}"
                                class="btn btn--outline"
                                style="min-width: 100px; text-align: center;"
                                onmouseover="this.style.background='#007bff'; this.style.color='white'"
@@ -85,18 +94,18 @@
         <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 10px;">
             <p style="font-size: 18px; color: #666;">
                 {% if selected_employee %}
-                    У выбранного специалиста нет свободных времён на ближайшие 14 дней.
+                    У выбранного специалиста нет свободного времени на выбранной неделе.
                 {% else %}
-                    На ближайшие 14 дней нет свободных времён для записи.
+                    На выбранной неделе нет свободного времени для записи.
                 {% endif %}
             </p>
             <p style="color: #888; margin-top: 10px;">Пожалуйста, выберите другого специалиста или зайдите позже.</p>
             {% if selected_employee %}
-                <a href="{% url 'client:service_detail' service_id=service.pk %}" class="btn btn--primary" style="margin-top: 20px;">Показать всех специалистов</a>
+                <a href="{% url 'client:service_detail' service_id=service.pk %}?week={{ week_page.number }}" class="btn btn--primary" style="margin-top: 20px;">Показать всех специалистов</a>
             {% endif %}
         </div>
     {% endif %}
-    
+
     <div style="margin-top: 40px;">
         <a href="{% url 'client:company_detail' service.company.pk %}" class="btn btn--outline">← Вернуться к компании</a>
     </div>
