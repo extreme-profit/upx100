@@ -1,17 +1,35 @@
 {% extends 'base.html' %}
 {% block title %}Отмена записи{% endblock %}
 {% block content %}
-<div class="container" style="max-width: 600px; padding: 40px 20px;">
-    <h1>Отмена записи</h1>
-    <p>Услуга: {{ booking.service.name }}</p>
-    <p>Компания: {{ booking.service.company.name }}</p>
-    {% if booking.status == 'pending' or booking.status == 'confirmed' %}
-        <p>Если вы передумали, подтвердите отмену записи. Время станет доступно другим клиентам.</p>
-        <form method="post">{% csrf_token %}<button type="submit" class="btn btn--primary">Отменить запись</button></form>
-    {% elif booking.status == 'client_cancelled' %}
-        <p role="status">Ваша запись отменена.</p>
-    {% else %}
-        <p>Эту запись уже нельзя отменить. Статус: {{ booking.get_status_display }}.</p>
-    {% endif %}
-</div>
+<section class="booking-state container">
+    <div class="booking-state__card">
+        <span class="booking-state__eyebrow">УПРАВЛЕНИЕ ЗАПИСЬЮ</span>
+        <div class="booking-state__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                {% if booking.status == 'client_cancelled' %}<path d="m5 12 4 4L19 6"/>{% else %}<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 11h18M9 15l6 3M15 15l-6 3"/>{% endif %}
+            </svg>
+        </div>
+        {% if booking.status == 'client_cancelled' %}
+            <h1>Ваша запись отменена</h1>
+            <p class="booking-state__lead" role="status">Время снова доступно другим клиентам. Вы можете выбрать другую услугу или записаться на удобную дату.</p>
+        {% elif booking.status == 'pending' or booking.status == 'confirmed' %}
+            <h1>Изменились планы?</h1>
+            <p class="booking-state__lead">Подтвердите отмену записи. Мы сообщим об этом специалисту и освободим время для других клиентов.</p>
+        {% else %}
+            <h1>Эту запись уже нельзя отменить</h1>
+            <p class="booking-state__lead">Текущий статус: {{ booking.get_status_display }}.</p>
+        {% endif %}
+        <dl class="booking-state__details">
+            <div><dt>Услуга</dt><dd>{{ booking.service.name }}</dd></div>
+            <div><dt>Компания</dt><dd>{{ booking.service.company.name }}</dd></div>
+        </dl>
+        <div class="booking-state__actions">
+            {% if booking.status == 'pending' or booking.status == 'confirmed' %}
+                <form method="post">{% csrf_token %}<button type="submit" class="btn btn--primary">Отменить запись</button></form>
+            {% endif %}
+            <a href="{% url 'client:companies_list' %}" class="btn btn--outline">Найти другую услугу</a>
+        </div>
+        <p class="booking-state__note">Ваше время — для важного.</p>
+    </div>
+</section>
 {% endblock %}

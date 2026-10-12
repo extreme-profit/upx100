@@ -74,6 +74,8 @@ class BusinessWorkflowTests(TestCase):
         self.assertEqual(self.slot.booking_id, booking.pk)
         self.assertEqual(mail.outbox[0].to, [self.owner.email])
         self.assertIn('Новая заявка', mail.outbox[0].subject)
+        self.assertEqual(mail.outbox[0].alternatives[0][1], 'text/html')
+        self.assertIn('upx100', mail.outbox[0].alternatives[0][0])
         self.client.force_login(self.owner)
         self.assertContains(self.client.get('/business/bookings/'), 'Анна')
         self.assertEqual(self.decide(booking).status_code, 302)
@@ -231,6 +233,16 @@ class BusinessWorkflowTests(TestCase):
         self.assertEqual(booking.status, 'client_cancelled')
         self.assertEqual(browser.get(url[:-2] + 'x/').status_code, 404)
         self.assertEqual(Client(enforce_csrf_checks=True).post(url).status_code, 403)
+
+    def test_html_notifications_escape_client_input_and_keep_links(self):
+        self.data['client_name'] = '<script>alert(1)</script>'
+        booking = self.submit()
+        html = mail.outbox[1].alternatives[0][0]
+        self.assertNotIn('<script>', html)
+        self.assertIn('&lt;script&gt;', html)
+        self.assertIn('/client/booking/cancel/', html)
+        self.assertIn('href=', html)
+        self.assertIn('Ожидайте ответа от менеджера', mail.outbox[1].body)
 
     def test_assigned_employee_can_confirm_and_client_can_cancel(self):
         from .notifications import cancellation_url

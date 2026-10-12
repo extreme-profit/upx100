@@ -1,0 +1,78 @@
+/* Общая визуальная система: исходная синяя, зелёная и нейтральная палитра. */
+:root { --surface:#fff; --ink:#1a1a2e; --accent:#2883ee; --soft:#f4f7fe; --line:#e0e0e0; --lift:0 16px 44px rgba(26,26,46,.07); }
+html { min-height:100%; }
+body { font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; text-rendering:optimizeLegibility; }
+body.public-site { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; background:var(--soft); }
+.public-site > main { flex:1; width:100%; }
+.public-site > .header,.public-site > .footer { flex-shrink:0; }
+.public-site h1,.public-site h2,.public-site h3 { color:var(--ink); letter-spacing:-.035em; line-height:1.25; }
+.public-site h1 { font-size:clamp(2rem,4vw,3.5rem); }
+.public-site h2 { font-size:clamp(1.5rem,3vw,2.3rem); }
+.public-site .header { background:rgba(255,255,255,.96); backdrop-filter:blur(16px); box-shadow:0 1px 0 var(--line),0 8px 30px rgba(26,26,46,.04); }
+.public-site .header__inner { padding:18px 24px; gap:24px; }
+.public-site .header__logo { letter-spacing:-1.4px; }
+.public-site .header__nav-link { border-radius:12px; font-size:14px; }
+.public-site .hero { position:relative; overflow:hidden; padding:clamp(48px,8vw,100px) 24px; background:radial-gradient(ellipse at 85% 15%,rgba(126,215,121,.16),transparent 45%),radial-gradient(ellipse at 10% 90%,rgba(40,131,238,.13),transparent 50%),var(--soft); border-bottom:1px solid var(--line); }
+.public-site .hero__title { font-size:clamp(2.2rem,5.5vw,4.6rem); max-width:850px; margin-left:auto; margin-right:auto; }
+.public-site .hero__subtitle { max-width:650px; margin-left:auto; margin-right:auto; line-height:1.8; }
+.public-site .card,.public-site .company-card { border:1px solid var(--line); border-radius:22px; background:var(--surface); box-shadow:0 4px 20px rgba(26,26,46,.04); overflow:hidden; transition:transform .2s,box-shadow .2s,border-color .2s; }
+.public-site .card:hover,.public-site .company-card:hover { transform:translateY(-4px); border-color:rgba(40,131,238,.35); box-shadow:var(--lift); }
+.public-site .card__content { padding:26px; }
+.public-site .card__title { font-size:21px; }
+.public-site .card__price { font-size:25px; letter-spacing:-.04em; }
+.public-site .cards-grid { gap:26px; }
+.public-site .btn { border-radius:12px; padding:12px 22px; min-height:46px; font-weight:600; transition:transform .2s,box-shadow .2s,background .2s; }
+.public-site .btn--primary,.public-site .btn--blue { background:#2883ee; box-shadow:0 6px 16px rgba(40,131,238,.18); }
+.public-site .btn:hover { transform:translateY(-1px); }
+.public-site .btn--outline { background:#fff; }
+.public-site .search-form { box-shadow:var(--lift); border:1px solid var(--line); border-radius:18px; padding:10px; background:#fff; }
+.public-site .search-form__input { border:0; background:transparent; }
+.public-site input:not([type=checkbox]):not([type=radio]):not([type=hidden]),.public-site select,.public-site textarea { border-radius:12px; border-color:var(--line); font:inherit; }
+.public-site .alert { border-radius:14px; padding:16px 20px; }
+.public-site .footer { margin-top:0; border-top:4px solid #2883ee; }
+.public-site .footer__inner { gap:40px; padding-top:48px; padding-bottom:36px; }
+.public-site .footer__section h3 { color:inherit; letter-spacing:-.02em; }
+:where(a,button,input,select,textarea):focus-visible { outline:3px solid #2883ee; outline-offset:4px; }
+.booking-state { width:100%; min-height:65vh; padding:clamp(36px,6vh,90px) 24px; display:grid; place-items:center; }
+.booking-state__card { width:100%; max-width:760px; text-align:center; padding:clamp(28px,5vw,64px); background:radial-gradient(circle at 100% 0,rgba(126,215,121,.13),transparent 45%),#fff; border:1px solid var(--line); border-radius:28px; box-shadow:var(--lift); }
+.booking-state__eyebrow { display:block; color:var(--accent); font-size:12px; font-weight:700; letter-spacing:2px; }
+.booking-state__icon { display:grid; place-items:center; width:84px; height:84px; margin:26px auto; color:var(--accent); background:var(--soft); border:1px solid rgba(40,131,238,.15); border-radius:24px; }
+.booking-state__lead { font-size:18px; line-height:1.8; max-width:540px; margin:20px auto 30px; }
+.booking-state__details { display:grid; grid-template-columns:1fr 1fr; gap:20px; text-align:left; padding:24px; background:var(--soft); border-radius:16px; }
+.booking-state__details dt { font-size:13px; margin-bottom:5px; }
+.booking-state__details dd { margin:0; font-size:17px; font-weight:600; color:var(--ink); overflow-wrap:anywhere; }
+.booking-state__actions { display:flex; justify-content:center; flex-wrap:wrap; gap:12px; margin-top:30px; }
+.booking-state__note { font-size:13px; margin-top:30px; }
+/* ЛК и админка используют собственную раскладку, но общие формы и поверхности. */
+.dashboard-site { background:#f4f7fe; }
+.dashboard-site .card { border:1px solid #e0e0e0; border-radius:20px; box-shadow:0 5px 24px rgba(26,26,46,.045); overflow:hidden; }
+.dashboard-site .card-header { padding:22px 26px; background:#fff; border-bottom:1px solid #e0e0e0; }
+.dashboard-site .card-body { padding:26px; }
+.dashboard-site .btn,.dashboard-site .action-btn { border-radius:10px; }
+.dashboard-site input:not([type=checkbox]):not([type=radio]):not([type=hidden]),.dashboard-site select,.dashboard-site textarea { border-radius:10px; }
+.dashboard-site .sidebar { box-shadow:8px 0 30px rgba(26,26,46,.08); }
+.dashboard-site .sidebar .nav-link { border-radius:12px; margin-left:12px; margin-right:12px; }
+.dashboard-site .topbar { border-bottom:1px solid #e0e0e0; box-shadow:none; }
+.dashboard-site table th { font-size:12px; letter-spacing:.05em; }
+.dashboard-site table td { padding-top:16px; padding-bottom:16px; }
+@media(max-width:768px) {
+ .public-site .header__inner { padding:14px 20px; }
+ .public-site .header__nav { gap:4px; }
+ .booking-state { min-height:60vh; padding:32px 16px; }
+ .booking-state__details { grid-template-columns:1fr; }
+ .booking-state__actions { flex-direction:column; }
+ .booking-state__actions .btn,.booking-state__actions form { width:100%; }
+ .dashboard-site .card-body,.dashboard-site .card-header { padding:18px; }
+}
+@media(prefers-reduced-motion:reduce) {
+ *,*::before,*::after { transition:none!important; animation:none!important; scroll-behavior:auto!important; }
+}
+.public-site .hero { color:var(--ink); }
+.public-site .hero__subtitle { color:#4c4c4c; opacity:1; }
+.service-summary { margin-bottom:40px; padding:clamp(24px,4vw,44px); background:linear-gradient(120deg,#fff,#f4f7fe); border:1px solid #e0e0e0; border-radius:24px; box-shadow:var(--lift); }
+.availability-day { background:#fff; border:1px solid #e0e0e0; border-radius:20px; padding:24px; box-shadow:0 4px 20px rgba(26,26,46,.03); }
+.availability-day h3 { padding-bottom:14px; border-bottom:1px solid #e0e0e0; }
+.public-site > main > .container { padding-left:24px!important; padding-right:24px!important; }
+.public-site > main { padding-bottom:48px; }
+.public-site > main:has(.booking-state) { display:flex; padding-bottom:0; }
+@media(max-width:480px) { .public-site .search-form { flex-wrap:wrap; } .public-site .search-form__input { width:100%; min-width:0; } .public-site .search-form button { width:100%; } }

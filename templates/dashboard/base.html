@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }} | Админ-панель upx100</title>
@@ -492,8 +493,9 @@
             border-color: #3b82f6;
         }
     </style>
+    <link rel="stylesheet" href="{% static 'css/refresh.css' %}">
 </head>
-<body>
+<body class="dashboard-site">
     <div class="dashboard-container">
         <!-- Sidebar -->
         <aside class="sidebar">

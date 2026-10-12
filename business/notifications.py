@@ -6,6 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.core import signing
 from django.urls import reverse
+from django.template.loader import render_to_string
 
 from .models import EmailNotification
 
@@ -39,6 +40,10 @@ def deliver_email(pk):
             delivered = send_mail(
                 notification.subject, notification.body, settings.DEFAULT_FROM_EMAIL,
                 [notification.recipient], fail_silently=False,
+                html_message=render_to_string('emails/notification.html', {
+                    'subject': notification.subject, 'body': notification.body,
+                    'site_url': settings.SITE_URL.rstrip('/'),
+                }),
             )
             if delivered != 1:
                 raise RuntimeError('Почтовый сервер не принял письмо')
