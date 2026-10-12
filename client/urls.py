@@ -9,4 +9,5 @@ urlpatterns = [
     path('service/<int:service_id>/', views.service_detail_view, name='service_detail'),
     path('service/<int:service_id>/book/', views.booking_create_view, name='booking_create'),
     path('booking/success/<int:booking_id>/', views.booking_success_view, name='booking_success'),
+    path('booking/cancel/<str:token>/', views.booking_cancel_view, name='booking_cancel'),
 ]

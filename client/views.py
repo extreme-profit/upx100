@@ -6,7 +6,10 @@ from business.models import Company, Service, ServiceTimeSlot, Booking, Employee
 from companies.models import Category
 from django.core.exceptions import ValidationError
 from .forms import BookingForm
-from business.booking_workflow import create_booking
+from business.booking_workflow import create_booking, cancel_client_booking
+from django.core import signing
+from django.http import Http404
+from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.db.models import Max, Q
 
@@ -158,7 +161,6 @@ def booking_create_view(request, service_id):
                 messages.error(request, 'Выбранное время недоступно. Выберите другое.')
                 return redirect('client:service_detail', service_id=service.pk)
             request.session['last_booking_id'] = booking.pk
-            messages.success(request, 'Заявка отправлена! Решение предпринимателя придёт на вашу почту.')
             return redirect('client:booking_success', booking_id=booking.pk)
     else:
         form = BookingForm()
@@ -189,3 +191,16 @@ def booking_success_view(request, booking_id):
     booking = get_object_or_404(Booking, pk=booking_id)
     context = {'booking': booking}
     return render(request, 'client/booking_success.html', context)
+
+
+@require_http_methods(['GET', 'POST'])
+def booking_cancel_view(request, token):
+    try:
+        data = signing.loads(token, salt='client.booking.cancel')
+        booking = get_object_or_404(Booking.objects.select_related('service__company'), pk=data['booking_id'])
+    except (signing.BadSignature, KeyError, TypeError, ValueError):
+        raise Http404
+    if request.method == 'POST':
+        cancel_client_booking(booking.pk)
+        return redirect('client:booking_cancel', token=token)
+    return render(request, 'client/booking_cancel.html', {'booking': booking})

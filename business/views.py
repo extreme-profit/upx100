@@ -1002,12 +1002,16 @@ def employee_dashboard_view(request):
     return render(request, 'business/employee_dashboard.html', context)
 
 def _booking_decision(request, pk, decision):
-    if request.user.role != 'entrepreneur':
-        return HttpResponseForbidden('Решение принимает предприниматель')
+    if request.user.role not in ('entrepreneur', 'employee'):
+        return HttpResponseForbidden('Решение принимает предприниматель или назначенный сотрудник')
     company = request.user.get_company()
     if not company:
         return HttpResponseForbidden('Компания не найдена')
-    get_object_or_404(Booking, pk=pk, service__company=company)
+    booking = get_object_or_404(Booking, pk=pk, service__company=company)
+    if request.user.role == 'employee' and not booking.time_slots.filter(
+        employee__user=request.user, employee__is_active=True,
+    ).exists():
+        return HttpResponseForbidden('Заявка назначена другому сотруднику')
     booking, changed = decide_booking(pk, company, decision)
     if changed:
         messages.success(request, 'Заявка принята.' if decision == 'confirmed' else 'Заявка отклонена.')

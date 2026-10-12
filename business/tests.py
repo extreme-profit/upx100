@@ -90,7 +90,7 @@ class BusinessWorkflowTests(TestCase):
         booking.refresh_from_db()
         self.assertEqual(booking.status, 'confirmed')
         self.assertEqual(booking.confirmed_at, confirmed_at)
-        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(len(mail.outbox), 3)
 
     def test_rejection_emails_client_and_frees_slot(self):
         booking = self.submit()
@@ -105,7 +105,7 @@ class BusinessWorkflowTests(TestCase):
         self.assertIn(self.slot.date.strftime('%d.%m.%Y'), mail.outbox[-1].body)
         self.assertIn('12:00', mail.outbox[-1].body)
         self.decide(booking, 'cancel')
-        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(len(mail.outbox), 3)
 
     def test_booking_validation_and_double_booking(self):
         url = reverse('client:booking_create', args=[self.service.pk])
@@ -116,7 +116,7 @@ class BusinessWorkflowTests(TestCase):
         self.submit()
         self.client.post(url, self.data)
         self.assertEqual(Booking.objects.count(), 1)
-        self.assertEqual(EmailNotification.objects.count(), 1)
+        self.assertEqual(EmailNotification.objects.count(), 2)
 
     def test_past_and_foreign_slots_cannot_be_booked(self):
         url = reverse('client:booking_create', args=[self.service.pk])
@@ -190,7 +190,7 @@ class BusinessWorkflowTests(TestCase):
     def test_failed_mail_is_persisted_and_retried(self):
         with patch('business.notifications.send_mail', side_effect=OSError('SMTP unavailable')):
             booking = self.submit()
-        notification = EmailNotification.objects.get()
+        notification = EmailNotification.objects.get(key=f'booking:{booking.pk}:new')
         self.assertIsNone(notification.sent_at)
         self.assertEqual(notification.attempts, 1)
         self.assertEqual(booking.status, 'pending')
@@ -203,6 +203,56 @@ class BusinessWorkflowTests(TestCase):
         url = reverse('client:booking_success', args=[booking.pk])
         self.assertEqual(self.client.get(url).status_code, 200)
         self.assertEqual(Client().get(url).status_code, 404)
+
+    def test_registration_and_signed_cancellation(self):
+        from .notifications import cancellation_url
+        booking = self.submit()
+        self.assertEqual(mail.outbox[1].to, [self.data['client_email']])
+        self.assertIn('Ожидайте ответа от менеджера', mail.outbox[1].body)
+        url = cancellation_url(booking).split('://', 1)[1].split('/', 1)[1]
+        url = '/' + url
+        browser = Client()
+        self.assertEqual(browser.get(url).status_code, 200)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, 'pending')
+        with self.captureOnCommitCallbacks(execute=True):
+            self.assertEqual(browser.post(url).status_code, 302)
+        booking.refresh_from_db()
+        self.slot.refresh_from_db()
+        self.assertEqual(booking.status, 'client_cancelled')
+        self.assertFalse(self.slot.is_booked)
+        self.assertIsNone(self.slot.booking_id)
+        count = len(mail.outbox)
+        with self.captureOnCommitCallbacks(execute=True):
+            browser.post(url)
+        self.assertEqual(len(mail.outbox), count)
+        self.decide(booking)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, 'client_cancelled')
+        self.assertEqual(browser.get(url[:-2] + 'x/').status_code, 404)
+        self.assertEqual(Client(enforce_csrf_checks=True).post(url).status_code, 403)
+
+    def test_assigned_employee_can_confirm_and_client_can_cancel(self):
+        from .notifications import cancellation_url
+        employee_user = User.objects.create_user('assigned@example.com', role='employee')
+        employee = Employee.objects.create(company=self.company, user=employee_user)
+        self.slot.employee = employee
+        self.slot.save()
+        booking = self.submit()
+        self.client.force_login(employee_user)
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse('business:booking_confirm', args=[booking.pk]))
+        self.assertEqual(response.status_code, 302)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, 'confirmed')
+        self.assertIn(cancellation_url(booking).split('/client/')[0], mail.outbox[-1].body)
+        confirmed_at = booking.confirmed_at
+        from .booking_workflow import cancel_client_booking
+        with self.captureOnCommitCallbacks(execute=True):
+            cancel_client_booking(booking.pk)
+        booking.refresh_from_db()
+        self.assertEqual(booking.confirmed_at, confirmed_at)
+        self.assertEqual(booking.status, 'client_cancelled')
 
     def test_only_admin_can_block_services_and_existing_account_ban_hides_them(self):
         self.client.force_login(self.owner)

@@ -5,7 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import Booking, Service, ServiceTimeSlot
-from .notifications import booking_created, booking_decided
+from .notifications import booking_created, booking_decided, queue_email
 
 
 @transaction.atomic
@@ -51,4 +51,23 @@ def decide_booking(pk, company, decision):
     if decision == 'cancelled':
         booking.time_slots.update(is_booked=False, booking=None)
     booking_decided(booking, slot)
+    return booking, True
+
+
+@transaction.atomic
+def cancel_client_booking(pk):
+    booking = Booking.objects.select_for_update().select_related('service__company__owner').get(pk=pk)
+    if booking.status not in ('pending', 'confirmed'):
+        return booking, False
+    updated = Booking.objects.filter(pk=pk, status=booking.status).update(
+        status='client_cancelled', updated_at=timezone.now(),
+    )
+    if not updated:
+        return booking, False
+    booking.time_slots.update(is_booked=False, booking=None)
+    booking.refresh_from_db()
+    body = f'Заявка №{booking.pk} на услугу «{booking.service.name}» отменена клиентом {booking.client_name}.'
+    queue_email(f'booking:{pk}:client-cancelled:owner', booking.service.company.owner.email, 'Клиент отменил запись', body)
+    if booking.client_email:
+        queue_email(f'booking:{pk}:client-cancelled:client', booking.client_email, 'Ваша запись отменена', body)
     return booking, True
