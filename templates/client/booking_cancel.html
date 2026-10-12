@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Отмена записи{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 600px; padding: 40px 20px;">
+    <h1>Отмена записи</h1>
+    <p>Услуга: {{ booking.service.name }}</p>
+    <p>Компания: {{ booking.service.company.name }}</p>
+    {% if booking.status == 'pending' or booking.status == 'confirmed' %}
+        <p>Если вы передумали, подтвердите отмену записи. Время станет доступно другим клиентам.</p>
+        <form method="post">{% csrf_token %}<button type="submit" class="btn btn--primary">Отменить запись</button></form>
+    {% elif booking.status == 'client_cancelled' %}
+        <p role="status">Ваша запись отменена.</p>
+    {% else %}
+        <p>Эту запись уже нельзя отменить. Статус: {{ booking.get_status_display }}.</p>
+    {% endif %}
+</div>
+{% endblock %}

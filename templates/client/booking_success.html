@@ -5,8 +5,14 @@
 {% block content %}
 <div class="container" style="padding: 40px 0; max-width: 600px;">
     <div style="text-align: center; padding: 40px 20px;">
-        <div style="font-size: 80px; margin-bottom: 20px;">✅</div>
+        <svg viewBox="0 0 80 80" width="80" height="80" aria-hidden="true" style="margin-bottom: 20px; color: #198754;">
+            <circle cx="40" cy="40" r="36" fill="none" stroke="currentColor" stroke-width="5"/>
+            <path d="M23 40l11 11 23-24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1 style="margin-bottom: 20px;">Запись успешно создана!</h1>
+        <p style="font-size: 18px; font-weight: 600; color: #174478; background: #eaf3ff; padding: 20px; border-radius: 10px; line-height: 1.6;">
+            Предприниматель рассмотрит заявку. Письмо с решением придёт на указанный email.
+        </p>
         
         <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; text-align: left; margin: 30px 0;">
             <h3 style="margin-bottom: 20px; color: #333;">Детали записи:</h3>
@@ -25,9 +31,6 @@
             {% endif %}
         </div>
         
-        <p style="font-size: 16px; color: #555; margin: 20px 0;">
-            Предприниматель рассмотрит заявку. Письмо с решением придёт на указанный email.
-        </p>
         
         <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
             <a href="{% url 'client:service_detail' booking.service.pk %}" class="btn btn--primary" style="padding: 15px 30px;">

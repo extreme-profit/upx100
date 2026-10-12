@@ -68,8 +68,8 @@
                             <td>
                                 {% if booking.status == 'pending' %}
                                     <div class="btn-group" role="group">
-                                        {% if user.role == 'entrepreneur' %}<form method="post" action="{% url 'business:booking_confirm' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-success" title="Подтвердить">Принять</button></form>{% endif %}
-                                        {% if user.role == 'entrepreneur' %}<form method="post" action="{% url 'business:booking_cancel' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-danger" title="Отменить">Отклонить</button></form>{% endif %}
+                                        {% if user.role == 'entrepreneur' or user.role == 'employee' %}<form method="post" action="{% url 'business:booking_confirm' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-success" title="Подтвердить">Принять</button></form>{% endif %}
+                                        {% if user.role == 'entrepreneur' or user.role == 'employee' %}<form method="post" action="{% url 'business:booking_cancel' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-danger" title="Отменить">Отклонить</button></form>{% endif %}
                                     </div>
                                 {% elif booking.status == 'confirmed' %}
                                     <span class="text-muted"><small>✓ Подтверждено</small></span>

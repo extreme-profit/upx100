@@ -162,6 +162,7 @@ class Booking(models.Model):
         ('pending', 'Ожидает подтверждения'),
         ('confirmed', 'Подтверждено'),
         ('cancelled', 'Отклонено'),
+        ('client_cancelled', 'Отменено клиентом'),
         ('completed', 'Выполнено'),
     ]
     

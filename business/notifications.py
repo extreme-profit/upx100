@@ -4,10 +4,21 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
+from django.core import signing
+from django.urls import reverse
 
 from .models import EmailNotification
 
 logger = logging.getLogger(__name__)
+
+
+def cancellation_url(booking):
+    token = signing.dumps({'booking_id': booking.pk}, salt='client.booking.cancel')
+    return settings.SITE_URL.rstrip('/') + reverse('client:booking_cancel', args=[token])
+
+
+def cancellation_text(booking):
+    return '\nЕсли вы передумали, пожалуйста, нажмите сюда для отмены записи:\n' + cancellation_url(booking)
 
 
 def queue_email(key, recipient, subject, body):
@@ -54,6 +65,15 @@ def booking_created(booking, slot):
         f'Примите или отклоните заявку в личном кабинете: '
         f'{settings.SITE_URL.rstrip("/")}/business/bookings/',
     )
+    if booking.client_email:
+        queue_email(
+            f'booking:{booking.pk}:registered', booking.client_email,
+            f'Заявка успешно зарегистрирована: {booking.service.name}',
+            f'{booking.client_name}, ваша заявка №{booking.pk} успешно зарегистрирована. '
+            f'Ожидайте ответа от менеджера.\nУслуга: {booking.service.name}\n'
+            f'Компания: {company.name}\nДата: {slot.date:%d.%m.%Y}, время: {slot.start_time:%H:%M}'
+            + cancellation_text(booking),
+        )
 
 
 def booking_decided(booking, slot=None):
@@ -69,5 +89,5 @@ def booking_decided(booking, slot=None):
         f'Заявка {decision}: {booking.service.name}',
         f'{booking.client_name}, ваша заявка №{booking.pk} на услугу '
         f'«{booking.service.name}» {decision}.\nКомпания: {booking.service.company.name}.'
-        f'{appointment}',
+        f'{appointment}' + (cancellation_text(booking) if booking.status == 'confirmed' else ''),
     )
