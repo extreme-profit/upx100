@@ -6,24 +6,25 @@
 {% block content %}
 <div class="container" style="padding: 40px 0;">
     <h1>Поиск услуг</h1>
-    
+
     <!-- Форма поиска -->
     <form method="get" class="search-form" style="margin: 20px 0;">
         <input type="text" name="q" class="search-form__input" placeholder="Что вы ищете? (например, стрижка, массаж, ремонт)" value="{{ query }}">
+        <select name="delivery_mode" aria-label="Формат оказания услуги"><option value="">Все форматы</option><option value="remote" {% if request.GET.delivery_mode == 'remote' %}selected{% endif %}>Удалённо</option><option value="onsite" {% if request.GET.delivery_mode == 'onsite' %}selected{% endif %}>На месте</option><option value="visit" {% if request.GET.delivery_mode == 'visit' %}selected{% endif %}>Выезд</option></select>
         <button type="submit" class="btn btn--primary">Найти</button>
     </form>
-    
+
     {% if query %}
         <p>Результаты поиска по запросу: <strong>{{ query }}</strong></p>
     {% endif %}
-    
+
     <!-- Категории для фильтрации -->
     {% if categories %}
     <div style="margin: 20px 0;">
         <h3>Категории:</h3>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
             {% for category in categories %}
-                <a href="?category={{ category.slug }}{% if query %}&q={{ query }}{% endif %}" 
+                <a href="?category={{ category.slug }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if request.GET.delivery_mode %}&amp;delivery_mode={{ request.GET.delivery_mode|urlencode }}{% endif %}"
                    class="btn btn--outline"
                    style="{% if category.slug == request.GET.category %}background: #007bff; color: white; border-color: #007bff;{% endif %}">
                     {{ category.name }}
@@ -33,18 +34,18 @@
                 <a href="?{% if query %}q={{ query }}{% endif %}" class="btn btn--outline">Сбросить фильтр</a>
             {% endif %}
         </div>
-        
+
         <!-- Подкатегории -->
         {% if selected_subcategories %}
         <h4 style="margin-top: 20px;">Подкатегории:</h4>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <a href="?category={{ request.GET.category }}{% if query %}&q={{ query }}{% endif %}" 
+            <a href="?category={{ request.GET.category }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if request.GET.delivery_mode %}&amp;delivery_mode={{ request.GET.delivery_mode|urlencode }}{% endif %}"
                class="btn btn--sm btn--outline"
                style="{% if not request.GET.subcategory %}background: #28a745; color: white; border-color: #28a745;{% endif %}">
                 Все
             </a>
             {% for subcat in selected_subcategories %}
-                <a href="?category={{ request.GET.category }}&subcategory={{ subcat.slug }}{% if query %}&q={{ query }}{% endif %}" 
+                <a href="?category={{ request.GET.category }}&subcategory={{ subcat.slug }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if request.GET.delivery_mode %}&amp;delivery_mode={{ request.GET.delivery_mode|urlencode }}{% endif %}"
                    class="btn btn--sm btn--outline"
                    style="{% if request.GET.subcategory == subcat.slug %}background: #28a745; color: white; border-color: #28a745;{% endif %}">
                     {{ subcat.name }}
@@ -54,7 +55,7 @@
         {% endif %}
     </div>
     {% endif %}
-    
+
     <!-- Результаты поиска -->
     {% if services %}
         <h3 style="margin-top: 30px;">Найденные услуги</h3>
@@ -102,15 +103,15 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const locations = {{ map_data | safe }};
-    
+
     if (locations.length > 0) {
         // Центр карты по умолчанию (Москва)
         let defaultCenter = [55.751244, 37.618423];
         let defaultZoom = 10;
-        
+
         // Инициализация карты
         ymaps.ready(init);
-        
+
         function init(){
             // Запрос геолокации пользователя ПЕРЕД инициализацией карты
             if (navigator.geolocation) {
@@ -118,11 +119,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     function(position) {
                         const userLat = position.coords.latitude;
                         const userLng = position.coords.longitude;
-                        
+
                         // Если пользователь разрешил доступ к геопозиции, центрируем карту на нём
                         defaultCenter = [userLat, userLng];
                         defaultZoom = 13;
-                        
+
                         initMap(defaultCenter, defaultZoom, locations, true);
                     },
                     function(error) {
@@ -158,14 +159,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 initMap(defaultCenter, defaultZoom, locations, false);
             }
         }
-        
+
         function initMap(center, zoom, locations, hasUserLocation) {
             const map = new ymaps.Map("map", {
                 center: center,
                 zoom: zoom,
                 controls: ['zoomControl', 'fullscreenControl', 'geolocationControl']
             });
-            
+
             // Добавление маркеров компаний
             locations.forEach(loc => {
                 const placemark = new ymaps.Placemark([loc.lat, loc.lng], {
@@ -175,10 +176,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, {
                     preset: 'islands#blueDotIcon'
                 });
-                
+
                 map.geoObjects.add(placemark);
             });
-            
+
             // Если есть геолокация пользователя, добавляем зеленый маркер
             if (hasUserLocation) {
                 const userPlacemark = new ymaps.Placemark(center, {
@@ -189,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 map.geoObjects.add(userPlacemark);
             }
-            
+
             // Масштабирование карты под все точки (если точек больше одной и нет геолокации)
             if (locations.length > 1 && !hasUserLocation) {
                 const bounds = [];
@@ -211,13 +212,20 @@ function showLocationError(message) {
     if (!errorDiv) {
         errorDiv = document.createElement('div');
         errorDiv.id = 'geo-error';
-        errorDiv.style.cssText = 'background: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 12px; border-radius: 4px; margin: 20px 0; display: none;';
+        errorDiv.setAttribute('role', 'status');
+        errorDiv.style.cssText = 'position: fixed; right: 20px; bottom: 24px; z-index: 2000; max-width: min(420px, calc(100vw - 40px)); box-shadow: 0 12px 36px rgba(0,0,0,.16); background: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 12px; border-radius: 4px; margin: 20px 0; display: none;';
         const container = document.querySelector('.container');
         if (container) {
-            container.insertBefore(errorDiv, container.firstChild);
+            document.body.appendChild(errorDiv);
         }
     }
     errorDiv.textContent = message;
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.textContent = 'Закрыть';
+    close.style.cssText = 'display:block; margin-top:10px; padding:6px 12px; cursor:pointer;';
+    close.addEventListener('click', () => { errorDiv.style.display = 'none'; });
+    errorDiv.appendChild(close);
     errorDiv.style.display = 'block';
 }
 </script>

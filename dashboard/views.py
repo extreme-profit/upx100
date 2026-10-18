@@ -542,3 +542,46 @@ def user_verify(request, pk):
         return redirect('dashboard:user_detail', pk=pk)
     
     return redirect('dashboard:user_detail', pk=pk)
+
+
+@admin_required
+def payment_report(request):
+    import csv
+    from django.http import HttpResponse
+    from django.core.paginator import Paginator
+    companies = Company.objects.select_related('owner').annotate(
+        paid_count=Count('invoices', filter=Q(invoices__status='paid')),
+        pending_count=Count('invoices', filter=Q(invoices__status='pending')),
+        paid_amount=Sum('invoices__amount', filter=Q(invoices__status='paid')),
+        pending_amount=Sum('invoices__amount', filter=Q(invoices__status='pending')),
+    )
+    city = request.GET.get('city', '').strip()
+    status = request.GET.get('status', '')
+    if city == '__empty__':
+        companies = companies.filter(city='')
+    elif city:
+        companies = companies.filter(city__iexact=city)
+    if status == 'paid':
+        companies = companies.filter(paid_count__gt=0, pending_count=0)
+    elif status == 'unpaid':
+        companies = companies.filter(pending_count__gt=0)
+    elif status == 'none':
+        companies = companies.filter(paid_count=0, pending_count=0)
+    companies = companies.order_by('city', 'name', 'pk')
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = 'attachment; filename="payments-report.csv"'
+        response.write('\ufeff')
+        writer = csv.writer(response, delimiter=';')
+        writer.writerow(['Город', 'Компания', 'Email', 'Оплачено счетов', 'Не оплачено счетов', 'Оплачено, руб.', 'К оплате, руб.'])
+        def safe(value):
+            text = str(value)
+            return "'" + text if text.lstrip().startswith(('=', '+', '-', '@', '\t', '\r', '\n')) else text
+        for company in companies.iterator():
+            writer.writerow([safe(company.city), safe(company.name), safe(company.owner.email), company.paid_count, company.pending_count, company.paid_amount or 0, company.pending_amount or 0])
+        return response
+    return render(request, 'dashboard/payment_report.html', {
+        'companies': Paginator(companies, 30).get_page(request.GET.get('page')),
+        'cities': Company.objects.exclude(city='').values_list('city', flat=True).distinct().order_by('city'),
+        'city': city, 'status': status, 'title': 'Отчёт по оплатам',
+    })

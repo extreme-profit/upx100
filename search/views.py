@@ -18,6 +18,9 @@ def search_view(request):
     base_services = Service.objects.visible().select_related('company').filter(
         company__is_verified=True
     )
+    delivery_mode = request.GET.get('delivery_mode', '')
+    if delivery_mode in dict(Service.DELIVERY_CHOICES):
+        base_services = base_services.filter(delivery_mode=delivery_mode)
     categories = Category.objects.all()
 
     # Поиск по запросу с использованием векторного поиска
