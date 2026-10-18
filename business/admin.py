@@ -141,3 +141,15 @@ class NoShowReportAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+from .models import BillingNotification
+
+@admin.register(BillingNotification)
+class BillingNotificationAdmin(admin.ModelAdmin):
+    list_display = ['recipient', 'invoice', 'title', 'created_at', 'read_at']
+    readonly_fields = ['recipient','invoice','key','title','body','created_at','read_at']
+    list_filter = ['read_at']
+
+    def has_add_permission(self, request):
+        return False

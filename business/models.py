@@ -333,3 +333,19 @@ class NoShowReport(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Сообщение о неявке'
         verbose_name_plural = 'Сообщения о неявках'
+
+
+class BillingNotification(models.Model):
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='billing_notifications')
+    invoice = models.ForeignKey(MonthlyInvoice, on_delete=models.CASCADE, related_name='notifications')
+    key = models.CharField(max_length=180, unique=True)
+    title = models.CharField(max_length=255)
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        indexes = [models.Index(fields=['recipient', 'read_at'])]
+        verbose_name = 'Уведомление о комиссии'
+        verbose_name_plural = 'Уведомления о комиссии'

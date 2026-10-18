@@ -1,0 +1,20 @@
+{% extends 'business/base.html' %}
+{% block title %}Уведомления о комиссии{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header"><h1>Уведомления о комиссии</h1>
+<form method="post" action="{% url 'business:notifications_read_all' %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">Отметить все прочитанными</button></form>
+</div><div class="card-body"><p>Количество использований не увеличивает комиссию: 100 ₽ за каждую учтённую услугу. Неявки исключены. Текст уведомления отражает данные на момент его создания; актуальный состав и сумму можно проверить в счёте.</p></div></div>
+{% for notification in notifications %}
+<article id="notification-{{ notification.pk }}" class="card billing-notification {% if not notification.read_at %}billing-notification--unread{% endif %}">
+    <div class="card-header"><div><small>{{ notification.created_at|date:'d.m.Y H:i' }}{% if not notification.read_at %} · Новое{% endif %}</small><h2>{{ notification.title }}</h2></div></div>
+    <div class="card-body"><div class="billing-notification__body">{{ notification.body }}</div>
+        <p class="billing-notification__status">Текущий статус счёта: <strong>{{ notification.invoice.get_status_display }}</strong></p>
+        <div class="billing-notification__actions">
+            <form method="post" action="{% url 'business:notification_read' notification.pk %}">{% csrf_token %}<button class="btn btn-primary" name="open_invoice" value="1" type="submit">Открыть счёт №{{ notification.invoice_id }}</button></form>
+            {% if not notification.read_at %}<form method="post" action="{% url 'business:notification_read' notification.pk %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">Прочитано</button></form>{% endif %}
+        </div>
+    </div>
+</article>
+{% empty %}<div class="card"><div class="card-body"><p>Пока нет уведомлений об оплате комиссии.</p></div></div>{% endfor %}
+<nav class="pagination" aria-label="Страницы уведомлений">{% if notifications.has_previous %}<a href="?page={{ notifications.previous_page_number }}" class="btn btn-secondary">Назад</a>{% endif %}{% if notifications.has_next %}<a href="?page={{ notifications.next_page_number }}" class="btn btn-secondary">Далее</a>{% endif %}</nav>
+{% endblock %}

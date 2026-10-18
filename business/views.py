@@ -1054,3 +1054,37 @@ def booking_no_show_view(request, pk):
     else:
         messages.success(request, 'Неявка отмечена. Данные переданы администратору для проверки.')
     return redirect('business:booking_list')
+
+
+@login_required
+def notification_list_view(request):
+    if request.user.role != 'entrepreneur':
+        return HttpResponseForbidden('Уведомления о комиссии доступны предпринимателю')
+    from django.core.paginator import Paginator
+    notifications = request.user.billing_notifications.select_related('invoice')
+    return render(request, 'business/notifications.html', {
+        'notifications':Paginator(notifications, 20).get_page(request.GET.get('page')),
+        'title':'Уведомления о комиссии',
+    })
+
+
+@login_required
+@require_POST
+def notification_read_view(request, pk):
+    from .models import BillingNotification
+    if request.user.role != 'entrepreneur':
+        return HttpResponseForbidden('Уведомления о комиссии доступны предпринимателю')
+    notification = get_object_or_404(BillingNotification, pk=pk, recipient=request.user)
+    BillingNotification.objects.filter(pk=pk, read_at__isnull=True).update(read_at=timezone.now())
+    if request.POST.get('open_invoice') == '1':
+        return redirect('business:invoice_detail', pk=notification.invoice_id)
+    return redirect('business:notification_list')
+
+
+@login_required
+@require_POST
+def notifications_read_all_view(request):
+    if request.user.role != 'entrepreneur':
+        return HttpResponseForbidden('Уведомления о комиссии доступны предпринимателю')
+    request.user.billing_notifications.filter(read_at__isnull=True).update(read_at=timezone.now())
+    return redirect('business:notification_list')

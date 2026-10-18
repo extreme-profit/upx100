@@ -4,6 +4,9 @@ from . import views
 app_name = 'business'
 
 urlpatterns = [
+    path('notifications/', views.notification_list_view, name='notification_list'),
+    path('notifications/read-all/', views.notifications_read_all_view, name='notifications_read_all'),
+    path('notifications/<int:pk>/read/', views.notification_read_view, name='notification_read'),
     path('bookings/<int:pk>/no-show/', views.booking_no_show_view, name='booking_no_show'),
     # API для подкатегорий
     path('api/subcategories/', views.subcategories_api_view, name='subcategories_api'),

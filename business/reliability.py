@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import Booking, NoShowReport
 
-WARNING = 'Вы попали в список ненадёжных клиентов из-за частых отмеченных неявок. Мастер вправе отказать в бронировании. Для оспаривания статуса напишите в поддержку: info@upx100.ru.'
+WARNING = 'Вы попали в список ненадёжных клиентов из-за частых отмеченных неявок. Мастер вправе отказать в бронировании. Для оспаривания статуса напишите в поддержку: http://6max.ru/admin_extreme_profit'
 
 
 def normalized_phone(value):
@@ -65,7 +65,7 @@ def report_no_show(booking_id, company, actor):
     reconcile_no_show_invoice(booking)
     if booking.client_email:
         from .notifications import queue_email
-        warning = WARNING if booking.no_show_count >= 3 else 'Если вы присутствовали или не согласны с отметкой, напишите в поддержку: info@upx100.ru.'
+        warning = WARNING if booking.no_show_count >= 3 else 'Если вы присутствовали или не согласны с отметкой, напишите в поддержку: http://6max.ru/admin_extreme_profit'
         queue_email(f'booking:{booking.pk}:no-show', booking.client_email, 'Исполнитель отметил неявку по записи',
             f'По заявке №{booking.pk} на услугу «{booking.service.name}» исполнитель сообщил, что клиент не пришёл.\n{warning}')
     return booking, True
