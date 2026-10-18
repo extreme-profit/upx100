@@ -8,7 +8,7 @@
 <div class="cards-grid">
 {% for booking in bookings %}
 <article class="card"><div class="card__content"><h2>{{ booking.service.name }}</h2><p>{{ booking.service.company.name }}</p>
-{% if booking.no_show_count >= 3 %}<p class="timezone-note">Вы попали в список ненадёжных клиентов из-за частых отмеченных неявок. Мастер вправе отказать в бронировании. Для оспаривания статуса напишите в поддержку: info@upx100.ru.</p>{% endif %}
+{% if booking.no_show_count >= 3 %}<p class="timezone-note">Вы попали в список ненадёжных клиентов из-за частых отмеченных неявок. Мастер вправе отказать в бронировании. Для оспаривания статуса напишите в поддержку: <a href="http://6max.ru/admin_extreme_profit">Связаться с поддержкой</a>.</p>{% endif %}
 <p><strong>Статус:</strong> {{ booking.get_status_display }}{% if booking.rejection_reason %}<br><strong>Причина отказа:</strong> {{ booking.rejection_reason }}{% endif %}</p>
 {% timezone booking.service.company.time_zone %}<p><strong>Дата:</strong> {{ booking.appointment_at|date:"d.m.Y H:i" }} ({{ booking.service.company.time_zone }})</p>{% endtimezone %}
 <p><strong>Адрес компании:</strong> {{ booking.service.company.address }}</p><p><strong>Формат:</strong> {{ booking.service.get_delivery_mode_display }}</p>

@@ -3,7 +3,7 @@
 {% block title %}Запись успешно создана{% endblock %}
 
 {% block content %}
-{% if reliability_warning %}<div class="container"><p class="timezone-note" role="alert">{{ reliability_warning }} Новую бронь мастер может не подтвердить по причине частых неявок.</p></div>{% endif %}
+{% if reliability_warning %}<div class="container"><p class="timezone-note" role="alert">{{ reliability_warning|urlize }} Новую бронь мастер может не подтвердить по причине частых неявок.</p></div>{% endif %}
 <div class="container" style="padding: 40px 0; max-width: 600px;">
     <div style="text-align: center; padding: 40px 20px;">
         <svg viewBox="0 0 80 80" width="80" height="80" aria-hidden="true" style="margin-bottom: 20px; color: #198754;">
