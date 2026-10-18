@@ -1,3 +1,5 @@
+import uuid
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -167,6 +169,9 @@ class ServiceTimeSlot(models.Model):
 
 
 class Booking(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='bookings', editable=False)
+    appointment_end_at = models.DateTimeField(null=True, blank=True, editable=False, db_index=True)
+    review_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     visitor_id = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
     appointment_at = models.DateTimeField(null=True, blank=True, editable=False)
     """Бронирование услуги клиентом"""
@@ -283,3 +288,17 @@ class EmailNotification(models.Model):
     class Meta:
         verbose_name = 'Почтовое уведомление'
         verbose_name_plural = 'Почтовые уведомления'
+
+
+class Review(models.Model):
+    booking = models.OneToOneField(Booking, on_delete=models.PROTECT, related_name='review')
+    employee = models.ForeignKey(Employee, on_delete=models.PROTECT, related_name='reviews')
+    rating = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    comment = models.TextField(blank=True, max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [models.CheckConstraint(check=models.Q(rating__gte=1, rating__lte=5), name='review_rating_1_to_5')]
+        verbose_name = 'Отзыв о мастере'
+        verbose_name_plural = 'Отзывы о мастерах'

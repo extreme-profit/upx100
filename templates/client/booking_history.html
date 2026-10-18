@@ -12,6 +12,7 @@
 {% timezone booking.service.company.time_zone %}<p><strong>Дата:</strong> {{ booking.appointment_at|date:"d.m.Y H:i" }} ({{ booking.service.company.time_zone }})</p>{% endtimezone %}
 <p><strong>Адрес компании:</strong> {{ booking.service.company.address }}</p><p><strong>Формат:</strong> {{ booking.service.get_delivery_mode_display }}</p>
 {% if booking.status == 'confirmed' %}<p class="timezone-note">Заявка принята!</p>{% endif %}
+{% if booking.review_link %}<a class="btn btn--primary" href="{{ booking.review_link }}">Оставить отзыв</a>{% elif booking.review %}<p>Ваш отзыв: {{ booking.review.rating }} из 5</p>{% endif %}
 {% if booking.cancel_url %}<a class="btn btn--outline" href="{{ booking.cancel_url }}">Отменить запись</a>{% endif %}
 </div></article>
 {% empty %}<p>Записей в этом разделе пока нет.</p>{% endfor %}

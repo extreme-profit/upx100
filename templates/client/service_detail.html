@@ -44,7 +44,7 @@
             <a href="{% url 'client:service_detail' service_id=service.pk %}?employee_id={{ employee.pk }}&amp;week={{ week_page.number }}"
                class="btn {% if selected_employee == employee %}btn--primary{% else %}btn--outline{% endif %}"
                style="min-width: 150px; text-align: center;">
-                {{ employee.name|truncatechars:20 }}
+                {{ employee.name|truncatechars:20 }}<br><small>{% if employee.rating_count %}{{ employee.rating_avg|floatformat:1 }} / 5 · Отзывов: {{ employee.rating_count }}{% else %}Пока нет отзывов{% endif %}</small>
             </a>
         {% endfor %}
     </div>
@@ -108,6 +108,9 @@
         </div>
     {% endif %}
 
+    <section class="master-reviews"><h2>Отзывы о мастерах</h2>
+        {% for review in master_reviews %}<article class="availability-day"><h3>{{ review.employee.name }} · {{ review.rating }} / 5</h3><small>{{ review.created_at|date:"d.m.Y" }} · Подтверждённая запись</small><p>{{ review.comment|linebreaksbr|default:'Клиент оставил оценку без комментария.' }}</p></article>{% empty %}<p>Отзывы появятся после первых выполненных записей.</p>{% endfor %}
+    </section>
     <div style="margin-top: 40px;">
         <a href="{% url 'client:company_detail' service.company.pk %}" class="btn btn--outline">← Вернуться к компании</a>
     </div>
