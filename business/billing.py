@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from .models import Booking, Company, InvoiceItem, MonthlyInvoice
 from .notifications import queue_email
+from .billing_notifications import notify_invoice
 
 SERVICE_FEE = Decimal('100.00')
 
@@ -21,6 +22,8 @@ def generate_invoice(company, period):
     Company.objects.select_for_update().get(pk=company.pk)
     existing = MonthlyInvoice.objects.filter(company=company, period=period).first()
     if existing:
+        if existing.status == 'pending':
+            notify_invoice(existing, 'created', 'Пора оплачивать комиссию за услуги')
         return existing
     start = timezone.make_aware(datetime.combine(period, time.min))
     end = timezone.make_aware(datetime.combine(next_month(period), time.min))
@@ -38,6 +41,7 @@ def generate_invoice(company, period):
         InvoiceItem(invoice=invoice, service=service, service_name=service.name, amount=SERVICE_FEE)
         for service in services
     ])
+    notify_invoice(invoice, 'created', 'Пора оплачивать комиссию за услуги')
     return invoice
 
 
@@ -68,6 +72,12 @@ def process_billing(today=None):
         else:
             key, subject = 'urgent', 'Срочно надо оплатить услуги'
             warning = '\nЕсли счёт не будет оплачен в срок, администратор может применить санкции: скрыть ваши услуги.'
+        if today > invoice.due_date:
+            notify_invoice(invoice, 'overdue', 'Просрочена оплата комиссии за услуги', 'Срок оплаты истёк. Оплатите счёт; администратор может применить санкции.')
+        elif urgent:
+            notify_invoice(invoice, 'urgent', 'Срочно оплатите комиссию за услуги', warning.strip())
+        else:
+            notify_invoice(invoice, 'created', 'Пора оплачивать комиссию за услуги')
         queue_email(
             f'invoice:{invoice.pk}:{key}', invoice.company.owner.email, subject,
             f'Счёт за {invoice.period:%m.%Y}: {invoice.amount} ₽.\n'
@@ -80,15 +90,20 @@ def process_billing(today=None):
 @transaction.atomic
 def mark_stub_paid(invoice):
     """Заглушка эквайринга; доступ к ней контролирует HTTP-представление."""
-    return MonthlyInvoice.objects.filter(pk=invoice.pk, status='pending').update(
+    updated = MonthlyInvoice.objects.filter(pk=invoice.pk, status='pending').update(
         status='paid', paid_at=timezone.now(),
     )
+    if updated:
+        invoice.refresh_from_db()
+        notify_invoice(invoice, 'paid', 'Комиссия за услуги оплачена', 'Демонстрационная оплата подтверждена. Деньги не списывались.')
+    return updated
 
 
 @transaction.atomic
 def reconcile_no_show_invoice(booking):
     from django.db.models import Sum
     from .models import NoShowReport, EmailNotification
+    booking.refresh_from_db(fields=['status'])
     if not booking.confirmed_at:
         return
     period = timezone.localdate(booking.confirmed_at).replace(day=1)
@@ -101,6 +116,8 @@ def reconcile_no_show_invoice(booking):
     item_exists = invoice.items.filter(service=booking.service).exists()
     if invoice.status == 'paid':
         NoShowReport.objects.filter(booking__service=booking.service, booking__confirmed_at__gte=start, booking__confirmed_at__lt=end, dismissed_at__isnull=True).update(paid_invoice_adjustment=item_exists and not eligible)
+        if item_exists and not eligible:
+            notify_invoice(invoice, f'paid-adjustment:{booking.pk}', 'Нужна корректировка оплаченной комиссии', 'Сумма оплаченного счёта не изменена. Администратор проверит корректировку или возврат.')
         return
     if eligible:
         InvoiceItem.objects.get_or_create(invoice=invoice, service=booking.service, defaults={'service_name':booking.service.name,'amount':SERVICE_FEE})
@@ -110,6 +127,7 @@ def reconcile_no_show_invoice(booking):
     invoice.amount = invoice.items.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     invoice.status = 'pending' if invoice.amount else 'void'
     invoice.save(update_fields=['amount','status'])
+    notify_invoice(invoice, f'adjustment:{booking.pk}:{booking.status}', 'Счёт на комиссию аннулирован' if invoice.status == 'void' else 'Счёт на комиссию скорректирован', 'Актуальная сумма и состав учтённых броней указаны в этом уведомлении. Изменение связано с проверкой неявки.')
     if invoice.amount != old_amount:
         EmailNotification.objects.filter(key__startswith=f'invoice:{invoice.pk}:', sent_at__isnull=True).update(cancelled_at=timezone.now())
         queue_email(f'invoice:{invoice.pk}:adjustment:{booking.pk}:{invoice.amount}', invoice.company.owner.email,

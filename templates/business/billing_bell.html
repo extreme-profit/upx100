@@ -1,0 +1,15 @@
+<details class="billing-bell">
+    <summary aria-label="Уведомления о комиссии: непрочитанных {{ billing_unread_count|default:0 }}">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+        {% if billing_unread_count %}<span class="billing-bell__badge">{{ billing_unread_count }}</span>{% endif %}
+    </summary>
+    <div class="billing-bell__dropdown">
+        <h3>Уведомления о комиссии</h3>
+        {% for notification in billing_recent_notifications %}
+            <a class="billing-bell__item {% if not notification.read_at %}billing-bell__item--unread{% endif %}" href="{% url 'business:notification_list' %}#notification-{{ notification.pk }}">
+                <strong>{{ notification.title }}</strong><small>{{ notification.created_at|date:'d.m.Y H:i' }}</small>
+            </a>
+        {% empty %}<p>Пока нет уведомлений об оплате комиссии.</p>{% endfor %}
+        <a class="btn btn-primary" href="{% url 'business:notification_list' %}">Все уведомления</a>
+    </div>
+</details>

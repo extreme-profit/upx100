@@ -638,6 +638,7 @@
             <div class="topbar">
                 <button type="button" id="panel-toggle" class="panel-toggle" aria-controls="panel-sidebar" aria-expanded="true" aria-label="Свернуть боковую панель"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Меню</span></button>
                 <h2 class="topbar-title">{% if user.role == 'employee' %}{{ title|default:"Панель сотрудника" }}{% else %}{{ title|default:"Панель предпринимателя" }}{% endif %}</h2>
+                {% if user.role == "entrepreneur" %}{% include "business/billing_bell.html" %}{% endif %}
             </div>
             
             <div class="content-area">
