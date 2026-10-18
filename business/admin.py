@@ -114,3 +114,15 @@ class EmailNotificationAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+from .models import Review
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ['employee', 'rating', 'created_at']
+    list_filter = ['rating', 'employee__company']
+    readonly_fields = ['booking', 'employee', 'rating', 'comment', 'created_at']
+
+    def has_add_permission(self, request):
+        return False

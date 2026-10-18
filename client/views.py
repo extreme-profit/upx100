@@ -8,13 +8,14 @@ from django.core.exceptions import ValidationError
 from .forms import BookingForm
 from business.booking_workflow import create_booking, cancel_client_booking
 from business.timezones import slot_start
+from business.models import Review
 from django.core import signing
 from django.http import Http404
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import never_cache
 from django.views.decorators.vary import vary_on_cookie
 from django.core.paginator import Paginator
-from django.db.models import Max, Q
+from django.db.models import Max, Q, Avg, Count, F
 
 
 def companies_list_view(request):
@@ -79,7 +80,7 @@ def service_detail_view(request, service_id):
     )
     
     # Получаем всех сотрудников услуги
-    employees = service.employees.filter(is_active=True).prefetch_related('user')
+    employees = service.employees.filter(is_active=True).prefetch_related('user').annotate(rating_avg=Avg('reviews__rating'), rating_count=Count('reviews')).order_by(F('rating_avg').desc(nulls_last=True), '-rating_count', 'pk')
     
     # Получаем выбранного сотрудника (если есть)
     employee_id = request.GET.get('employee_id')
@@ -142,6 +143,7 @@ def service_detail_view(request, service_id):
         'slots_by_date': slots_by_date,
         'today_str': today_str,
         'tomorrow_str': tomorrow_str,
+        'master_reviews': Review.objects.filter(employee__in=employees).select_related('employee__user')[:20],
         'week_page': week_page,
         'week_start': week_start,
         'week_end': week_end,
@@ -217,11 +219,31 @@ def booking_cancel_view(request, token):
 def booking_history_view(request):
     from django.db.models import Q
     from business.notifications import cancellation_url
-    bookings = Booking.objects.filter(visitor_id=request.booking_visitor).select_related('service__company').order_by('-created_at')
+    from business.reviews import can_review, review_url
+    bookings = Booking.objects.filter(visitor_id=request.booking_visitor).select_related('service__company', 'review').order_by('-created_at')
     active = Q(status__in=['pending', 'confirmed']) & (Q(appointment_at__gte=timezone.now()) | Q(appointment_at__isnull=True))
     tab = request.GET.get('tab', 'current')
     bookings = bookings.exclude(active) if tab == 'past' else bookings.filter(active)
     page = Paginator(bookings, 15).get_page(request.GET.get('page'))
     for booking in page:
+        booking.review_link = review_url(booking) if can_review(booking) and not hasattr(booking, 'review') else ''
         booking.cancel_url = cancellation_url(booking) if booking.status in ('pending', 'confirmed') else ''
     return render(request, 'client/booking_history.html', {'bookings': page, 'tab': tab})
+
+
+@never_cache
+@require_http_methods(['GET', 'POST'])
+def booking_review_view(request, token):
+    from business.reviews import can_review, save_review
+    from .forms import ReviewForm
+    booking = get_object_or_404(Booking.objects.select_related('employee__user', 'service', 'review'), review_token=token)
+    existing = getattr(booking, 'review', None)
+    if not existing and not can_review(booking):
+        return render(request, 'client/booking_review.html', {'booking':booking, 'unavailable':True}, status=403)
+    form = ReviewForm(request.POST if request.method == 'POST' else None)
+    if request.method == 'POST' and not existing and form.is_valid():
+        review = save_review(booking.pk, form.cleaned_data['rating'], form.cleaned_data['comment'])
+        if review is None:
+            return render(request, 'client/booking_review.html', {'booking':booking, 'unavailable':True}, status=403)
+        return redirect('client:booking_review', token=token)
+    return render(request, 'client/booking_review.html', {'booking':booking, 'review':existing, 'form':form})

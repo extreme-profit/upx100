@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from types import SimpleNamespace
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -18,7 +19,12 @@ def create_booking(service_id, data, visitor_id=None):
     starts_at = slot_start(slot)
     if starts_at <= timezone.now() or (slot.employee and not slot.employee.is_active):
         raise ValidationError('Выбранное время недоступно')
+    end_date = slot.date + timedelta(days=slot.end_time <= slot.start_time)
+    ends_at = slot_start(SimpleNamespace(date=end_date, start_time=slot.end_time, service=service))
+    if ends_at <= starts_at:
+        raise ValidationError('Некорректная длительность записи')
     booking = Booking.objects.create(
+        employee=slot.employee, appointment_end_at=ends_at,
         visitor_id=visitor_id, appointment_at=starts_at,
         service=service, client_name=data['client_name'], client_phone=data['client_phone'],
         client_email=data['client_email'], notes=data['notes'],

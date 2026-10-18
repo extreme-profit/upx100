@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Отзыв о мастере{% endblock %}
+{% block content %}
+<section class="booking-state container"><div class="booking-state__card">
+<span class="booking-state__eyebrow">ВАШЕ МНЕНИЕ ВАЖНО</span>
+<h1>Отзыв о мастере</h1>
+<p>{{ booking.service.name }} · {{ booking.employee.name }}</p>
+{% if review %}<p class="timezone-note" role="status">Спасибо! Ваш отзыв сохранён. Оценка: {{ review.rating }} из 5.</p><p>{{ review.comment|linebreaksbr }}</p>
+{% elif unavailable %}<p class="timezone-note">Отзыв доступен только после окончания подтверждённой услуги с назначенным мастером. Для отменённой заявки отзыв недоступен.</p>
+{% else %}<p class="booking-state__lead">Ваш отзыв поможет другим клиентам выбрать специалиста.</p>
+<form method="post" class="review-form">{% csrf_token %}{{ form.as_p }}<button type="submit" class="btn btn--primary">Опубликовать отзыв</button></form>
+<p class="booking-state__note">Оценка и текст отзыва будут видны посетителям сайта. Не указывайте в отзыве личные данные.</p>{% endif %}
+<a href="{% url 'client:booking_history' %}">Мои записи</a>
+</div></section>
+{% endblock %}
