@@ -44,7 +44,7 @@ class BusinessWorkflowTests(TestCase):
     def decide(self, booking, action='confirm'):
         self.client.force_login(self.owner)
         with self.captureOnCommitCallbacks(execute=True):
-            return self.client.post(reverse(f'business:booking_{action}', args=[booking.pk]))
+            return self.client.post(reverse(f'business:booking_{action}', args=[booking.pk]), {'rejection_reason':'Нет свободного времени'})
 
     def test_free_service_creation_and_public_pages(self):
         employee_user = User.objects.create_user('employee@example.com', role='employee')

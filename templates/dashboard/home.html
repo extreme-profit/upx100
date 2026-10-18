@@ -1,6 +1,7 @@
 {% extends 'dashboard/base.html' %}
 
 {% block content %}
+<div class="stats-grid"><div class="stat-card"><div class="stat-label">Неявки (без отменённых отметок)</div><div class="stat-value">{{ no_show_total }}</div></div><div class="stat-card"><div class="stat-label">Неявки на проверке</div><div class="stat-value">{{ no_show_pending }}</div><a href="{% url 'dashboard:no_show_reports' %}">Данные клиентов и исполнителей</a></div><div class="stat-card"><div class="stat-label">Подтверждённые / выполненные, без неявок</div><div class="stat-value">{{ attended_bookings }}</div></div></div>
 <p style="margin-bottom:20px;"><a class="btn btn-primary" href="{% url 'dashboard:payment_report' %}">Отчёт по городам и оплатам · CSV</a></p>
 <div class="stats-grid">
     <div class="stat-card"><div class="stat-label">Оплачено счетов / всего</div><div class="stat-value">{{ invoices_paid }} / {{ invoices_total }}</div><small>За всё время</small></div>

@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.db.models import Count, Q, Sum
 from accounts.models import User
 from companies.models import Category
-from business.models import Service, Company, MonthlyInvoice
+from business.models import Service, Company, MonthlyInvoice, Booking, NoShowReport
 from datetime import datetime
 from django.utils import timezone
 
@@ -66,7 +66,7 @@ def dashboard_home(request):
     inactive_users = User.objects.filter(is_active=False).count()
     
     context = {
-        'invoices_total': MonthlyInvoice.objects.count(),
+        'invoices_total': MonthlyInvoice.objects.exclude(status='void').count(),
         'invoices_paid': MonthlyInvoice.objects.filter(status='paid').count(),
         'invoices_paid_amount': MonthlyInvoice.objects.filter(status='paid').aggregate(total=Sum('amount'))['total'] or 0,
         'active_entrepreneurs': User.objects.filter(role='entrepreneur', is_active=True, company__is_verified=True, company__is_blocked=False).count(),
@@ -75,6 +75,9 @@ def dashboard_home(request):
             unpaid_amount=Sum('invoices__amount', filter=Q(invoices__status='pending')),
             overdue_count=Count('invoices', filter=Q(invoices__status='pending', invoices__due_date__lt=timezone.localdate())),
         ).order_by('-unpaid_amount', 'pk'),
+        'no_show_total': NoShowReport.objects.filter(dismissed_at__isnull=True).count(),
+        'no_show_pending': NoShowReport.objects.filter(dismissed_at__isnull=True, checked_at__isnull=True).count(),
+        'attended_bookings': Booking.objects.filter(status__in=['confirmed','completed']).count(),
         'users_count': users_count,
         'entrepreneurs_count': entrepreneurs_count,
         'admins_count': admins_count,
@@ -585,3 +588,35 @@ def payment_report(request):
         'cities': Company.objects.exclude(city='').values_list('city', flat=True).distinct().order_by('city'),
         'city': city, 'status': status, 'title': 'Отчёт по оплатам',
     })
+
+
+@admin_required
+def no_show_reports(request):
+    from django.core.exceptions import ValidationError
+    from django.core.paginator import Paginator
+    if request.method == 'POST':
+        try:
+            report_id = int(request.POST.get('report_id', ''))
+        except (ValueError, TypeError):
+            messages.error(request, 'Некорректный номер сообщения.')
+            return redirect('dashboard:no_show_reports')
+        report = get_object_or_404(NoShowReport, pk=report_id)
+        if request.POST.get('action') == 'dismiss':
+            from business.reliability import dismiss_no_show
+            try:
+                dismiss_no_show(report.pk, request.user, request.POST.get('reason',''))
+            except ValidationError as exc:
+                messages.error(request, exc.messages[0])
+        elif request.POST.get('action') == 'check':
+            NoShowReport.objects.filter(pk=report.pk, dismissed_at__isnull=True).update(checked_at=timezone.now())
+        return redirect('dashboard:no_show_reports')
+    reports = NoShowReport.objects.select_related('booking__service__company__owner','reported_by','dismissed_by')
+    unreliable_clients = []
+    seen = set()
+    for report in reports.filter(dismissed_at__isnull=True):
+        booking = report.booking
+        identity = booking.normalized_phone or booking.normalized_email or str(booking.visitor_id)
+        if identity not in seen and booking.no_show_count >= 3:
+            seen.add(identity)
+            unreliable_clients.append(booking)
+    return render(request, 'dashboard/no_show_reports.html', {'title':'Неявки клиентов', 'reports':Paginator(reports,30).get_page(request.GET.get('page')), 'unreliable_clients':unreliable_clients})

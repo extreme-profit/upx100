@@ -11,7 +11,7 @@ from .notifications import booking_created, booking_decided, queue_email
 
 
 @transaction.atomic
-def create_booking(service_id, data, visitor_id=None):
+def create_booking(service_id, data, visitor_id=None, client_ip=None):
     service = Service.objects.visible().select_related('company__owner').get(pk=service_id)
     slot = ServiceTimeSlot.objects.select_for_update().get(
         pk=data['slot_id'], service=service, is_booked=False,
@@ -23,7 +23,9 @@ def create_booking(service_id, data, visitor_id=None):
     ends_at = slot_start(SimpleNamespace(date=end_date, start_time=slot.end_time, service=service))
     if ends_at <= starts_at:
         raise ValidationError('Некорректная длительность записи')
+    from .reliability import normalized_phone
     booking = Booking.objects.create(
+        client_ip=client_ip, normalized_email=data['client_email'].strip().casefold(), normalized_phone=normalized_phone(data['client_phone']),
         employee=slot.employee, appointment_end_at=ends_at,
         visitor_id=visitor_id, appointment_at=starts_at,
         service=service, client_name=data['client_name'], client_phone=data['client_phone'],
@@ -40,7 +42,7 @@ def create_booking(service_id, data, visitor_id=None):
 
 
 @transaction.atomic
-def decide_booking(pk, company, decision):
+def decide_booking(pk, company, decision, rejection_reason=''):
     booking = Booking.objects.select_for_update().select_related('service__company').get(
         pk=pk, service__company=company,
     )
@@ -48,7 +50,12 @@ def decide_booking(pk, company, decision):
         return booking, False
     if decision not in ('confirmed', 'cancelled'):
         raise ValueError('Неизвестное решение')
+    rejection_reason = rejection_reason.strip()
+    if decision == 'cancelled' and (not rejection_reason or len(rejection_reason) > 1000):
+        raise ValidationError('Укажите причину отказа (до 1000 символов).')
     changes = {'status': decision, 'updated_at': timezone.now()}
+    if decision == 'cancelled':
+        changes['rejection_reason'] = rejection_reason
     if decision == 'confirmed':
         changes['confirmed_at'] = timezone.now()
     updated = Booking.objects.filter(pk=pk, status='pending').update(**changes)

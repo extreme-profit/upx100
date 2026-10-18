@@ -1,0 +1,20 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<h1>Неявки клиентов</h1><p>Сообщения исполнителей. Вы можете позвонить клиенту для проверки и отменить ошибочную отметку. Месяц определяется по дате записи в Europe/Moscow. IP сам по себе не определяет ненадёжность.</p>
+<section class="card"><div class="card-body"><h2>Клиенты с частыми неявками за текущий месяц</h2>{% for client in unreliable_clients %}<p>{{ client.client_name }} · {{ client.client_phone }} · {{ client.client_email }} · Неявок: {{ client.no_show_count }}</p>{% empty %}<p>Клиентов с тремя неявками нет.</p>{% endfor %}</div></section>
+{% for report in reports %}<article class="card"><div class="card-body">
+<h2>Заявка №{{ report.booking_id }} · {{ report.booking.service.name }}</h2>
+<p><strong>Клиент:</strong> {{ report.booking.client_name }} · <a href="tel:{{ report.booking.client_phone }}">{{ report.booking.client_phone }}</a> · {{ report.booking.client_email }}</p>
+<p><strong>Технические данные:</strong> IP {{ report.booking.client_ip|default:'Не сохранён' }} · UUID {{ report.booking.visitor_id|default:'Нет' }}</p>
+<p><strong>Предприниматель:</strong> {{ report.booking.service.company.name }} · {{ report.booking.service.company.owner.email }} · {{ report.booking.service.company.phone }} · {{ report.booking.service.company.owner.phone }}</p>
+<p>Сообщил: {{ report.reported_by.email }} · {{ report.created_at|date:'d.m.Y H:i' }} · Дата записи: {{ report.booking.appointment_at|date:'d.m.Y H:i' }}</p>
+<p>Неявок клиента за текущий месяц: {{ report.booking.no_show_count }}</p>
+{% if report.paid_invoice_adjustment %}<p class="message warning">Запись была включена в оплаченный счёт. Требуется ручная корректировка оплаты/возврата.</p>{% endif %}
+{% if report.dismissed_at %}<p>Отметка отменена: {{ report.dismissal_reason }} · {{ report.dismissed_by.email }}</p>
+{% else %}<p>{% if report.checked_at %}Проверено администратором{% else %}Ожидает проверки{% endif %}</p>
+<form method="post">{% csrf_token %}<input type="hidden" name="report_id" value="{{ report.pk }}"><button class="btn btn-secondary" name="action" value="check">Отметить проверенным</button></form>
+<form method="post">{% csrf_token %}<input type="hidden" name="report_id" value="{{ report.pk }}"><label>Причина отмены отметки<textarea name="reason" required maxlength="1000"></textarea></label><button class="btn btn-primary" name="action" value="dismiss">Отменить ошибочную неявку</button></form>
+{% endif %}
+</div></article>{% empty %}<p>Сообщений о неявках нет.</p>{% endfor %}
+{% if reports.has_previous %}<a href="?page={{ reports.previous_page_number }}">Назад</a>{% endif %}{% if reports.has_next %}<a href="?page={{ reports.next_page_number }}">Далее</a>{% endif %}
+{% endblock %}

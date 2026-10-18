@@ -9,6 +9,7 @@ from .forms import BookingForm
 from business.booking_workflow import create_booking, cancel_client_booking
 from business.timezones import slot_start
 from business.models import Review
+from business.reliability import client_ip
 from django.core import signing
 from django.http import Http404
 from django.views.decorators.http import require_http_methods
@@ -80,7 +81,7 @@ def service_detail_view(request, service_id):
     )
     
     # Получаем всех сотрудников услуги
-    employees = service.employees.filter(is_active=True).prefetch_related('user').annotate(rating_avg=Avg('reviews__rating'), rating_count=Count('reviews')).order_by(F('rating_avg').desc(nulls_last=True), '-rating_count', 'pk')
+    employees = service.employees.filter(is_active=True).prefetch_related('user').annotate(rating_avg=Avg('reviews__rating', filter=Q(reviews__booking__status__in=['confirmed', 'completed'])), rating_count=Count('reviews', filter=Q(reviews__booking__status__in=['confirmed', 'completed']))).order_by(F('rating_avg').desc(nulls_last=True), '-rating_count', 'pk')
     
     # Получаем выбранного сотрудника (если есть)
     employee_id = request.GET.get('employee_id')
@@ -143,7 +144,7 @@ def service_detail_view(request, service_id):
         'slots_by_date': slots_by_date,
         'today_str': today_str,
         'tomorrow_str': tomorrow_str,
-        'master_reviews': Review.objects.filter(employee__in=employees).select_related('employee__user')[:20],
+        'master_reviews': Review.objects.filter(employee__in=employees, booking__status__in=['confirmed', 'completed']).select_related('employee__user')[:20],
         'week_page': week_page,
         'week_start': week_start,
         'week_end': week_end,
@@ -164,7 +165,7 @@ def booking_create_view(request, service_id):
         form = BookingForm(request.POST)
         if form.is_valid():
             try:
-                booking = create_booking(service.pk, form.cleaned_data, visitor_id=request.booking_visitor)
+                booking = create_booking(service.pk, form.cleaned_data, visitor_id=request.booking_visitor, client_ip=client_ip(request))
             except (ServiceTimeSlot.DoesNotExist, Service.DoesNotExist, ValidationError):
                 messages.error(request, 'Выбранное время недоступно. Выберите другое.')
                 return redirect('client:service_detail', service_id=service.pk)
@@ -182,7 +183,9 @@ def booking_create_view(request, service_id):
         except (ValueError, TypeError):
             slot = None
     
+    from business.reliability import monthly_no_shows, WARNING
     context = {
+        'reliability_warning': WARNING if monthly_no_shows(request.booking_visitor, request.POST.get('client_email',''), request.POST.get('client_phone','')) >= 3 else '',
         'service': service,
         'slot': slot,
         'employee': slot.employee if slot and slot.employee else None,
@@ -197,7 +200,8 @@ def booking_success_view(request, booking_id):
     if request.session.get('last_booking_id') != booking_id:
         raise Http404
     booking = get_object_or_404(Booking, pk=booking_id)
-    context = {'booking': booking}
+    from business.reliability import WARNING
+    context = {'booking': booking, 'reliability_warning': WARNING if booking.no_show_count >= 3 else ''}
     return render(request, 'client/booking_success.html', context)
 
 
