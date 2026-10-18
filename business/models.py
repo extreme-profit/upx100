@@ -12,6 +12,7 @@ class Company(models.Model):
     description = models.TextField(blank=True, verbose_name="Описание")
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True, verbose_name="Логотип")
     photo = models.ImageField(upload_to='company_photos/', blank=True, null=True, verbose_name="Фото компании")
+    city = models.CharField(max_length=150, blank=True, db_index=True, verbose_name="Город")
     address = models.CharField(max_length=300, verbose_name="Адрес")
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="Широта")
     longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="Долгота")
@@ -88,6 +89,8 @@ class ServiceCategory(models.Model):
 
 
 class Service(models.Model):
+    DELIVERY_CHOICES = [('remote', 'Удалённо'), ('onsite', 'На месте'), ('visit', 'Выезд')]
+    delivery_mode = models.CharField(max_length=10, choices=DELIVERY_CHOICES, default='onsite', verbose_name='Формат оказания услуги')
     """Модель услуги"""
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='services', verbose_name="Компания")
     category = models.ForeignKey('companies.Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='business_services', verbose_name="Категория")
@@ -164,6 +167,8 @@ class ServiceTimeSlot(models.Model):
 
 
 class Booking(models.Model):
+    visitor_id = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
+    appointment_at = models.DateTimeField(null=True, blank=True, editable=False)
     """Бронирование услуги клиентом"""
     STATUS_CHOICES = [
         ('pending', 'Ожидает подтверждения'),

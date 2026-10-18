@@ -52,7 +52,7 @@ class BusinessWorkflowTests(TestCase):
         self.client.force_login(self.owner)
         for name in ['Маникюр', 'Укладка']:
             response = self.client.post(reverse('business:service_create'), {
-                'name': name, 'price': '500', 'description': '',
+                'name': name, 'price': '500', 'description': '', 'delivery_mode': 'onsite',
                 'category': self.category.pk, 'subcategory_id': self.subcategory.pk, 'employees': [employee.pk],
             })
             self.assertEqual(response.status_code, 302)
@@ -85,6 +85,7 @@ class BusinessWorkflowTests(TestCase):
         self.assertIsNotNone(confirmed_at)
         self.assertEqual(mail.outbox[-1].to, [self.data['client_email']])
         self.assertIn('принята', mail.outbox[-1].subject)
+        self.assertIn(self.company.address, mail.outbox[-1].body)
         self.assertIn(self.slot.date.strftime('%d.%m.%Y'), mail.outbox[-1].body)
         self.assertIn('12:00', mail.outbox[-1].body)
         self.decide(booking)

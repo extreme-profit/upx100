@@ -16,6 +16,7 @@
                 <div class="card-body p-4">
                     <form method="post" enctype="multipart/form-data" id="serviceForm">
                         {% csrf_token %}
+                        <div class="mb-4"><label for="id_delivery_mode">Формат оказания услуги</label>{{ form.delivery_mode }}{{ form.delivery_mode.errors }}</div>
                         
                         <!-- Название услуги -->
                         <div class="mb-4">

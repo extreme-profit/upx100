@@ -135,8 +135,9 @@ class CompanyForm(forms.ModelForm):
     """Форма профиля компании"""
     class Meta:
         model = Company
-        fields = ['name', 'description', 'logo', 'photo', 'address', 'latitude', 'longitude', 'time_zone']
+        fields = ['name', 'description', 'logo', 'photo', 'address', 'latitude', 'longitude', 'time_zone', 'city']
         widgets = {
+            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Например, Москва'}),
             'time_zone': forms.Select(attrs={'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название компании'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Описание компании'}),
@@ -334,8 +335,9 @@ class ServiceForm(forms.ModelForm):
     
     class Meta:
         model = Service
-        fields = ['name', 'description', 'price', 'photo']
+        fields = ['name', 'description', 'price', 'photo', 'delivery_mode']
         widgets = {
+            'delivery_mode': forms.Select(attrs={'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название услуги'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Описание услуги'}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),

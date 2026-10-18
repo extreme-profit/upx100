@@ -11,6 +11,8 @@ from business.timezones import slot_start
 from django.core import signing
 from django.http import Http404
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import never_cache
+from django.views.decorators.vary import vary_on_cookie
 from django.core.paginator import Paginator
 from django.db.models import Max, Q
 
@@ -160,7 +162,7 @@ def booking_create_view(request, service_id):
         form = BookingForm(request.POST)
         if form.is_valid():
             try:
-                booking = create_booking(service.pk, form.cleaned_data)
+                booking = create_booking(service.pk, form.cleaned_data, visitor_id=request.booking_visitor)
             except (ServiceTimeSlot.DoesNotExist, Service.DoesNotExist, ValidationError):
                 messages.error(request, 'Выбранное время недоступно. Выберите другое.')
                 return redirect('client:service_detail', service_id=service.pk)
@@ -208,3 +210,18 @@ def booking_cancel_view(request, token):
         cancel_client_booking(booking.pk)
         return redirect('client:booking_cancel', token=token)
     return render(request, 'client/booking_cancel.html', {'booking': booking})
+
+
+@never_cache
+@vary_on_cookie
+def booking_history_view(request):
+    from django.db.models import Q
+    from business.notifications import cancellation_url
+    bookings = Booking.objects.filter(visitor_id=request.booking_visitor).select_related('service__company').order_by('-created_at')
+    active = Q(status__in=['pending', 'confirmed']) & (Q(appointment_at__gte=timezone.now()) | Q(appointment_at__isnull=True))
+    tab = request.GET.get('tab', 'current')
+    bookings = bookings.exclude(active) if tab == 'past' else bookings.filter(active)
+    page = Paginator(bookings, 15).get_page(request.GET.get('page'))
+    for booking in page:
+        booking.cancel_url = cancellation_url(booking) if booking.status in ('pending', 'confirmed') else ''
+    return render(request, 'client/booking_history.html', {'bookings': page, 'tab': tab})

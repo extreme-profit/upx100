@@ -507,6 +507,7 @@
             </div>
             
             <nav class="sidebar-nav">
+                <a class="nav-link" href="{% url 'dashboard:payment_report' %}">Отчёт по оплатам</a>
                 <div class="nav-section">
                     <div class="nav-section-title">Главное</div>
                     <a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">

@@ -8,7 +8,7 @@ class CompanyAdmin(admin.ModelAdmin):
     list_display = ['name', 'owner', 'address', 'is_verified', 'is_blocked', 'created_at']
     search_fields = ['name', 'owner__email', 'address']
     readonly_fields = ['created_at', 'updated_at']
-    list_filter = ['is_verified', 'is_blocked']
+    list_filter = ['is_verified', 'is_blocked', 'city']
     actions = ['block_services', 'unblock_services']
 
     @admin.action(description='Скрыть все текущие и будущие услуги предпринимателей')
@@ -38,7 +38,7 @@ class ServiceCategoryAdmin(admin.ModelAdmin):
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
     list_display = ['name', 'company', 'category', 'get_employees_list', 'price', 'duration', 'status', 'payment_due_date']
-    list_filter = ['company', 'category']
+    list_filter = ['company', 'category', 'delivery_mode']
     search_fields = ['name', 'company__name', 'description']
     readonly_fields = ['created_at', 'updated_at']
     filter_horizontal = ['employees']

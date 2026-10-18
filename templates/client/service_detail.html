@@ -30,6 +30,7 @@
         </div>
     </div>
 
+    <p><strong>Формат:</strong> {{ service.get_delivery_mode_display }} · <strong>Адрес компании:</strong> {{ service.company.address }}</p>
     <!-- Выбор сотрудника -->
     {% if employees %}
     <h2 style="margin-bottom: 20px;">Выберите специалиста</h2>

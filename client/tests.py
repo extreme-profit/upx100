@@ -97,3 +97,42 @@ class CompanyTimezoneTests(TestCase):
             slot = ServiceTimeSlot(service=self.service, date=day, start_time=time(hour, 30), end_time=time(4))
             with self.assertRaises(ValidationError):
                 slot_start(slot)
+
+
+class VisitorHistoryTests(TestCase):
+    def setUp(self):
+        owner = User.objects.create_user('history-owner@example.com', role='entrepreneur')
+        company = Company.objects.create(owner=owner, name='История', address='Улица, 5', is_verified=True)
+        self.service = Service.objects.create(company=company, name='Секретная услуга', price=100)
+        self.slot = ServiceTimeSlot.objects.create(service=self.service, date=timezone.localdate()+timedelta(days=2), start_time=time(12), end_time=time(13))
+
+    def test_history_cookie_isolation_and_cancellation_keeps_date(self):
+        from django.test import Client
+        from business.models import Booking
+        from business.booking_workflow import cancel_client_booking
+        response = self.client.post(reverse('client:booking_create', args=[self.service.pk]), {
+            'slot_id':self.slot.pk, 'client_name':'Имя', 'client_phone':'123', 'client_email':'visitor@example.com', 'notes':'',
+        })
+        self.assertEqual(response.status_code, 302)
+        cookie = self.client.cookies['booking_visitor']
+        self.assertTrue(cookie['httponly'])
+        booking = Booking.objects.get()
+        self.assertIsNotNone(booking.visitor_id)
+        self.assertIsNotNone(booking.appointment_at)
+        url = reverse('client:booking_history')
+        self.assertContains(self.client.get(url), self.service.name)
+        self.assertNotContains(Client().get(url), self.service.name)
+        stranger = Client()
+        stranger.cookies['booking_visitor'] = str(booking.visitor_id)  # Unsigned forgery.
+        self.assertNotContains(stranger.get(url), self.service.name)
+        cancel_client_booking(booking.pk)
+        self.assertNotContains(self.client.get(url), self.service.name)
+        self.assertContains(self.client.get(url, {'tab':'past'}), self.service.name)
+        self.assertContains(self.client.get(url, {'tab':'past'}), 'Отменено клиентом')
+
+    def test_delivery_mode_search_filter(self):
+        from unittest.mock import patch
+        remote = Service.objects.create(company=self.service.company, name='Удалённая консультация', price=100, delivery_mode='remote')
+        response = self.client.get('/search/', {'delivery_mode':'remote'})
+        self.assertContains(response, remote.name)
+        self.assertNotContains(response, self.service.name)

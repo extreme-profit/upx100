@@ -10,7 +10,7 @@ from .notifications import booking_created, booking_decided, queue_email
 
 
 @transaction.atomic
-def create_booking(service_id, data):
+def create_booking(service_id, data, visitor_id=None):
     service = Service.objects.visible().select_related('company__owner').get(pk=service_id)
     slot = ServiceTimeSlot.objects.select_for_update().get(
         pk=data['slot_id'], service=service, is_booked=False,
@@ -19,6 +19,7 @@ def create_booking(service_id, data):
     if starts_at <= timezone.now() or (slot.employee and not slot.employee.is_active):
         raise ValidationError('Выбранное время недоступно')
     booking = Booking.objects.create(
+        visitor_id=visitor_id, appointment_at=starts_at,
         service=service, client_name=data['client_name'], client_phone=data['client_phone'],
         client_email=data['client_email'], notes=data['notes'],
     )

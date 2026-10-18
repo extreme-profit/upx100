@@ -94,5 +94,6 @@ def booking_decided(booking, slot=None):
         f'Заявка {decision}: {booking.service.name}',
         f'{booking.client_name}, ваша заявка №{booking.pk} на услугу '
         f'«{booking.service.name}» {decision}.\nКомпания: {booking.service.company.name}.'
+        f'\nАдрес компании: {booking.service.company.address}\nФормат: {booking.service.get_delivery_mode_display()}'
         f'{appointment}' + (cancellation_text(booking) if booking.status == 'confirmed' else ''),
     )

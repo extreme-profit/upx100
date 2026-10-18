@@ -17,6 +17,7 @@
                 <span class="header__logo-text">upx100<span class="header__logo-accent">.ru</span></span>
             </a>
             <nav class="header__nav">
+                <a class="header__nav-link" href="{% url 'client:booking_history' %}">Мои записи</a>
                 <a href="{% url 'home' %}" class="header__nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>

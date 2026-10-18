@@ -9,14 +9,16 @@
             <circle cx="40" cy="40" r="36" fill="none" stroke="currentColor" stroke-width="5"/>
             <path d="M23 40l11 11 23-24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <h1 style="margin-bottom: 20px;">Запись успешно создана!</h1>
+        <h1 style="margin-bottom: 20px;">{% if booking.status == "confirmed" %}Заявка принята!{% else %}Запись успешно создана!{% endif %}</h1>
         <p style="font-size: 18px; font-weight: 600; color: #174478; background: #eaf3ff; padding: 20px; border-radius: 10px; line-height: 1.6;">
-            Предприниматель рассмотрит заявку. Письмо с решением придёт на указанный email.
+            {% if booking.status == "confirmed" %}Ваша заявка принята. Детали и адрес компании указаны ниже.{% else %}Предприниматель рассмотрит заявку. Письмо с решением придёт на указанный email.{% endif %}
         </p>
         
         <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; text-align: left; margin: 30px 0;">
             <h3 style="margin-bottom: 20px; color: #333;">Детали записи:</h3>
             <p style="margin-bottom: 10px;"><strong>Услуга:</strong> {{ booking.service.name }}</p>
+            <p style="margin-bottom: 10px;"><strong>Адрес компании:</strong> {{ booking.service.company.address }}</p>
+            <p><strong>Формат:</strong> {{ booking.service.get_delivery_mode_display }}</p>
             <p style="margin-bottom: 10px;"><strong>Компания:</strong> {{ booking.service.company.name }}</p>
             <p style="margin-bottom: 10px;"><strong>Ваше имя:</strong> {{ booking.client_name }}</p>
             <p style="margin-bottom: 10px;"><strong>Телефон:</strong> {{ booking.client_phone }}</p>
@@ -32,7 +34,8 @@
         </div>
         
         
-        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 30px;">
+            <a href="{% url 'client:booking_history' %}" class="btn btn--outline">Мои записи</a>
             <a href="{% url 'client:service_detail' booking.service.pk %}" class="btn btn--primary" style="padding: 15px 30px;">
                 Вернуться к услуге
             </a>
