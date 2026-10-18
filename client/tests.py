@@ -56,3 +56,44 @@ class ServiceWeekTests(TestCase):
         self.assertContains(self.page({'week': 2}), 'На выбранной неделе нет свободного времени')
         self.assertEqual(self.page({'week': 'invalid'}).context['week_page'].number, 1)
         self.assertEqual(self.page({'week': '999999999999999999999'}).context['week_page'].number, 3)
+
+
+class CompanyTimezoneTests(TestCase):
+    def setUp(self):
+        owner = User.objects.create_user('tz-owner@example.com', role='entrepreneur')
+        self.company = Company.objects.create(owner=owner, name='Владивосток', time_zone='Asia/Vladivostok', is_verified=True)
+        self.service = Service.objects.create(company=self.company, name='Встреча', price=100)
+
+    def test_today_and_booking_follow_company_timezone(self):
+        from datetime import timezone as utc_timezone
+        from business.booking_workflow import create_booking
+        from django.core.exceptions import ValidationError
+        now = datetime(2026, 10, 18, 20, tzinfo=utc_timezone.utc)  # 19 October, 06:00 locally.
+        past = ServiceTimeSlot.objects.create(service=self.service, date=now.date() + timedelta(days=1), start_time=time(5), end_time=time(6))
+        future = ServiceTimeSlot.objects.create(service=self.service, date=now.date() + timedelta(days=1), start_time=time(7), end_time=time(8))
+        with patch('django.utils.timezone.now', return_value=now):
+            response = self.client.get(reverse('client:service_detail', args=[self.service.pk]))
+            self.assertEqual(response.context['week_start'], future.date)
+            self.assertContains(response, 'Сегодня, 19.10.2026')
+            self.assertContains(response, 'Asia/Vladivostok')
+            self.assertEqual(list(response.context['slots_by_date'].values())[0], [future])
+            data = dict(slot_id=past.pk, client_name='Клиент', client_phone='123', client_email='client-tz@example.com', notes='')
+            with self.assertRaises(ValidationError):
+                create_booking(self.service.pk, data)
+            data['slot_id'] = future.pk
+            booking = create_booking(self.service.pk, data)
+            self.assertEqual(booking.service_id, self.service.pk)
+
+    def test_timezone_validation_and_dst(self):
+        from business.forms import CompanyForm
+        from business.timezones import slot_start
+        from django.core.exceptions import ValidationError
+        form = CompanyForm(data={'name':'Компания','address':'Адрес','time_zone':'invalid/zone'})
+        self.assertFalse(form.is_valid())
+        self.assertIn('time_zone', form.errors)
+        self.company.time_zone = 'Europe/Berlin'
+        self.company.save()
+        for day, hour in [(timezone.datetime(2026, 3, 29).date(), 2), (timezone.datetime(2026, 10, 25).date(), 2)]:
+            slot = ServiceTimeSlot(service=self.service, date=day, start_time=time(hour, 30), end_time=time(4))
+            with self.assertRaises(ValidationError):
+                slot_start(slot)

@@ -1,10 +1,13 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from zoneinfo import ZoneInfo
+from .timezones import timezone_choices
 
 class Company(models.Model):
     """Модель компании (предпринимателя)"""
     owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='company')
+    time_zone = models.CharField(max_length=64, default="Europe/Moscow", choices=timezone_choices, verbose_name="Часовой пояс")
     name = models.CharField(max_length=200, verbose_name="Название компании")
     description = models.TextField(blank=True, verbose_name="Описание")
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True, verbose_name="Логотип")
@@ -19,6 +22,10 @@ class Company(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    @property
+    def tzinfo(self):
+        return ZoneInfo(self.time_zone)
+
     class Meta:
         verbose_name = "Компания"
         verbose_name_plural = "Компании"

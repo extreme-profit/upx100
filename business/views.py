@@ -332,7 +332,7 @@ def service_detail_view(request, pk):
         messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
     
-    time_slots = service.time_slots.filter(date__gte=timezone.now().date()).order_by('date', 'start_time')
+    time_slots = service.time_slots.filter(date__gte=timezone.localdate(timezone=service.company.tzinfo)).order_by('date', 'start_time')
     bookings = service.bookings.all().order_by('-created_at')
     
     return render(request, 'business/service_detail.html', {
@@ -397,6 +397,7 @@ def slot_manage_view(request, service_id):
         'service': service,
         'employees': employees,
         'weekdays': weekdays,
+        'company_today': timezone.localdate(timezone=service.company.tzinfo).isoformat(),
         'hours': hours,
         'interval': interval,
         'work_start': work_start_str,
@@ -425,7 +426,7 @@ def slot_get_grid_view(request, service_id):
         interval = 30  # Значение по умолчанию
     
     # Базовая дата - начало недели с учётом смещения
-    today = timezone.now().date()
+    today = timezone.localdate(timezone=service.company.tzinfo)
     start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
     
     # Даты недели с учётом смещения
@@ -499,7 +500,7 @@ def slot_update_grid_view(request, service_id):
         return JsonResponse({'error': 'Не указаны день или час'}, status=400)
     
     # Вычисляем дату с учетом смещения недели
-    today = timezone.now().date()
+    today = timezone.localdate(timezone=service.company.tzinfo)
     start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=int(week_offset))
     target_date = start_of_week + timedelta(days=int(weekday))
     
@@ -589,7 +590,7 @@ def slot_bulk_update_view(request, service_id):
         period_end = datetime.strptime(period_end_str, '%Y-%m-%d').date()
     else:
         # Если даты не переданы, используем текущую неделю
-        today = timezone.now().date()
+        today = timezone.localdate(timezone=service.company.tzinfo)
         period_start = today - timedelta(days=today.weekday())
         period_end = period_start + timedelta(days=6)
     

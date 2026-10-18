@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from accounts.models import User
 from companies.models import Category
-from business.models import Service
+from business.models import Service, Company, MonthlyInvoice
 from datetime import datetime
 from django.utils import timezone
 
@@ -66,6 +66,15 @@ def dashboard_home(request):
     inactive_users = User.objects.filter(is_active=False).count()
     
     context = {
+        'invoices_total': MonthlyInvoice.objects.count(),
+        'invoices_paid': MonthlyInvoice.objects.filter(status='paid').count(),
+        'invoices_paid_amount': MonthlyInvoice.objects.filter(status='paid').aggregate(total=Sum('amount'))['total'] or 0,
+        'active_entrepreneurs': User.objects.filter(role='entrepreneur', is_active=True, company__is_verified=True, company__is_blocked=False).count(),
+        'debtors': Company.objects.filter(invoices__status='pending').select_related('owner').annotate(
+            unpaid_count=Count('invoices', filter=Q(invoices__status='pending')),
+            unpaid_amount=Sum('invoices__amount', filter=Q(invoices__status='pending')),
+            overdue_count=Count('invoices', filter=Q(invoices__status='pending', invoices__due_date__lt=timezone.localdate())),
+        ).order_by('-unpaid_amount', 'pk'),
         'users_count': users_count,
         'entrepreneurs_count': entrepreneurs_count,
         'admins_count': admins_count,

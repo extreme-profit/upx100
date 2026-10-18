@@ -1,13 +1,26 @@
 {% extends 'dashboard/base.html' %}
 
 {% block content %}
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Оплачено счетов / всего</div><div class="stat-value">{{ invoices_paid }} / {{ invoices_total }}</div><small>За всё время</small></div>
+    <div class="stat-card"><div class="stat-label">Сумма оплаченных счетов</div><div class="stat-value">{{ invoices_paid_amount|floatformat:2 }} ₽</div><small>За всё время</small></div>
+    <div class="stat-card"><div class="stat-label">Активных предпринимателей / всего</div><div class="stat-value">{{ active_entrepreneurs }} / {{ entrepreneurs_count }}</div><small>Аккаунт включён, компания проверена и не заблокирована</small></div>
+</div>
+<div class="card">
+    <div class="card-header"><h3 class="card-title">Предприниматели с неоплаченными счетами</h3></div>
+    <div class="card-body"><p>Все неоплаченные счета, включая ещё не просроченные. Просрочка — после 5 числа.</p>
+        <div class="table-responsive"><table><thead><tr><th>Компания / предприниматель</th><th>Неоплачено счетов</th><th>Сумма</th><th>Просрочено</th><th></th></tr></thead>
+        <tbody>{% for company in debtors %}<tr><td>{{ company.name }}<br>{{ company.owner.email }}</td><td>{{ company.unpaid_count }}</td><td>{{ company.unpaid_amount|floatformat:2 }} ₽</td><td>{{ company.overdue_count }}</td><td><a class="btn btn-secondary btn-sm" href="{% url 'dashboard:user_detail' company.owner_id %}">Открыть</a></td></tr>
+        {% empty %}<tr><td colspan="5">Неоплаченных счетов нет.</td></tr>{% endfor %}</tbody></table></div>
+    </div>
+</div>
 <!-- Stats Grid -->
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-label">Всего пользователей</div>
         <div class="stat-value">{{ users_count }}</div>
         <div class="stat-change positive">
-            <span>👥 {{ entrepreneurs_count }} предпринимателей, {{ clients_count }} клиентов</span>
+            <span>👥 {{ entrepreneurs_count }} предпринимателей, {{ admins_count }} администраторов</span>
         </div>
     </div>
     

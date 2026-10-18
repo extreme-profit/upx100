@@ -5,6 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import Booking, Service, ServiceTimeSlot
+from .timezones import slot_start
 from .notifications import booking_created, booking_decided, queue_email
 
 
@@ -14,7 +15,7 @@ def create_booking(service_id, data):
     slot = ServiceTimeSlot.objects.select_for_update().get(
         pk=data['slot_id'], service=service, is_booked=False,
     )
-    starts_at = timezone.make_aware(datetime.combine(slot.date, slot.start_time))
+    starts_at = slot_start(slot)
     if starts_at <= timezone.now() or (slot.employee and not slot.employee.is_active):
         raise ValidationError('Выбранное время недоступно')
     booking = Booking.objects.create(

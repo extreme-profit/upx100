@@ -16,6 +16,11 @@
                         {% csrf_token %}
                         
                         <div class="row g-4">
+                            <div class="col-12">
+                                <label for="id_time_zone" class="form-label">Часовой пояс компании</label>
+                                {{ form.time_zone }} {{ form.time_zone.errors }}
+                                <p class="form-text">Все часы записи — местное время компании. При смене пояса даты и часы существующих слотов сохраняются.</p>
+                            </div>
                             <!-- Логотип -->
                             <div class="col-md-12 text-center mb-3">
                                 <div class="mb-3">
