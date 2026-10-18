@@ -539,7 +539,9 @@
 <body class="dashboard-site">
     <div class="dashboard-container">
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <button id="panel-backdrop" class="panel-backdrop" aria-label="Закрыть меню" hidden></button>
+        <aside class="sidebar" id="panel-sidebar">
+            <button type="button" class="panel-close" data-panel-close aria-label="Закрыть меню">×</button>
             <div class="sidebar-header">
                 <h1>
                     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
@@ -633,6 +635,7 @@
         <!-- Main Content -->
         <main class="main-content">
             <div class="topbar">
+                <button type="button" id="panel-toggle" class="panel-toggle" aria-controls="panel-sidebar" aria-expanded="true" aria-label="Свернуть боковую панель"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Меню</span></button>
                 <h2 class="topbar-title">{% if user.role == 'employee' %}{{ title|default:"Панель сотрудника" }}{% else %}{{ title|default:"Панель предпринимателя" }}{% endif %}</h2>
             </div>
             
@@ -651,5 +654,6 @@
     </div>
     
     {% block scripts %}{% endblock %}
+<script src="{% static 'js/panel-navigation.js' %}" defer></script>
 </body>
 </html>

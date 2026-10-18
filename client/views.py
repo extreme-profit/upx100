@@ -7,6 +7,7 @@ from companies.models import Category
 from django.core.exceptions import ValidationError
 from .forms import BookingForm
 from business.booking_workflow import create_booking, cancel_client_booking
+from business.timezones import slot_start
 from django.core import signing
 from django.http import Http404
 from django.views.decorators.http import require_http_methods
@@ -88,7 +89,7 @@ def service_detail_view(request, service_id):
             pass
     
     # Недели отсчитываются от сегодняшнего дня, по семь дней на страницу.
-    today = timezone.localdate()
+    today = timezone.localdate(timezone=service.company.tzinfo)
     now = timezone.now()
     
     time_slots_qs = ServiceTimeSlot.objects.filter(
@@ -113,7 +114,10 @@ def service_detail_view(request, service_id):
     # Фильтруем прошедшие слоты
     filtered_slots = []
     for slot in time_slots_qs:
-        slot_datetime = timezone.make_aware(timezone.datetime.combine(slot.date, slot.start_time))
+        try:
+            slot_datetime = slot_start(slot)
+        except ValidationError:
+            continue
         if slot_datetime > now:
             filtered_slots.append(slot)
     

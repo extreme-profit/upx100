@@ -27,6 +27,7 @@
                     </div>
                     {% endif %}
                     <div style="flex: 1;">
+                        <p><strong>Часовой пояс:</strong> {{ company.time_zone }}</p>
                         <p><strong>Адрес:</strong> {{ company.address }}</p>
                         <p><a href="{% url 'business:invoice_list' %}">Ежемесячные счета</a></p><p><strong>Описание:</strong> {{ company.description|default:"Не указано" }}</p>
                         <div class="mt-3" style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">

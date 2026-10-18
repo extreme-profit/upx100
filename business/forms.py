@@ -86,9 +86,9 @@ class ServiceTimeSlotGenerateForm(forms.Form):
         
         # Устанавливаем начальные значения дат
         if not self.initial.get('start_date'):
-            self.fields['start_date'].initial = timezone.now().date()
+            self.fields['start_date'].initial = timezone.localdate(timezone=self.service.company.tzinfo) if self.service else timezone.localdate()
         if not self.initial.get('end_date'):
-            self.fields['end_date'].initial = timezone.now().date() + timedelta(days=30)
+            self.fields['end_date'].initial = (timezone.localdate(timezone=self.service.company.tzinfo) if self.service else timezone.localdate()) + timedelta(days=30)
         
         # Устанавливаем начальные значения из сессии если есть
         if self.service and self.service.id:
@@ -135,8 +135,9 @@ class CompanyForm(forms.ModelForm):
     """Форма профиля компании"""
     class Meta:
         model = Company
-        fields = ['name', 'description', 'logo', 'photo', 'address', 'latitude', 'longitude']
+        fields = ['name', 'description', 'logo', 'photo', 'address', 'latitude', 'longitude', 'time_zone']
         widgets = {
+            'time_zone': forms.Select(attrs={'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название компании'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Описание компании'}),
             'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Адрес'}),

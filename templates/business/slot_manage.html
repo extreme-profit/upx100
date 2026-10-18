@@ -4,6 +4,9 @@
 {% block title %}Управление слотами | {{ service.name }} | Панель предпринимателя{% endblock %}
 
 {% block content %}
+{{ company_today|json_script:"company-today" }}
+    <p class="timezone-note">Время записи указано в часовом поясе компании: {{ service.company.time_zone }}.</p>
+
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-12">
@@ -421,7 +424,7 @@ function openModal() {
 
 // Вспомогательная функция для получения даты начала недели по смещению
 function getWeekStartDate(offset) {
-    const now = new Date();
+    const now = new Date(JSON.parse(document.getElementById('company-today').textContent) + 'T12:00:00');
     const dayOfWeek = now.getDay(); // 0 = воскресенье, 1 = понедельник, ...
     const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Смещение до понедельника
     const monday = new Date(now);
@@ -616,14 +619,14 @@ function renderGrid(grid, weekDates, interval) {
     weekDates.forEach((date, index) => {
         const dateEl = document.getElementById(`day-date-${index}`);
         if (dateEl) {
-            const d = new Date(date);
+            const d = new Date(date + 'T12:00:00');
             dateEl.textContent = `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth()+1).toString().padStart(2, '0')}`;
         }
     });
     
     // Обновляем диапазон недели
-    const startDate = new Date(weekDates[0]);
-    const endDate = new Date(weekDates[6]);
+    const startDate = new Date(weekDates[0] + 'T12:00:00');
+    const endDate = new Date(weekDates[6] + 'T12:00:00');
     document.getElementById('weekRange').textContent = 
         `${startDate.getDate().toString().padStart(2, '0')}.${(startDate.getMonth()+1).toString().padStart(2, '0')} - ${endDate.getDate().toString().padStart(2, '0')}.${(endDate.getMonth()+1).toString().padStart(2, '0')}`;
     

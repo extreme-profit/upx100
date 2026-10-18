@@ -23,6 +23,7 @@
         {% endif %}
     </div>
     
+    <p class="timezone-note">Время записи указано в часовом поясе компании: {{ service.company.time_zone }}.</p>
     <!-- Форма записи -->
     <form method="post" style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
         {% csrf_token %}

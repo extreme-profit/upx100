@@ -4,6 +4,8 @@
 {% block title %}Создание слотов | {{ service.name }} | Панель предпринимателя{% endblock %}
 
 {% block content %}
+    <p class="timezone-note">Время записи указано в часовом поясе компании: {{ service.company.time_zone }}.</p>
+
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
         <div class="col-md-10">

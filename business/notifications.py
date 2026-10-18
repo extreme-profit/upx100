@@ -65,7 +65,7 @@ def booking_created(booking, slot):
         f'Новая заявка №{booking.pk} на услугу «{booking.service.name}».\n'
         f'Клиент: {booking.client_name}\nТелефон: {booking.client_phone}\n'
         f'Email: {booking.client_email}\n'
-        f'Дата: {slot.date:%d.%m.%Y}, время: {slot.start_time:%H:%M}\n'
+        f'Дата: {slot.date:%d.%m.%Y}, время: {slot.start_time:%H:%M} ({booking.service.company.time_zone})\n'
         f'Комментарий: {booking.notes}\n'
         f'Примите или отклоните заявку в личном кабинете: '
         f'{settings.SITE_URL.rstrip("/")}/business/bookings/',
@@ -76,7 +76,7 @@ def booking_created(booking, slot):
             f'Заявка успешно зарегистрирована: {booking.service.name}',
             f'{booking.client_name}, ваша заявка №{booking.pk} успешно зарегистрирована. '
             f'Ожидайте ответа от менеджера.\nУслуга: {booking.service.name}\n'
-            f'Компания: {company.name}\nДата: {slot.date:%d.%m.%Y}, время: {slot.start_time:%H:%M}'
+            f'Компания: {company.name}\nДата: {slot.date:%d.%m.%Y}, время: {slot.start_time:%H:%M} ({booking.service.company.time_zone})'
             + cancellation_text(booking),
         )
 
@@ -86,7 +86,7 @@ def booking_decided(booking, slot=None):
         return  # Старые заявки могли быть созданы без email.
     decision = 'принята' if booking.status == 'confirmed' else 'отклонена'
     appointment = (
-        f'\nДата: {slot.date:%d.%m.%Y}, время: {slot.start_time:%H:%M}'
+        f'\nДата: {slot.date:%d.%m.%Y}, время: {slot.start_time:%H:%M} ({booking.service.company.time_zone})'
         if slot else ''
     )
     queue_email(

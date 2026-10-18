@@ -66,6 +66,7 @@
         {% endif %}
     </nav>
 
+    <p class="timezone-note">Время записи указано в часовом поясе компании: {{ service.company.time_zone }}.</p>
     {% if slots_by_date %}
         <div style="display: grid; gap: 20px;">
             {% for date_str, slots in slots_by_date.items %}
