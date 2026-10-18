@@ -1,0 +1,2 @@
+{% extends 'business/base.html' %}
+{% block content %}<div class="card"><div class="card-body"><h1>Причина отказа</h1><p role="alert">{{ error }}</p><p>{{ booking.service.name }} · {{ booking.client_name }}</p><form method="post" action="{% url 'business:booking_cancel' booking.pk %}">{% csrf_token %}<label for="rejection-reason">Клиент увидит эту причину</label><textarea id="rejection-reason" name="rejection_reason" required maxlength="1000" rows="4"></textarea><button class="btn btn-primary" type="submit">Отклонить заявку</button></form></div></div>{% endblock %}

@@ -25,7 +25,7 @@ def generate_invoice(company, period):
     start = timezone.make_aware(datetime.combine(period, time.min))
     end = timezone.make_aware(datetime.combine(next_month(period), time.min))
     services = list(company.services.filter(
-        bookings__confirmed_at__gte=start, bookings__confirmed_at__lt=end,
+        bookings__in=Booking.objects.filter(confirmed_at__gte=start, confirmed_at__lt=end).exclude(status='no_show'),
     ).distinct().order_by('pk'))
     if not services:
         return None
@@ -83,3 +83,36 @@ def mark_stub_paid(invoice):
     return MonthlyInvoice.objects.filter(pk=invoice.pk, status='pending').update(
         status='paid', paid_at=timezone.now(),
     )
+
+
+@transaction.atomic
+def reconcile_no_show_invoice(booking):
+    from django.db.models import Sum
+    from .models import NoShowReport, EmailNotification
+    if not booking.confirmed_at:
+        return
+    period = timezone.localdate(booking.confirmed_at).replace(day=1)
+    invoice = MonthlyInvoice.objects.select_for_update().filter(company=booking.service.company, period=period).first()
+    if not invoice:
+        return
+    start = timezone.make_aware(datetime.combine(period, time.min))
+    end = timezone.make_aware(datetime.combine(next_month(period), time.min))
+    eligible = Booking.objects.filter(service=booking.service, confirmed_at__gte=start, confirmed_at__lt=end).exclude(status='no_show').exists()
+    item_exists = invoice.items.filter(service=booking.service).exists()
+    if invoice.status == 'paid':
+        NoShowReport.objects.filter(booking__service=booking.service, booking__confirmed_at__gte=start, booking__confirmed_at__lt=end, dismissed_at__isnull=True).update(paid_invoice_adjustment=item_exists and not eligible)
+        return
+    if eligible:
+        InvoiceItem.objects.get_or_create(invoice=invoice, service=booking.service, defaults={'service_name':booking.service.name,'amount':SERVICE_FEE})
+    else:
+        invoice.items.filter(service=booking.service).delete()
+    old_amount = invoice.amount
+    invoice.amount = invoice.items.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    invoice.status = 'pending' if invoice.amount else 'void'
+    invoice.save(update_fields=['amount','status'])
+    if invoice.amount != old_amount:
+        EmailNotification.objects.filter(key__startswith=f'invoice:{invoice.pk}:', sent_at__isnull=True).update(cancelled_at=timezone.now())
+        queue_email(f'invoice:{invoice.pk}:adjustment:{booking.pk}:{invoice.amount}', invoice.company.owner.email,
+            'Счёт скорректирован после проверки неявки',
+            f'Счёт за {invoice.period:%m.%Y}: актуальная сумма {invoice.amount} ₽. '
+            f'Статус: {invoice.get_status_display()}. Изменение связано с отметкой неявки по заявке №{booking.pk}.')

@@ -169,6 +169,10 @@ class ServiceTimeSlot(models.Model):
 
 
 class Booking(models.Model):
+    client_ip = models.GenericIPAddressField(null=True, blank=True, editable=False)
+    normalized_email = models.CharField(max_length=254, blank=True, db_index=True, editable=False)
+    normalized_phone = models.CharField(max_length=32, blank=True, db_index=True, editable=False)
+    rejection_reason = models.TextField(blank=True, max_length=1000)
     employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='bookings', editable=False)
     appointment_end_at = models.DateTimeField(null=True, blank=True, editable=False, db_index=True)
     review_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
@@ -181,6 +185,7 @@ class Booking(models.Model):
         ('cancelled', 'Отклонено'),
         ('client_cancelled', 'Отменено клиентом'),
         ('completed', 'Выполнено'),
+        ('no_show', 'Клиент не пришёл'),
     ]
     
     service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name='bookings', verbose_name="Услуга")
@@ -198,6 +203,15 @@ class Booking(models.Model):
         verbose_name_plural = "Бронирования"
         ordering = ['-created_at']
     
+    @property
+    def no_show_count(self):
+        from .reliability import monthly_no_shows
+        return monthly_no_shows(self.visitor_id, self.client_email, self.client_phone)
+
+    @property
+    def can_mark_no_show(self):
+        return self.status == 'confirmed' and bool(self.appointment_end_at and self.appointment_end_at <= timezone.now())
+
     def __str__(self):
         return f"{self.client_name} - {self.service.name} ({self.get_status_display()})"
 
@@ -243,7 +257,7 @@ class MonthlyInvoice(models.Model):
     period = models.DateField(verbose_name='Расчётный месяц')
     due_date = models.DateField(verbose_name='Оплатить до (включительно)')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=10, choices=[('pending', 'Ожидает оплаты'), ('paid', 'Оплачен')], default='pending')
+    status = models.CharField(max_length=10, choices=[('pending', 'Ожидает оплаты'), ('paid', 'Оплачен'), ('void', 'Аннулирован')], default='pending')
     gateway_reference = models.CharField(max_length=100, unique=True)
     paid_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -275,6 +289,7 @@ class InvoiceItem(models.Model):
 
 
 class EmailNotification(models.Model):
+    cancelled_at = models.DateTimeField(null=True, blank=True, editable=False)
     """Сохранённые письма: ошибки SMTP можно повторить без потери заявки."""
     key = models.CharField(max_length=150, unique=True)
     recipient = models.EmailField()
@@ -302,3 +317,19 @@ class Review(models.Model):
         constraints = [models.CheckConstraint(check=models.Q(rating__gte=1, rating__lte=5), name='review_rating_1_to_5')]
         verbose_name = 'Отзыв о мастере'
         verbose_name_plural = 'Отзывы о мастерах'
+
+
+class NoShowReport(models.Model):
+    booking = models.OneToOneField(Booking, on_delete=models.PROTECT, related_name='no_show_report')
+    reported_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='reported_no_shows')
+    created_at = models.DateTimeField(auto_now_add=True)
+    checked_at = models.DateTimeField(null=True, blank=True)
+    dismissed_at = models.DateTimeField(null=True, blank=True)
+    dismissed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True, related_name='dismissed_no_shows')
+    dismissal_reason = models.TextField(blank=True, max_length=1000)
+    paid_invoice_adjustment = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Сообщение о неявке'
+        verbose_name_plural = 'Сообщения о неявках'

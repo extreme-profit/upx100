@@ -33,8 +33,15 @@ def queue_email(key, recipient, subject, body):
 def deliver_email(pk):
     with transaction.atomic():
         notification = EmailNotification.objects.select_for_update().get(pk=pk)
-        if notification.sent_at:
+        if notification.sent_at or notification.cancelled_at:
             return True
+        if notification.key.endswith(':review-invitation'):
+            from .models import Booking
+            booking_id = notification.key.split(':')[1]
+            if not Booking.objects.filter(pk=booking_id, status__in=['confirmed', 'completed'], review__isnull=True).exists():
+                notification.cancelled_at = timezone.now()
+                notification.save(update_fields=['cancelled_at'])
+                return True
         notification.attempts += 1
         try:
             delivered = send_mail(
@@ -58,6 +65,7 @@ def deliver_email(pk):
 
 
 def booking_created(booking, slot):
+    from .reliability import WARNING
     company = booking.service.company
     queue_email(
         f'booking:{booking.pk}:new', company.owner.email,
@@ -67,6 +75,7 @@ def booking_created(booking, slot):
         f'Email: {booking.client_email}\n'
         f'Дата: {slot.date:%d.%m.%Y}, время: {slot.start_time:%H:%M} ({booking.service.company.time_zone})\n'
         f'Комментарий: {booking.notes}\n'
+        + ('Осторожно: у клиента три и более отмеченных неявки за текущий месяц.\n' if booking.no_show_count >= 3 else '') +
         f'Примите или отклоните заявку в личном кабинете: '
         f'{settings.SITE_URL.rstrip("/")}/business/bookings/',
     )
@@ -77,7 +86,7 @@ def booking_created(booking, slot):
             f'{booking.client_name}, ваша заявка №{booking.pk} успешно зарегистрирована. '
             f'Ожидайте ответа от менеджера.\nУслуга: {booking.service.name}\n'
             f'Компания: {company.name}\nДата: {slot.date:%d.%m.%Y}, время: {slot.start_time:%H:%M} ({booking.service.company.time_zone})'
-            + cancellation_text(booking),
+            + cancellation_text(booking) + ('\n' + WARNING if booking.no_show_count >= 3 else ''),
         )
 
 
@@ -95,5 +104,5 @@ def booking_decided(booking, slot=None):
         f'{booking.client_name}, ваша заявка №{booking.pk} на услугу '
         f'«{booking.service.name}» {decision}.\nКомпания: {booking.service.company.name}.'
         f'\nАдрес компании: {booking.service.company.address}\nФормат: {booking.service.get_delivery_mode_display()}'
-        f'{appointment}' + (cancellation_text(booking) if booking.status == 'confirmed' else ''),
+        f'{appointment}' + (f'\nПричина отказа: {booking.rejection_reason}' if booking.status == 'cancelled' else '') + (cancellation_text(booking) if booking.status == 'confirmed' else ''),
     )

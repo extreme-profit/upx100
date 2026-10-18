@@ -61,7 +61,7 @@ class BookingAdmin(admin.ModelAdmin):
     list_display = ['client_name', 'service', 'status', 'created_at']
     list_filter = ['status', 'service']
     search_fields = ['client_name', 'client_phone', 'service__name']
-    readonly_fields = ['created_at', 'updated_at', 'confirmed_at', 'status']
+    readonly_fields = ['created_at', 'updated_at', 'confirmed_at', 'status', 'rejection_reason', 'client_ip', 'normalized_email', 'normalized_phone']
 
     def has_add_permission(self, request):
         return False
@@ -105,9 +105,9 @@ class MonthlyInvoiceAdmin(admin.ModelAdmin):
 
 @admin.register(EmailNotification)
 class EmailNotificationAdmin(admin.ModelAdmin):
-    list_display = ['subject', 'recipient', 'sent_at', 'attempts', 'last_error']
+    list_display = ['subject', 'recipient', 'sent_at', 'cancelled_at', 'attempts', 'last_error']
     list_filter = ['sent_at']
-    readonly_fields = ['key', 'recipient', 'subject', 'body', 'created_at', 'sent_at', 'attempts', 'last_error']
+    readonly_fields = ['key', 'recipient', 'subject', 'body', 'created_at', 'sent_at', 'cancelled_at', 'attempts', 'last_error']
 
     def has_add_permission(self, request):
         return False
@@ -125,4 +125,19 @@ class ReviewAdmin(admin.ModelAdmin):
     readonly_fields = ['booking', 'employee', 'rating', 'comment', 'created_at']
 
     def has_add_permission(self, request):
+        return False
+
+
+from .models import NoShowReport
+
+@admin.register(NoShowReport)
+class NoShowReportAdmin(admin.ModelAdmin):
+    list_display = ['booking', 'reported_by', 'created_at', 'checked_at', 'dismissed_at', 'paid_invoice_adjustment']
+    list_filter = ['paid_invoice_adjustment', 'checked_at', 'dismissed_at']
+    readonly_fields = ['booking','reported_by','created_at','checked_at','dismissed_at','dismissed_by','dismissal_reason','paid_invoice_adjustment']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False

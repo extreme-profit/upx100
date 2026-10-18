@@ -84,7 +84,7 @@
                         <tbody>
                             {% for booking in bookings %}
                             <tr>
-                                <td>{{ booking.client_name }}</td>
+                                <td>{{ booking.client_name }}{% if booking.no_show_count >= 3 %}<p class="message warning">Осторожно: у клиента три и более отмеченных неявки за текущий месяц.</p>{% endif %}</td>
                                 <td>{{ booking.service.name }}</td>
                                 <td>
                                     <span class="badge badge-{% if booking.status == 'confirmed' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}info{% endif %}">
@@ -95,7 +95,7 @@
                                 <td>
                                     {% if booking.status == 'pending' %}
                                         {% if user.role == 'entrepreneur' %}<form method="post" action="{% url 'business:booking_confirm' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-success">Принять</button></form>{% endif %}
-                                        {% if user.role == 'entrepreneur' %}<form method="post" action="{% url 'business:booking_cancel' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">Отклонить</button></form>{% endif %}
+                                        {% if user.role == 'entrepreneur' %}<form method="post" action="{% url 'business:booking_cancel' booking.pk %}" style="display:inline;">{% csrf_token %}<label>Причина отказа<textarea name="rejection_reason" required maxlength="1000" rows="2" placeholder="Клиент увидит эту причину"></textarea></label><button type="submit" class="btn btn-sm btn-danger">Отклонить</button></form>{% endif %}
                                     {% endif %}
                                 </td>
                             </tr>

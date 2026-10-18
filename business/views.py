@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -1013,7 +1014,10 @@ def _booking_decision(request, pk, decision):
         employee__user=request.user, employee__is_active=True,
     ).exists():
         return HttpResponseForbidden('Заявка назначена другому сотруднику')
-    booking, changed = decide_booking(pk, company, decision)
+    try:
+        booking, changed = decide_booking(pk, company, decision, request.POST.get('rejection_reason', ''))
+    except ValidationError as exc:
+        return render(request, 'business/rejection_reason.html', {'booking':booking, 'error':exc.messages[0]}, status=400)
     if changed:
         messages.success(request, 'Заявка принята.' if decision == 'confirmed' else 'Заявка отклонена.')
     else:
@@ -1031,3 +1035,22 @@ def booking_confirm_view(request, pk):
 @require_POST
 def booking_cancel_view(request, pk):
     return _booking_decision(request, pk, 'cancelled')
+
+
+@login_required
+@require_POST
+def booking_no_show_view(request, pk):
+    from .reliability import report_no_show
+    company = request.user.get_company()
+    if request.user.role not in ('entrepreneur', 'employee') or not company:
+        return HttpResponseForbidden('Недостаточно прав')
+    booking = get_object_or_404(Booking, pk=pk, service__company=company)
+    if request.user.role == 'employee' and not Employee.objects.filter(pk=booking.employee_id, user=request.user, is_active=True).exists():
+        return HttpResponseForbidden('Заявка назначена другому сотруднику')
+    try:
+        report_no_show(pk, company, request.user)
+    except ValidationError as exc:
+        messages.error(request, exc.messages[0])
+    else:
+        messages.success(request, 'Неявка отмечена. Данные переданы администратору для проверки.')
+    return redirect('business:booking_list')

@@ -4,6 +4,7 @@ from . import views
 app_name = 'business'
 
 urlpatterns = [
+    path('bookings/<int:pk>/no-show/', views.booking_no_show_view, name='booking_no_show'),
     # API для подкатегорий
     path('api/subcategories/', views.subcategories_api_view, name='subcategories_api'),
     

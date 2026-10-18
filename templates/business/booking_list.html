@@ -29,6 +29,7 @@
                 <label for="status_filter" class="form-label fw-bold" style="align-self: center;">Статус</label>
                 <select name="status" id="status_filter" class="form-select form-select-lg">
                     <option value="">Все статусы</option>
+                    <option value="no_show" {% if request.GET.status == "no_show" %}selected{% endif %}>Клиент не пришёл</option>
                     <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Ожидают подтверждения</option>
                     <option value="confirmed" {% if request.GET.status == 'confirmed' %}selected{% endif %}>Подтверждены</option>
                     <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Отклонены</option>
@@ -111,13 +112,16 @@
                             <td class="py-3">{{ booking.created_at|date:"d.m.Y H:i" }}</td>
                             <td class="py-3">{{ booking.notes|truncatechars:30|default:"—" }}</td>
                             <td class="py-3 text-center">
+                                {% if booking.no_show_count >= 3 %}<p class="message warning">Осторожно: у клиента не менее трёх отмеченных неявок за текущий календарный месяц. Рекомендуем уточнить намерение прийти.</p>{% endif %}
+                                {% if booking.can_mark_no_show %}<p>Если клиент не пришёл по этой брони, нажмите кнопку ниже. Бронь не будет учитываться в статистике. Неявку мы можем проверить, позвонив клиенту.</p><form method="post" action="{% url 'business:booking_no_show' booking.pk %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">Клиент не пришёл</button></form>{% endif %}
                                 {% if booking.status == 'pending' %}
                                     <div class="btn-group" role="group">
                                         {% if user.role == 'entrepreneur' or user.role == 'employee' %}<form method="post" action="{% url 'business:booking_confirm' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-success" title="Подтвердить">Принять</button></form>{% endif %}
-                                        {% if user.role == 'entrepreneur' or user.role == 'employee' %}<form method="post" action="{% url 'business:booking_cancel' booking.pk %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-sm btn-danger" title="Отменить">Отклонить</button></form>{% endif %}
+                                        {% if user.role == 'entrepreneur' or user.role == 'employee' %}<form method="post" action="{% url 'business:booking_cancel' booking.pk %}" style="display:inline;">{% csrf_token %}<label>Причина отказа<textarea name="rejection_reason" required maxlength="1000" rows="2" placeholder="Клиент увидит эту причину"></textarea></label><button type="submit" class="btn btn-sm btn-danger" title="Отменить">Отклонить</button></form>{% endif %}
                                     </div>
                                 {% elif booking.status == 'confirmed' %}
                                     <span class="text-muted"><i class="fas fa-check-double text-success"></i> Подтверждено</span>
+                                {% elif booking.status == 'no_show' %}<span>Клиент не пришёл</span>
                                 {% elif booking.status == 'cancelled' %}
                                     <span class="text-muted"><i class="fas fa-ban text-danger"></i> Отменено</span>
                                 {% else %}

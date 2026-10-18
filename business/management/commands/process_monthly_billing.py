@@ -12,6 +12,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         process_billing()
         process_review_invitations()
-        pending = EmailNotification.objects.filter(sent_at__isnull=True).values_list('pk', flat=True)
+        pending = EmailNotification.objects.filter(sent_at__isnull=True, cancelled_at__isnull=True).values_list('pk', flat=True)
         sent = sum(deliver_email(pk) for pk in list(pending))
         self.stdout.write(f'Счета обработаны. Повторно отправлено писем: {sent}.')
