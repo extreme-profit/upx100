@@ -576,12 +576,12 @@ def payment_report(request):
         response['Content-Disposition'] = 'attachment; filename="payments-report.csv"'
         response.write('\ufeff')
         writer = csv.writer(response, delimiter=';')
-        writer.writerow(['Адрес компании', 'Компания', 'Email', 'Оплачено счетов', 'Не оплачено счетов', 'Оплачено, руб.', 'К оплате, руб.'])
+        writer.writerow(['Город', 'Компания', 'Email', 'Оплачено счетов', 'Не оплачено счетов', 'Оплачено, руб.', 'К оплате, руб.'])
         def safe(value):
             text = str(value)
             return "'" + text if text.lstrip().startswith(('=', '+', '-', '@', '\t', '\r', '\n')) else text
         for company in companies.iterator():
-            writer.writerow([safe(company.address), safe(company.name), safe(company.owner.email), company.paid_count, company.pending_count, company.paid_amount or 0, company.pending_amount or 0])
+            writer.writerow([safe(company.city), safe(company.name), safe(company.owner.email), company.paid_count, company.pending_count, company.paid_amount or 0, company.pending_amount or 0])
         return response
     return render(request, 'dashboard/payment_report.html', {
         'companies': Paginator(companies, 30).get_page(request.GET.get('page')),
