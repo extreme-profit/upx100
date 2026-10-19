@@ -43,7 +43,7 @@ class PaymentReportTests(TestCase):
         self.client.force_login(admin)
         for city, name, status in [('Москва','=Danger','pending'),('Омск','Оплатил','paid')]:
             owner = User.objects.create_user(f'{status}@example.com',role='entrepreneur')
-            company = Company.objects.create(owner=owner,name=name,city=city)
+            company = Company.objects.create(owner=owner,name=name,city=city,address=f'{city}, улица Мастеров, 1')
             MonthlyInvoice.objects.create(company=company,period=date(2026,9,1),due_date=date(2026,10,5),amount=100,status=status,gateway_reference=status)
         url = reverse('dashboard:payment_report')
         response = self.client.get(url, {'city':'Москва','status':'unpaid'})
@@ -55,6 +55,7 @@ class PaymentReportTests(TestCase):
         self.assertNotIn('Омск',content)
         self.assertIn('attachment',response['Content-Disposition'])
         response = self.client.get(url, {'status':'paid','export':'csv'})
-        self.assertIn('Омск',response.content.decode('utf-8-sig'))
+        self.assertIn('Адрес компании',response.content.decode('utf-8-sig'))
+        self.assertIn('Омск, улица Мастеров, 1',response.content.decode('utf-8-sig'))
         self.assertNotIn('Danger',response.content.decode('utf-8-sig'))
         self.assertEqual(Client().get(url, {'export':'csv'}).status_code,302)

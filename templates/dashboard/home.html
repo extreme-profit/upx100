@@ -8,7 +8,7 @@
     <div class="stat-card"><div class="stat-label">Сумма оплаченных счетов</div><div class="stat-value">{{ invoices_paid_amount|floatformat:2 }} ₽</div><small>За всё время</small></div>
     <div class="stat-card"><div class="stat-label">Активных предпринимателей / всего</div><div class="stat-value">{{ active_entrepreneurs }} / {{ entrepreneurs_count }}</div><small>Аккаунт включён, компания проверена и не заблокирована</small></div>
 </div>
-<div class="card">
+<div class="card dashboard-debtors">
     <div class="card-header"><h3 class="card-title">Предприниматели с неоплаченными счетами</h3></div>
     <div class="card-body"><p>Все неоплаченные счета, включая ещё не просроченные. Просрочка — после 5 числа.</p>
         <div class="table-responsive"><table><thead><tr><th>Компания / предприниматель</th><th>Неоплачено счетов</th><th>Сумма</th><th>Просрочено</th><th></th></tr></thead>
@@ -25,7 +25,7 @@
             <span>👥 {{ entrepreneurs_count }} предпринимателей, {{ admins_count }} администраторов</span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-label">Категории услуг</div>
         <div class="stat-value">{{ categories_count }}</div>
@@ -33,7 +33,7 @@
             <span>📁 {{ subcategories_count }} подкатегорий</span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-label">Заблокированные аккаунты</div>
         <div class="stat-value" style="color: #ef4444;">{{ inactive_users }}</div>

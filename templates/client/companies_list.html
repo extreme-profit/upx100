@@ -1,23 +1,23 @@
 {% extends 'base.html' %}
 
-{% block title %}Все компании - upx100.ru{% endblock %}
+{% block title %}Все компании - 42master.ru{% endblock %}
 
 {% block content %}
 <div class="container" style="padding: 40px 0;">
     <h1>Все компании</h1>
-    
+
     <!-- Фильтр по категориям -->
     {% if categories %}
     <div style="margin: 20px 0;">
         <h3>Категории:</h3>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <a href="?{% if query %}q={{ query }}{% endif %}" 
+            <a href="?{% if query %}q={{ query }}{% endif %}"
                class="btn btn--outline"
                style="{% if not selected_category %}background: #007bff; color: white;{% endif %}">
                 Все
             </a>
             {% for category in categories %}
-                <a href="?category={{ category.slug }}{% if query %}&q={{ query }}{% endif %}" 
+                <a href="?category={{ category.slug }}{% if query %}&q={{ query }}{% endif %}"
                    class="btn btn--outline"
                    style="{% if category.slug == selected_category %}background: #007bff; color: white;{% endif %}">
                     {{ category.name }}
@@ -26,7 +26,7 @@
         </div>
     </div>
     {% endif %}
-    
+
     <!-- Список компаний -->
     {% if companies %}
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; margin-top: 30px;">

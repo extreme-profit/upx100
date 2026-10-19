@@ -7,6 +7,8 @@ from django.utils import timezone
 from django.core import signing
 from django.urls import reverse
 from django.template.loader import render_to_string
+from django.templatetags.static import static
+from urllib.parse import urljoin
 
 from .models import EmailNotification
 
@@ -50,6 +52,7 @@ def deliver_email(pk):
                 html_message=render_to_string('emails/notification.html', {
                     'subject': notification.subject, 'body': notification.body,
                     'site_url': settings.SITE_URL.rstrip('/'),
+                    'logo_url': urljoin(settings.SITE_URL.rstrip('/')+'/', static('img/logo.png')),
                 }),
             )
             if delivered != 1:

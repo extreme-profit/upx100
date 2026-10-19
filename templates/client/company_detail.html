@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ company.name }} - upx100.ru{% endblock %}
+{% block title %}{{ company.name }} - 42master.ru{% endblock %}
 
 {% block content %}
 <div class="container" style="padding: 40px 0;">
@@ -24,7 +24,7 @@
             <p style="color: #555; line-height: 1.6;">{{ company.description }}</p>
         {% endif %}
     </div>
-    
+
     <!-- Услуги компании -->
     <h2 style="margin-bottom: 20px;">Наши услуги</h2>
     {% if services %}
@@ -61,7 +61,7 @@
             <p>Услуги пока не добавлены или не активны.</p>
         </div>
     {% endif %}
-    
+
     <div style="margin-top: 40px;">
         <a href="{% url 'client:companies_list' %}" class="btn btn--outline">← Вернуться к списку компаний</a>
     </div>

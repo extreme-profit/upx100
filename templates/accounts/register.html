@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регистрация компании | upx100</title>
+    <title>Регистрация компании | 42master.ru</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -111,12 +112,12 @@
 <body>
     <div class="register-container">
         <div class="logo">
-            <h1>upx100</h1>
+            <h1><img src="{% static 'img/logo.png' %}" alt="" style="max-width:64px;max-height:44px;vertical-align:middle;object-fit:contain;margin-right:8px;" onerror="this.hidden=true">42master.ru</h1>
             <p>Регистрация компании</p>
         </div>
 
         <div class="info-box">
-            <strong>Обратите внимание:</strong> После регистрации ваша компания будет иметь статус "не проверена". 
+            <strong>Обратите внимание:</strong> После регистрации ваша компания будет иметь статус "не проверена".
             Доступ к полному функционалу откроется после проверки администратором.
         </div>
 
@@ -130,12 +131,12 @@
 
         <form method="post">
             {% csrf_token %}
-            
+
             <div class="form-group">
                 <label for="email">Email *</label>
                 <input type="email" id="email" name="email" class="form-control" required autofocus>
             </div>
-            
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="first_name">Имя</label>
@@ -146,27 +147,27 @@
                     <input type="text" id="last_name" name="last_name" class="form-control">
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <label for="company_name">Название компании *</label>
                 <input type="text" id="company_name" name="company_name" class="form-control" required placeholder="ООО «Ваша компания»">
             </div>
-            
+
             <div class="form-group">
                 <label for="phone">Телефон</label>
                 <input type="tel" id="phone" name="phone" class="form-control" placeholder="+7 (___) ___-__-__">
             </div>
-            
+
             <div class="form-group">
                 <label for="address">Адрес компании *</label>
                 <input type="text" id="address" name="address" class="form-control" required placeholder="Город, улица, дом">
             </div>
-            
+
             <div class="form-group">
                 <label for="description">Описание компании</label>
                 <textarea id="description" name="description" class="form-control" rows="3" placeholder="Расскажите о вашей компании"></textarea>
             </div>
-            
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="latitude">Широта</label>
@@ -179,113 +180,113 @@
                     <small style="color: #64748b;">Кликните по карте ниже или введите вручную</small>
                 </div>
             </div>
-            
+
             <!-- Карта для выбора координат -->
             <div class="form-group">
                 <label>📍 Расположение на карте</label>
                 <div id="map" style="height: 300px; width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 10px;"></div>
                 <small style="color: #64748b;">Кликните по карте чтобы установить координаты</small>
             </div>
-            
+
             <div class="form-group">
                 <label for="password">Пароль *</label>
                 <input type="password" id="password" name="password" class="form-control" required minlength="8">
             </div>
-            
+
             <div class="form-group">
                 <label for="password_confirm">Подтверждение пароля *</label>
                 <input type="password" id="password_confirm" name="password_confirm" class="form-control" required minlength="8">
             </div>
-            
+
             <button type="submit" class="btn">Зарегистрировать компанию</button>
         </form>
-        
+
         <div style="text-align: center; margin-top: 20px; color: #64748b; font-size: 14px;">
             Уже есть аккаунт? <a href="{% url 'accounts:login' %}" style="color: #667eea; text-decoration: none; font-weight: 500;">Войти</a>
         </div>
     </div>
-    
+
     <!-- Подключаем Yandex Maps API для интерактивной карты -->
     <script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_api_key }}&lang=ru_RU" type="text/javascript"></script>
-    
+
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         ymaps.ready(function() {
             // Получаем поля координат
             var latInput = document.getElementById('latitude');
             var lngInput = document.getElementById('longitude');
-            
+
             // Значения по умолчанию (Москва)
             var defaultLat = 55.7558;
             var defaultLng = 37.6173;
-            
+
             // Получаем текущие значения или используем дефолтные
             var currentLat = latInput && latInput.value ? parseFloat(latInput.value) : defaultLat;
             var currentLng = lngInput && lngInput.value ? parseFloat(lngInput.value) : defaultLng;
-            
+
             // Инициализируем карту
             var map = new ymaps.Map("map", {
                 center: [currentLat, currentLng],
                 zoom: 10,
                 controls: ['zoomControl', 'fullscreenControl']
             });
-            
+
             // Создаем маркер
             var marker = new ymaps.Placemark([currentLat, currentLng], {}, {
                 draggable: true,
                 preset: 'islands#blueCircleDotIcon'
             });
-            
+
             map.geoObjects.add(marker);
-            
+
             // Функция обновления координат в полях формы
             function updateCoords(lat, lng) {
                 if (latInput) latInput.value = lat.toFixed(6);
                 if (lngInput) lngInput.value = lng.toFixed(6);
             }
-            
+
             // Обработчик клика по карте - приближение и установка маркера
             map.events.add('click', function(e) {
                 var coords = e.get('coords');
                 var lat = coords[0];
                 var lng = coords[1];
-                
+
                 // Приближаем карту к месту клика
                 map.setCenter([lat, lng], 15, {duration: 300});
-                
+
                 // Перемещаем маркер
                 marker.geometry.setCoordinates([lat, lng]);
-                
+
                 // Обновляем поля формы
                 updateCoords(lat, lng);
             });
-            
+
             // Обработчик перетаскивания маркера - исправленный синтаксис
             marker.events.add('dragend', function() {
                 var coords = marker.geometry.getCoordinates();
                 var lat = coords[0];
                 var lng = coords[1];
-                
+
                 // Обновляем поля формы
                 updateCoords(lat, lng);
             });
-            
+
             // Обработчики изменения полей формы (для синхронизации при ручном вводе)
             function onInputChange() {
                 var lat = latInput ? parseFloat(latInput.value) : defaultLat;
                 var lng = lngInput ? parseFloat(lngInput.value) : defaultLng;
-                
+
                 if (!isNaN(lat) && !isNaN(lng)) {
                     marker.geometry.setCoordinates([lat, lng]);
                     map.setCenter([lat, lng]);
                 }
             }
-            
+
             if (latInput) {
                 latInput.addEventListener('change', onInputChange);
                 latInput.addEventListener('input', onInputChange);
             }
-            
+
             if (lngInput) {
                 lngInput.addEventListener('change', onInputChange);
                 lngInput.addEventListener('input', onInputChange);

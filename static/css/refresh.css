@@ -135,3 +135,7 @@ body.public-site { min-height:100vh; min-height:100dvh; display:flex; flex-direc
 .billing-notification__actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:20px; }
 .billing-notification__status { margin-top:20px; }
 @media(max-width:600px) { .billing-bell__dropdown { position:fixed; top:80px; left:16px; right:16px; width:auto; } .billing-notification__actions form,.billing-notification__actions button { width:100%; } }
+
+.brand-logo { width:40px; height:40px; object-fit:contain; vertical-align:middle; margin-right:10px; flex-shrink:0; }
+.public-site .header__logo { display:flex; align-items:center; }
+.dashboard-site .dashboard-debtors { margin-bottom:32px; }

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход в систему | upx100</title>
+    <title>Вход в систему | 42master.ru</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -97,7 +98,7 @@
 <body>
     <div class="login-container">
         <div class="logo">
-            <h1>upx100</h1>
+            <h1><img src="{% static 'img/logo.png' %}" alt="" style="max-width:64px;max-height:44px;vertical-align:middle;object-fit:contain;margin-right:8px;" onerror="this.hidden=true">42master.ru</h1>
             <p>Платформа для поиска услуг</p>
         </div>
 
@@ -121,7 +122,7 @@
             </div>
             <button type="submit" class="btn">Войти</button>
         </form>
-        
+
         <div style="text-align: center; margin-top: 20px; color: #64748b; font-size: 14px;">
             Нет аккаунта? <a href="{% url 'accounts:register' %}" style="color: #667eea; text-decoration: none; font-weight: 500;">Зарегистрировать компанию</a>
         </div>
