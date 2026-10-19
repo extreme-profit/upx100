@@ -75,7 +75,7 @@ class BusinessWorkflowTests(TestCase):
         self.assertEqual(mail.outbox[0].to, [self.owner.email])
         self.assertIn('Новая заявка', mail.outbox[0].subject)
         self.assertEqual(mail.outbox[0].alternatives[0][1], 'text/html')
-        self.assertIn('upx100', mail.outbox[0].alternatives[0][0])
+        self.assertIn('42master', mail.outbox[0].alternatives[0][0])
         self.client.force_login(self.owner)
         self.assertContains(self.client.get('/business/bookings/'), 'Анна')
         self.assertEqual(self.decide(booking).status_code, 302)

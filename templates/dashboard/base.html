@@ -4,26 +4,26 @@
     {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} | Админ-панель upx100</title>
+    <title>{{ title }} | Админ-панель 42master.ru</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background-color: #f5f7fa;
             color: #333;
             line-height: 1.6;
         }
-        
+
         .dashboard-container {
             display: flex;
             min-height: 100vh;
         }
-        
+
         /* Sidebar */
         .sidebar {
             width: 260px;
@@ -33,32 +33,32 @@
             height: 100vh;
             overflow-y: auto;
         }
-        
+
         .sidebar-header {
             padding: 24px 20px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        
+
         .sidebar-header h1 {
             font-size: 20px;
             font-weight: 700;
             color: #fff;
         }
-        
+
         .sidebar-header p {
             font-size: 12px;
             color: #94a3b8;
             margin-top: 4px;
         }
-        
+
         .sidebar-nav {
             padding: 16px 0;
         }
-        
+
         .nav-section {
             margin-bottom: 24px;
         }
-        
+
         .nav-section-title {
             padding: 8px 20px;
             font-size: 11px;
@@ -67,7 +67,7 @@
             color: #64748b;
             font-weight: 600;
         }
-        
+
         .nav-link {
             display: flex;
             align-items: center;
@@ -77,32 +77,32 @@
             transition: all 0.2s;
             border-left: 3px solid transparent;
         }
-        
+
         .nav-link:hover {
             background: rgba(255,255,255,0.05);
             color: #fff;
         }
-        
+
         .nav-link.active {
             background: rgba(59, 130, 246, 0.1);
             color: #60a5fa;
             border-left-color: #3b82f6;
         }
-        
+
         .nav-icon {
             width: 20px;
             height: 20px;
             margin-right: 12px;
             fill: currentColor;
         }
-        
+
         /* Main Content */
         .main-content {
             flex: 1;
             margin-left: 260px;
             padding: 0;
         }
-        
+
         .topbar {
             background: #fff;
             padding: 16px 32px;
@@ -114,19 +114,19 @@
             top: 0;
             z-index: 100;
         }
-        
+
         .topbar-title {
             font-size: 24px;
             font-weight: 600;
             color: #1e293b;
         }
-        
+
         .user-menu {
             display: flex;
             align-items: center;
             gap: 12px;
         }
-        
+
         .user-avatar {
             width: 36px;
             height: 36px;
@@ -139,41 +139,41 @@
             font-weight: 600;
             font-size: 14px;
         }
-        
+
         .content-area {
             padding: 32px;
         }
-        
+
         /* Messages */
         .messages {
             margin-bottom: 24px;
         }
-        
+
         .message {
             padding: 14px 20px;
             border-radius: 8px;
             margin-bottom: 12px;
             font-size: 14px;
         }
-        
+
         .message.success {
             background: #dcfce7;
             color: #166534;
             border: 1px solid #bbf7d0;
         }
-        
+
         .message.error {
             background: #fee2e2;
             color: #991b1b;
             border: 1px solid #fecaca;
         }
-        
+
         .message.warning {
             background: #fef3c7;
             color: #92400e;
             border: 1px solid #fde68a;
         }
-        
+
         /* Cards */
         .card {
             background: #fff;
@@ -181,7 +181,7 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             overflow: hidden;
         }
-        
+
         .card-header {
             padding: 20px 24px;
             border-bottom: 1px solid #e2e8f0;
@@ -189,17 +189,17 @@
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .card-title {
             font-size: 18px;
             font-weight: 600;
             color: #1e293b;
         }
-        
+
         .card-body {
             padding: 24px;
         }
-        
+
         /* Stats Grid */
         .stats-grid {
             display: grid;
@@ -207,50 +207,50 @@
             gap: 24px;
             margin-bottom: 32px;
         }
-        
+
         .stat-card {
             background: #fff;
             border-radius: 12px;
             padding: 24px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        
+
         .stat-label {
             font-size: 13px;
             color: #64748b;
             margin-bottom: 8px;
         }
-        
+
         .stat-value {
             font-size: 32px;
             font-weight: 700;
             color: #1e293b;
         }
-        
+
         .stat-change {
             font-size: 13px;
             margin-top: 8px;
         }
-        
+
         .stat-change.positive { color: #16a34a; }
         .stat-change.negative { color: #dc2626; }
-        
+
         /* Tables */
         .table-responsive {
             overflow-x: auto;
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
         }
-        
+
         th, td {
             padding: 14px 16px;
             text-align: left;
             border-bottom: 1px solid #e2e8f0;
         }
-        
+
         th {
             background: #f8fafc;
             font-weight: 600;
@@ -259,11 +259,11 @@
             letter-spacing: 0.5px;
             color: #64748b;
         }
-        
+
         tr:hover {
             background: #f8fafc;
         }
-        
+
         /* Buttons */
         .btn {
             display: inline-flex;
@@ -278,39 +278,39 @@
             border: none;
             transition: all 0.2s;
         }
-        
+
         .btn-primary {
             background: #3b82f6;
             color: #fff;
         }
-        
+
         .btn-primary:hover {
             background: #2563eb;
         }
-        
+
         .btn-secondary {
             background: #f1f5f9;
             color: #475569;
         }
-        
+
         .btn-secondary:hover {
             background: #e2e8f0;
         }
-        
+
         .btn-danger {
             background: #ef4444;
             color: #fff;
         }
-        
+
         .btn-danger:hover {
             background: #dc2626;
         }
-        
+
         .btn-sm {
             padding: 6px 12px;
             font-size: 13px;
         }
-        
+
         /* Badges */
         .badge {
             display: inline-block;
@@ -319,32 +319,32 @@
             font-size: 12px;
             font-weight: 500;
         }
-        
+
         .badge-success {
             background: #dcfce7;
             color: #166534;
         }
-        
+
         .badge-warning {
             background: #fef3c7;
             color: #92400e;
         }
-        
+
         .badge-danger {
             background: #fee2e2;
             color: #991b1b;
         }
-        
+
         .badge-info {
             background: #dbeafe;
             color: #1e40af;
         }
-        
+
         /* Forms */
         .form-group {
             margin-bottom: 20px;
         }
-        
+
         .form-label {
             display: block;
             margin-bottom: 8px;
@@ -352,7 +352,7 @@
             color: #374151;
             font-size: 14px;
         }
-        
+
         .form-control {
             width: 100%;
             padding: 12px 16px;
@@ -361,17 +361,17 @@
             font-size: 14px;
             transition: border-color 0.2s;
         }
-        
+
         .form-control:focus {
             outline: none;
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
-        
+
         select.form-control {
             background: #fff;
         }
-        
+
         /* Filters */
         .filters {
             display: flex;
@@ -379,18 +379,18 @@
             margin-bottom: 24px;
             flex-wrap: wrap;
         }
-        
+
         .filter-item {
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        
+
         .filter-item label {
             font-size: 13px;
             color: #64748b;
         }
-        
+
         .filter-item select,
         .filter-item input {
             padding: 8px 12px;
@@ -398,18 +398,18 @@
             border-radius: 6px;
             font-size: 13px;
         }
-        
+
         /* Actions */
         .actions-cell {
             vertical-align: middle;
         }
-        
+
         .actions-cell > * {
             display: inline-flex;
             gap: 8px;
             align-items: center;
         }
-        
+
         .action-btn {
             padding: 6px 10px;
             border-radius: 6px;
@@ -417,55 +417,55 @@
             text-decoration: none;
             transition: all 0.2s;
         }
-        
+
         .action-btn.edit {
             background: #dbeafe;
             color: #1e40af;
         }
-        
+
         .action-btn.edit:hover {
             background: #bfdbfe;
         }
-        
+
         .action-btn.delete {
             background: #fee2e2;
             color: #991b1b;
         }
-        
+
         .action-btn.delete:hover {
             background: #fecaca;
         }
-        
+
         .action-btn.toggle {
             background: #fef3c7;
             color: #92400e;
             border: none;
             cursor: pointer;
         }
-        
+
         .action-btn.toggle:hover {
             background: #fde68a;
         }
-        
+
         /* Empty state */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
             color: #64748b;
         }
-        
+
         .empty-state-icon {
             font-size: 48px;
             margin-bottom: 16px;
             opacity: 0.5;
         }
-        
+
         .empty-state h3 {
             font-size: 18px;
             margin-bottom: 8px;
             color: #475569;
         }
-        
+
         /* Pagination */
         .pagination {
             display: flex;
@@ -473,7 +473,7 @@
             gap: 8px;
             margin-top: 24px;
         }
-        
+
         .page-link {
             padding: 8px 14px;
             border: 1px solid #e2e8f0;
@@ -482,11 +482,11 @@
             color: #475569;
             transition: all 0.2s;
         }
-        
+
         .page-link:hover {
             background: #f1f5f9;
         }
-        
+
         .page-link.active {
             background: #3b82f6;
             color: #fff;
@@ -502,12 +502,11 @@
         <aside class="sidebar" id="panel-sidebar">
             <button type="button" class="panel-close" data-panel-close aria-label="Закрыть меню">×</button>
             <div class="sidebar-header">
-                <h1>🚀 upx100</h1>
+                <h1><img class="brand-logo" src="{% static 'img/logo.png' %}" alt="" onerror="this.hidden=true">42master.ru</h1>
                 <p>Админ-панель</p>
             </div>
-            
+
             <nav class="sidebar-nav">
-                <a class="nav-link" href="http://6max.ru/admin_extreme_profit" target="_blank" rel="noopener noreferrer">Поддержка</a>
                 <a class="nav-link" href="{% url 'dashboard:no_show_reports' %}">Неявки клиентов</a>
                 <a class="nav-link" href="{% url 'dashboard:payment_report' %}">Отчёт по оплатам</a>
                 <div class="nav-section">
@@ -517,7 +516,7 @@
                         Дашборд
                     </a>
                 </div>
-                
+
                 <div class="nav-section">
                     <div class="nav-section-title">Категории</div>
                     <a href="{% url 'dashboard:category_list' %}" class="nav-link {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
@@ -529,7 +528,7 @@
                         Подкатегории
                     </a>
                 </div>
-                
+
                 <div class="nav-section">
                     <div class="nav-section-title">Пользователи</div>
                     <a href="{% url 'dashboard:user_list' %}" class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
@@ -537,16 +536,12 @@
                         Пользователи
                     </a>
                 </div>
-                
+
                 <div class="nav-section">
                     <div class="nav-section-title">Навигация</div>
                     <a href="/" class="nav-link" target="_blank">
                         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                         На сайт
-                    </a>
-                    <a href="/admin/" class="nav-link" target="_blank">
-                        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-                        Django Admin
                     </a>
                     <a href="{% url 'accounts:logout' %}" class="nav-link" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);">
                         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
@@ -555,7 +550,7 @@
                 </div>
             </nav>
         </aside>
-        
+
         <!-- Main Content -->
         <main class="main-content">
             <div class="topbar">
@@ -566,7 +561,7 @@
                     <span style="font-size: 14px; color: #64748b;">{{ user.username }}</span>
                 </div>
             </div>
-            
+
             <div class="content-area">
                 {% if messages %}
                 <div class="messages">
@@ -575,12 +570,12 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                
+
                 {% block content %}{% endblock %}
             </div>
         </main>
     </div>
-    
+
     {% block scripts %}{% endblock %}
     {% block extra_js %}{% endblock %}
 <script src="{% static 'js/panel-navigation.js' %}" defer></script>

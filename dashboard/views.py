@@ -53,18 +53,18 @@ def dashboard_home(request):
     users_count = User.objects.count()
     entrepreneurs_count = User.objects.filter(role='entrepreneur').count()
     admins_count = User.objects.filter(role='admin').count()
-    
+
     # Категории и подкатегории (импортируем здесь, чтобы избежать циклического импорта)
     from companies.models import Category, Subcategory
     categories_count = Category.objects.count()
     subcategories_count = Subcategory.objects.count()
-    
+
     # Последние пользователи
     recent_users = User.objects.order_by('-date_joined')[:10]
-    
+
     # Неактивные/заблокированные пользователи
     inactive_users = User.objects.filter(is_active=False).count()
-    
+
     context = {
         'invoices_total': MonthlyInvoice.objects.exclude(status='void').count(),
         'invoices_paid': MonthlyInvoice.objects.filter(status='paid').count(),
@@ -99,11 +99,11 @@ def category_list(request):
     categories = Category.objects.annotate(
         subcategories_count=Count('subcategories'),
     ).order_by('name')
-    
+
     query = request.GET.get('q', '')
     if query:
         categories = categories.filter(Q(name__icontains=query) | Q(slug__icontains=query))
-    
+
     context = {
         'categories': categories,
         'query': query,
@@ -116,33 +116,33 @@ def category_list(request):
 def category_create(request):
     """Создание категории"""
     from companies.models import Category
-    
+
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         slug = request.POST.get('slug', '').strip()
-        
+
         if not name:
             messages.error(request, 'Название категории обязательно')
             return redirect('dashboard:category_create')
-        
+
         if not slug:
             slug = name.lower().replace(' ', '-').replace('--', '-')
-        
+
         if Category.objects.filter(slug=slug).exists():
             messages.error(request, 'Категория с таким слагом уже существует')
             return redirect('dashboard:category_create')
-        
+
         icon = request.FILES.get('icon')
-        
+
         Category.objects.create(
             name=name,
             slug=slug,
             icon=icon if icon else None
         )
-        
+
         messages.success(request, f'Категория "{name}" успешно создана')
         return redirect('dashboard:category_list')
-    
+
     return render(request, 'dashboard/categories/form.html', {'title': 'Новая категория'})
 
 
@@ -151,36 +151,36 @@ def category_edit(request, pk):
     """Редактирование категории"""
     from companies.models import Category
     category = get_object_or_404(Category, pk=pk)
-    
+
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         slug = request.POST.get('slug', '').strip()
-        
+
         if not name:
             messages.error(request, 'Название категории обязательно')
             return redirect('dashboard:category_edit', pk=pk)
-        
+
         if not slug:
             slug = name.lower().replace(' ', '-').replace('--', '-')
-        
+
         # Проверка уникальности слага (исключая текущую категорию)
         if Category.objects.filter(slug=slug).exclude(pk=pk).exists():
             messages.error(request, 'Категория с таким слагом уже существует')
             return redirect('dashboard:category_edit', pk=pk)
-        
+
         category.name = name
         category.slug = slug
-        
+
         if 'clear_icon' in request.POST:
             category.icon = None
         elif 'icon' in request.FILES:
             category.icon = request.FILES['icon']
-        
+
         category.save()
-        
+
         messages.success(request, f'Категория "{name}" успешно обновлена')
         return redirect('dashboard:category_list')
-    
+
     context = {
         'category': category,
         'title': f'Редактирование: {category.name}',
@@ -193,13 +193,13 @@ def category_delete(request, pk):
     """Удаление категории"""
     from companies.models import Category
     category = get_object_or_404(Category, pk=pk)
-    
+
     if request.method == 'POST':
         category_name = category.name
         category.delete()
         messages.success(request, f'Категория "{category_name}" успешно удалена')
         return redirect('dashboard:category_list')
-    
+
     context = {
         'category': category,
         'title': f'Удаление: {category.name}',
@@ -214,19 +214,19 @@ def subcategory_list(request):
     """Список подкатегорий"""
     from companies.models import Category, Subcategory
     subcategories = Subcategory.objects.select_related('category').order_by('category__name', 'name')
-    
+
     category_filter = request.GET.get('category', '')
     if category_filter:
         subcategories = subcategories.filter(category_id=category_filter)
-    
+
     query = request.GET.get('q', '')
     if query:
         subcategories = subcategories.filter(
             Q(name__icontains=query) | Q(category__name__icontains=query)
         )
-    
+
     categories = Category.objects.all()
-    
+
     context = {
         'subcategories': subcategories,
         'categories': categories,
@@ -241,38 +241,38 @@ def subcategory_list(request):
 def subcategory_create(request):
     """Создание подкатегории"""
     from companies.models import Category, Subcategory
-    
+
     if request.method == 'POST':
         category_id = request.POST.get('category')
         name = request.POST.get('name', '').strip()
         slug = request.POST.get('slug', '').strip()
-        
+
         if not category_id:
             messages.error(request, 'Выберите категорию')
             return redirect('dashboard:subcategory_create')
-        
+
         if not name:
             messages.error(request, 'Название подкатегории обязательно')
             return redirect('dashboard:subcategory_create')
-        
+
         if not slug:
             slug = name.lower().replace(' ', '-').replace('--', '-')
-        
+
         category = get_object_or_404(Category, pk=category_id)
-        
+
         if Subcategory.objects.filter(slug=slug).exists():
             messages.error(request, 'Подкатегория с таким слагом уже существует')
             return redirect('dashboard:subcategory_create')
-        
+
         Subcategory.objects.create(
             category=category,
             name=name,
             slug=slug
         )
-        
+
         messages.success(request, f'Подкатегория "{name}" успешно создана')
         return redirect('dashboard:subcategory_list')
-    
+
     categories = Category.objects.all()
     context = {
         'categories': categories,
@@ -286,38 +286,38 @@ def subcategory_edit(request, pk):
     """Редактирование подкатегории"""
     from companies.models import Category, Subcategory
     subcategory = get_object_or_404(Subcategory, pk=pk)
-    
+
     if request.method == 'POST':
         category_id = request.POST.get('category')
         name = request.POST.get('name', '').strip()
         slug = request.POST.get('slug', '').strip()
-        
+
         if not category_id:
             messages.error(request, 'Выберите категорию')
             return redirect('dashboard:subcategory_edit', pk=pk)
-        
+
         if not name:
             messages.error(request, 'Название подкатегории обязательно')
             return redirect('dashboard:subcategory_edit', pk=pk)
-        
+
         if not slug:
             slug = name.lower().replace(' ', '-').replace('--', '-')
-        
+
         category = get_object_or_404(Category, pk=category_id)
-        
+
         # Проверка уникальности слага (исключая текущую подкатегорию)
         if Subcategory.objects.filter(slug=slug).exclude(pk=pk).exists():
             messages.error(request, 'Подкатегория с таким слагом уже существует')
             return redirect('dashboard:subcategory_edit', pk=pk)
-        
+
         subcategory.category = category
         subcategory.name = name
         subcategory.slug = slug
         subcategory.save()
-        
+
         messages.success(request, f'Подкатегория "{name}" успешно обновлена')
         return redirect('dashboard:subcategory_list')
-    
+
     categories = Category.objects.all()
     context = {
         'subcategory': subcategory,
@@ -332,13 +332,13 @@ def subcategory_delete(request, pk):
     """Удаление подкатегории"""
     from companies.models import Subcategory
     subcategory = get_object_or_404(Subcategory, pk=pk)
-    
+
     if request.method == 'POST':
         subcategory_name = subcategory.name
         subcategory.delete()
         messages.success(request, f'Подкатегория "{subcategory_name}" успешно удалена')
         return redirect('dashboard:subcategory_list')
-    
+
     context = {
         'subcategory': subcategory,
         'title': f'Удаление: {subcategory.name}',
@@ -353,20 +353,20 @@ def user_list(request):
     """Список пользователей"""
     from business.models import Company
     users = User.objects.order_by('-date_joined')
-    
+
     # Фильтры
     role_filter = request.GET.get('role', '')
     status_filter = request.GET.get('status', '')
     query = request.GET.get('q', '')
-    
+
     if role_filter:
         users = users.filter(role=role_filter)
-    
+
     if status_filter == 'active':
         users = users.filter(is_active=True)
     elif status_filter == 'inactive':
         users = users.filter(is_active=False)
-    
+
     if query:
         # Поиск по email, имени, фамилии, телефону или названию компании
         users = users.filter(
@@ -376,7 +376,7 @@ def user_list(request):
             Q(phone__icontains=query) |
             Q(company__name__icontains=query)
         )
-    
+
     context = {
         'users': users,
         'role_filter': role_filter,
@@ -391,11 +391,11 @@ def user_list(request):
 def user_detail(request, pk):
     """Детальная информация о пользователе"""
     user = get_object_or_404(User, pk=pk)
-    
+
     # Передаем API ключ в шаблон
     from decouple import config
     yandex_api_key = config('YANDEX_MAPS_API_KEY', default='')
-    
+
     # Получаем компанию пользователя (если есть)
     company = None
     if user.role == 'entrepreneur':
@@ -403,7 +403,7 @@ def user_detail(request, pk):
             company = user.company
         except Company.DoesNotExist:
             pass
-    
+
     context = {
         'user_obj': user,
         'company': company,
@@ -417,17 +417,17 @@ def user_detail(request, pk):
 def user_edit(request, pk):
     """Редактирование пользователя (смена роли, бан)"""
     user = get_object_or_404(User, pk=pk)
-    
+
     if request.method == 'POST':
         role = request.POST.get('role')
         is_active = request.POST.get('is_active') == 'on'
-        
+
         if role and role in dict(User.ROLE_CHOICES):
             user.role = role
-        
+
         user.is_active = is_active
         user.save()
-        
+
         # Получаем название компании для отображения
         display_name = user.email
         if user.role == 'entrepreneur':
@@ -435,10 +435,10 @@ def user_edit(request, pk):
                 display_name = user.company.name
             except Company.DoesNotExist:
                 pass
-        
+
         messages.success(request, f'Пользователь "{display_name}" успешно обновлён')
         return redirect('dashboard:user_list')
-    
+
     context = {
         'user_obj': user,
         'title': f'Редактирование: {user.email}',
@@ -450,16 +450,16 @@ def user_edit(request, pk):
 def user_toggle_active(request, pk):
     """Бан/разбан пользователя (AJAX endpoint)"""
     user = get_object_or_404(User, pk=pk)
-    
+
     # Защита от блокировки самого себя
     if request.user.pk == user.pk:
         messages.error(request, 'Нельзя заблокировать самого себя')
         return redirect('dashboard:user_list')
-    
+
     if request.method == 'POST':
         user.is_active = not user.is_active
         user.save()
-        
+
         # Получаем название компании для отображения
         display_name = user.email
         if user.role == 'entrepreneur':
@@ -467,16 +467,16 @@ def user_toggle_active(request, pk):
                 display_name = user.company.name
             except Company.DoesNotExist:
                 pass
-        
+
         status = 'разбанен' if user.is_active else 'забанен'
         messages.success(request, f'Пользователь "{display_name}" успешно {status}')
-        
+
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             from django.http import JsonResponse
             return JsonResponse({'success': True, 'is_active': user.is_active})
-        
+
         return redirect('dashboard:user_list')
-    
+
     return redirect('dashboard:user_list')
 
 
@@ -484,15 +484,15 @@ def user_toggle_active(request, pk):
 def user_change_role(request, pk):
     """Смена роли пользователя (AJAX endpoint)"""
     user = get_object_or_404(User, pk=pk)
-    
+
     if request.method == 'POST':
         new_role = request.POST.get('role')
-        
+
         if new_role and new_role in dict(User.ROLE_CHOICES):
             old_role = user.get_role_display()
             user.role = new_role
             user.save()
-            
+
             # Получаем название компании для отображения
             display_name = user.email
             if user.role == 'entrepreneur':
@@ -500,15 +500,15 @@ def user_change_role(request, pk):
                     display_name = user.company.name
                 except Company.DoesNotExist:
                     pass
-            
+
             messages.success(request, f'Роль пользователя "{display_name}" изменена с "{old_role}" на "{user.get_role_display()}"')
-            
+
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 from django.http import JsonResponse
                 return JsonResponse({'success': True, 'new_role': user.get_role_display()})
-        
+
         return redirect('dashboard:user_list')
-    
+
     return redirect('dashboard:user_list')
 
 
@@ -529,7 +529,7 @@ def user_verify(request, pk):
     """Подтверждение компании предпринимателя (верификация)"""
     from business.models import Company
     user = get_object_or_404(User, pk=pk)
-    
+
     if request.method == 'POST':
         if user.role == 'entrepreneur':
             try:
@@ -541,9 +541,9 @@ def user_verify(request, pk):
                 messages.error(request, 'Компания не найдена')
         else:
             messages.error(request, 'Верифицировать можно только компанию предпринимателя')
-        
+
         return redirect('dashboard:user_detail', pk=pk)
-    
+
     return redirect('dashboard:user_detail', pk=pk)
 
 

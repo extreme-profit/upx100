@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Local apps
     'accounts',
     'business',
@@ -160,6 +160,6 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 EMAIL_TIMEOUT = 10
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@upx100.ru')
-SITE_URL = config('SITE_URL', default='https://upx100.ru')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@42master.ru')
+SITE_URL = config('SITE_URL', default='https://42master.ru')
 PAYMENT_STUB_ENABLED = config('PAYMENT_STUB_ENABLED', default=DEBUG, cast=bool)

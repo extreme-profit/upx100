@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}upx100.ru - Платформа для поиска и записи на услуги{% endblock %}</title>
+    <title>{% block title %}42master.ru - Платформа для поиска и записи на услуги{% endblock %}</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/refresh.css' %}">
@@ -14,7 +14,7 @@
     <header class="header">
         <div class="container header__inner">
             <a href="{% url 'home' %}" class="header__logo">
-                <span class="header__logo-text">upx100<span class="header__logo-accent">.ru</span></span>
+                <img class="brand-logo" src="{% static 'img/logo.png' %}" alt="" onerror="this.hidden=true"><span class="header__logo-text">42master<span class="header__logo-accent">.ru</span></span>
             </a>
             <nav class="header__nav">
                 <a class="header__nav-link" href="{% url 'client:booking_history' %}">Мои записи</a>
@@ -86,7 +86,7 @@
     <footer class="footer">
         <div class="container footer__inner">
             <div class="footer__section">
-                <h3>upx100.ru</h3>
+                <h3>42master.ru</h3>
                 <p>Платформа для поиска и записи на услуги</p>
                 <p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">Ваш надёжный помощник в мире услуг</p>
             </div>
@@ -112,15 +112,11 @@
                         <svg viewBox="0 0 24 24" style="width:18px;height:18px;vertical-align:middle;display:inline-block;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.93 1.23-5.46 3.62-.51.35-.98.52-1.4.51-.46-.01-1.35-.26-2.01-.48-.81-.27-1.44-.42-1.38-.88.03-.24.37-.49 1.03-.75 4.04-1.76 6.74-2.92 8.09-3.48 3.85-1.6 4.64-1.89 5.17-1.89.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.13-.03.26z"/></svg>
                         Telegram
                     </a>
-                    <a href="#" style="display: inline-block;">
-                        <svg viewBox="0 0 24 24" style="width:18px;height:18px;vertical-align:middle;display:inline-block;fill:currentColor;"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>
-                        Instagram
-                    </a>
                 </div>
             </div>
         </div>
         <div class="container footer__bottom">
-            <p>&copy; 2026 upx100.ru. Все права защищены.</p>
+            <p>&copy; 2026 42master.ru. Все права защищены.</p>
         </div>
     </footer>
 
@@ -129,8 +125,8 @@
         <div class="container cookie-banner__inner">
             <p class="cookie-banner__text">
                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;vertical-align:middle;display:inline-block;fill:currentColor;margin-right:5px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                Мы используем файлы cookie для улучшения работы сайта и анализа трафика. 
-                Продолжая использовать сайт, вы соглашаетесь с нашей 
+                Мы используем файлы cookie для улучшения работы сайта и анализа трафика.
+                Продолжая использовать сайт, вы соглашаетесь с нашей
                 <a href="{% url 'cookie_policy' %}" target="_blank">политикой использования cookie</a>.
             </p>
             <button id="cookie-accept" class="btn btn--green cookie-banner__btn">Принять</button>
@@ -138,30 +134,30 @@
     </div>
 
     {% block extra_js %}{% endblock %}
-    
+
     <script>
         // Мобильное меню
         document.addEventListener('DOMContentLoaded', function() {
             const mobileToggle = document.querySelector('.header__mobile-toggle');
             const headerNav = document.querySelector('.header__nav');
-            
+
             if (mobileToggle) {
                 mobileToggle.addEventListener('click', function() {
                     headerNav.classList.toggle('header__nav--mobile-open');
                     this.classList.toggle('header__mobile-toggle--active');
                 });
             }
-            
+
             // Cookie banner
             const cookieBanner = document.getElementById('cookie-banner');
             const cookieAccept = document.getElementById('cookie-accept');
-            
+
             if (!localStorage.getItem('cookiesAccepted')) {
                 setTimeout(function() {
                     cookieBanner.classList.add('cookie-banner--visible');
                 }, 1000);
             }
-            
+
             if (cookieAccept) {
                 cookieAccept.addEventListener('click', function() {
                     localStorage.setItem('cookiesAccepted', 'true');
