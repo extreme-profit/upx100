@@ -445,7 +445,10 @@ class ServiceForm(forms.ModelForm):
         return subcategory_id
     
     def clean(self):
-        """Дополнительная очистка для синхронизации категории и подкатегории"""
+        """Validate publication restrictions and related category fields."""
+        from accounts.security import find_block, BLOCK_MESSAGE
+        if self.company and (self.company.fraud_blocked or find_block(user=self.company.owner, company=self.company)):
+            raise forms.ValidationError(BLOCK_MESSAGE)
         cleaned_data = super().clean()
         
         # Если есть и категория и подкатегория, убеждаемся что они совместимы

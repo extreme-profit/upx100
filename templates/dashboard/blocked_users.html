@@ -1,0 +1,27 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/fraud.css' %}">{% endblock %}
+{% block content %}
+<div class="card"><div class="card-header"><h2>Блокировки предпринимателей</h2></div><div class="card-body">
+<p>Обычная блокировка аккаунта или услуг не добавляет телефон в антифрод-реестр. Подтверждённые случаи оформляются из карточки предпринимателя. Учётные записи с совпадениями ограничиваются без отдельного письма исполнителю.</p>
+<form method="get" class="admin-filters"><input type="search" name="q" value="{{ q }}" placeholder="Компания, email, телефон, IP" aria-label="Поиск"><select name="state" aria-label="История решений"><option value="active">Действующие решения</option><option value="all" {% if state == 'all' %}selected{% endif %}>Вся история решений</option></select><button class="btn btn-primary">Найти</button></form>
+<h3>Заблокированные аккаунты и компании</h3><div class="table-responsive"><table><thead><tr><th>Предприниматель</th><th>Компания</th><th>Телефоны</th><th>Ограничение</th></tr></thead><tbody>
+{% for owner in blocked_users %}<tr><td><a href="{% url 'dashboard:user_detail' owner.pk %}">{{ owner.email }}</a><br>{{ owner.get_full_name }}</td><td>{{ owner.company.name|default:'Нет компании' }}</td><td>{{ owner.phone }}<br>{{ owner.company.phone }}</td><td>{% if not owner.is_active %}Аккаунт отключён. {% endif %}{% if owner.company.fraud_blocked %}Антифрод-реестр. {% endif %}{% if owner.company.is_blocked %}Услуги скрыты вручную.{% endif %}</td></tr>{% empty %}<tr><td colspan="4">Заблокированных предпринимателей нет.</td></tr>{% endfor %}
+</tbody></table></div>
+<nav class="admin-pagination" aria-label="Заблокированные аккаунты">{% if blocked_users.has_previous %}<a href="?q={{ q|urlencode }}&amp;state={{ state }}&amp;page={{ blocked_users.previous_page_number }}">Назад</a>{% endif %}{% if blocked_users.has_next %}<a href="?q={{ q|urlencode }}&amp;state={{ state }}&amp;page={{ blocked_users.next_page_number }}">Далее</a>{% endif %}</nav>
+</div></div>
+<section class="card"><div class="card-header"><h2>Подтверждённые решения и материалы</h2></div><div class="card-body">
+{% for block in blocks %}<article class="fraud-case"><h3>Запись №{{ block.pk }} · {{ block.snapshot.company.name }}</h3>
+<p>{{ block.snapshot.owner.name }} · {{ block.snapshot.owner.email }} · {{ block.snapshot.company.address }}</p>
+<p><strong>Причина:</strong> {{ block.reason }}</p><p><strong>Материалы проверки:</strong> {{ block.evidence|linebreaksbr|default:'Не указаны' }}</p>
+<p><strong>Зафиксированные идентификаторы:</strong> {% for identifier in block.identifiers.all %}{{ identifier.get_kind_display }}: {{ identifier.value }}{% if not forloop.last %}; {% endif %}{% empty %}Нет{% endfor %}</p>
+<p>Блокировка по IP: {{ block.block_ips|yesno:'включена,выключена' }}. Подтвердил: {{ block.confirmed_by.email }} · {{ block.created_at|date:'d.m.Y H:i' }}.</p>
+<p><a class="btn btn-secondary" href="{% url 'dashboard:export_fraud' block.pk %}">Выгрузить материалы JSON</a></p>
+{% if block.lifted_at %}<p>Снята {{ block.lifted_at|date:'d.m.Y H:i' }} · {{ block.lifted_by.email }} · {{ block.lift_reason }}</p>{% else %}<p class="badge badge-danger">Действует бессрочно</p><details><summary>Пересмотреть решение</summary><form method="post" action="{% url 'dashboard:lift_user_fraud' block.pk %}">{% csrf_token %}<label>Причина снятия ограничения<textarea name="reason" required maxlength="4000"></textarea></label><button class="btn btn-secondary">Снять ограничение</button></form></details>{% endif %}
+</article>{% empty %}<p>Подтверждённых решений нет.</p>{% endfor %}
+<nav class="admin-pagination" aria-label="Решения">{% if blocks.has_previous %}<a href="?q={{ q|urlencode }}&amp;state={{ state }}&amp;case_page={{ blocks.previous_page_number }}">Назад</a>{% endif %}{% if blocks.has_next %}<a href="?q={{ q|urlencode }}&amp;state={{ state }}&amp;case_page={{ blocks.next_page_number }}">Далее</a>{% endif %}</nav>
+</div></section>
+<section class="card"><div class="card-header"><h2>Попытки обхода ограничений</h2></div><div class="card-body"><div class="table-responsive"><table><thead><tr><th>Дата</th><th>Аккаунт</th><th>Телефон / IP</th><th>Событие</th><th>Основание</th></tr></thead><tbody>
+{% for event in attempts %}<tr><td>{{ event.created_at|date:'d.m.Y H:i' }}</td><td>{% if event.user_id %}<a href="{% url 'dashboard:user_detail' event.user_id %}">{{ event.email }}</a>{% else %}{{ event.email }}{% endif %}</td><td>{{ event.phone }}<br>{{ event.ip|default:'Не определён' }}</td><td>{{ event.get_action_display }}</td><td>Запись №{{ event.matched_block_id|default:'—' }}</td></tr>{% empty %}<tr><td colspan="5">Попыток не зафиксировано.</td></tr>{% endfor %}
+</tbody></table></div><nav class="admin-pagination" aria-label="Попытки обхода">{% if attempts.has_previous %}<a href="?q={{ q|urlencode }}&amp;state={{ state }}&amp;attempt_page={{ attempts.previous_page_number }}">Назад</a>{% endif %}{% if attempts.has_next %}<a href="?q={{ q|urlencode }}&amp;state={{ state }}&amp;attempt_page={{ attempts.next_page_number }}">Далее</a>{% endif %}</nav></div></section>
+{% endblock %}

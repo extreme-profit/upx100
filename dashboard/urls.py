@@ -1,9 +1,13 @@
 from django.urls import path
-from . import views
+from . import views, fraud_views
 
 app_name = 'dashboard'
 
 urlpatterns = [
+    path('blocks/', fraud_views.blocked_users, name='blocked_users'),
+    path('users/<int:pk>/fraud/', fraud_views.confirm_user_fraud, name='confirm_user_fraud'),
+    path('blocks/<int:pk>/lift/', fraud_views.lift_user_fraud, name='lift_user_fraud'),
+    path('blocks/<int:pk>/export/', fraud_views.export_fraud, name='export_fraud'),
     path('no-shows/', views.no_show_reports, name='no_show_reports'),
     path('payments/', views.payment_report, name='payment_report'),
     # Главная

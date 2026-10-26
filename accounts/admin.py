@@ -25,5 +25,43 @@ class UserAdmin(admin.ModelAdmin):
     @admin.action(description='Разблокировать предпринимателей')
     def unblock_entrepreneurs(self, request, queryset):
         from business.models import Company
-        count = Company.objects.filter(owner__in=queryset.filter(role='entrepreneur')).update(is_blocked=False)
+        count = Company.objects.filter(owner__in=queryset.filter(role='entrepreneur'), fraud_blocked=False).update(is_blocked=False)
         self.message_user(request, f'Разблокировано предпринимателей: {count}.')
+
+
+from .models import FraudBlock, FraudIdentifier, SecurityEvent
+
+
+class ReadOnlySecurityAdmin(admin.ModelAdmin):
+    def get_readonly_fields(self, request, obj=None):
+        return [field.name for field in self.model._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(FraudBlock)
+class FraudBlockAdmin(ReadOnlySecurityAdmin):
+    list_display = ['id','company','confirmed_by','created_at','block_ips','lifted_at']
+    list_filter = ['block_ips','lifted_at']
+    search_fields = ['company__name','company__owner__email','reason']
+
+
+@admin.register(FraudIdentifier)
+class FraudIdentifierAdmin(ReadOnlySecurityAdmin):
+    list_display = ['block','kind','value']
+    list_filter = ['kind']
+    search_fields = ['value']
+
+
+@admin.register(SecurityEvent)
+class SecurityEventAdmin(ReadOnlySecurityAdmin):
+    list_display = ['created_at','action','email','phone','ip','matched_block']
+    list_filter = ['action']
+    search_fields = ['email','phone','company_phone','ip']

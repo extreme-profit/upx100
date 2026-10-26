@@ -173,3 +173,6 @@ TOCHKA_RECEIPT_MODE = config('TOCHKA_RECEIPT_MODE', default='')
 TOCHKA_TAX_SYSTEM = config('TOCHKA_TAX_SYSTEM', default='')
 TOCHKA_VAT_TYPE = config('TOCHKA_VAT_TYPE', default='')
 TOCHKA_CA_BUNDLE = config('TOCHKA_CA_BUNDLE', default='')
+
+# Only explicitly trusted reverse proxies may supply X-Forwarded-For.
+ANTIFRAUD_TRUSTED_PROXY_CIDRS = [value.strip() for value in config('ANTIFRAUD_TRUSTED_PROXY_CIDRS', default='').split(',') if value.strip()]

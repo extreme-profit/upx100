@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models import Count, Q, Sum
-from accounts.models import User
+from accounts.models import User, SecurityEvent
 from companies.models import Category
 from business.models import Service, Company, MonthlyInvoice, Booking, NoShowReport
 from datetime import datetime
@@ -66,10 +66,11 @@ def dashboard_home(request):
     inactive_users = User.objects.filter(is_active=False).count()
 
     context = {
+        'blocked_registration_count': SecurityEvent.objects.filter(action='registration_blocked').count(),
         'invoices_total': MonthlyInvoice.objects.exclude(status='void').count(),
         'invoices_paid': MonthlyInvoice.objects.filter(status='paid').count(),
         'invoices_paid_amount': MonthlyInvoice.objects.filter(status='paid').aggregate(total=Sum('amount'))['total'] or 0,
-        'active_entrepreneurs': User.objects.filter(role='entrepreneur', is_active=True, company__is_verified=True, company__is_blocked=False).count(),
+        'active_entrepreneurs': User.objects.filter(role='entrepreneur', is_active=True, company__is_verified=True, company__is_blocked=False, company__fraud_blocked=False).count(),
         'debtors': Company.objects.filter(invoices__status='pending').select_related('owner').annotate(
             unpaid_count=Count('invoices', filter=Q(invoices__status='pending')),
             unpaid_amount=Sum('invoices__amount', filter=Q(invoices__status='pending')),
@@ -405,6 +406,8 @@ def user_detail(request, pk):
             pass
 
     context = {
+        'fraud_blocks': company.fraud_blocks.select_related('confirmed_by', 'lifted_by') if company else [],
+        'security_events': user.security_events.select_related('matched_block')[:30] if company else [],
         'user_obj': user,
         'company': company,
         'title': f'{user.email} ({company.name if company else "Без компании"})',
@@ -518,6 +521,9 @@ def user_toggle_services(request, pk):
     from business.models import Company
     company = get_object_or_404(Company, owner_id=pk, owner__role='entrepreneur')
     if request.method == 'POST':
+        if company.fraud_blocked:
+            messages.error(request, 'Действует антифрод-ограничение. Сначала рассмотрите запись в реестре блокировок.')
+            return redirect('dashboard:user_detail', pk=pk)
         company.is_blocked = not company.is_blocked
         company.save(update_fields=['is_blocked', 'updated_at'])
         messages.success(request, 'Все услуги предпринимателя скрыты.' if company.is_blocked else 'Услуги разблокированы.')
@@ -534,6 +540,12 @@ def user_verify(request, pk):
         if user.role == 'entrepreneur':
             try:
                 company = user.company
+                from accounts.security import refresh_fraud_flags
+                refresh_fraud_flags()
+                company.refresh_from_db()
+                if company.fraud_blocked:
+                    messages.error(request, 'Компания ограничена антифрод-реестром.')
+                    return redirect('dashboard:user_detail', pk=pk)
                 company.is_verified = True
                 company.save()
                 messages.success(request, f'Компания "{company.name}" успешно проверена и верифицирована')

@@ -79,6 +79,9 @@
         </div>
         <div class="card-body">
             {% if company %}
+            {% if company.fraud_blocked %}<p class="message error">Публикация ограничена антифрод-реестром. Обычная разблокировка аккаунта или услуг это ограничение не снимает.</p>{% endif %}
+            <p><a class="btn btn-danger" href="{% url 'dashboard:confirm_user_fraud' user_obj.pk %}">{% include 'includes/icon.html' with name='ban' %} Подтвердить мошенничество / запретить повторную публикацию</a></p>
+            <p><a href="{% url 'dashboard:blocked_users' %}">Реестр блокировок и история решений</a></p>
             <p>Блокировка услуг скрывает все текущие и будущие услуги и запрещает новые заявки. Доступ предпринимателя к ЛК и счетам сохраняется.</p>
             <form method="post" action="{% url 'dashboard:user_toggle_services' user_obj.pk %}">
                 {% csrf_token %}
@@ -122,6 +125,15 @@
     </div>
 </div>
 
+{% if company %}
+<section class="card"><div class="card-header"><h3>История контактов и IP</h3></div><div class="card-body">
+<p>События сохраняются с момента включения функции. Отсутствие сотрудников само по себе не является нарушением.</p>
+<div class="table-responsive"><table><thead><tr><th>Дата</th><th>Событие</th><th>Email</th><th>Телефон</th><th>IP</th></tr></thead><tbody>
+{% for event in security_events %}<tr><td>{{ event.created_at|date:'d.m.Y H:i' }}</td><td>{{ event.get_action_display }}</td><td>{{ event.email }}</td><td>{{ event.phone }}{% if event.company_phone != event.phone %}<br>{{ event.company_phone }}{% endif %}</td><td>{{ event.ip|default:'Не определён' }}</td></tr>{% empty %}<tr><td colspan="5">Наблюдений пока нет. Старые IP задним числом восстановить нельзя.</td></tr>{% endfor %}
+</tbody></table></div>
+{% for block in fraud_blocks %}<p>Запись №{{ block.pk }} · {{ block.created_at|date:'d.m.Y H:i' }} · {% if block.lifted_at %}Снята{% else %}Действует бессрочно{% endif %} · {{ block.reason }} <a href="{% url 'dashboard:export_fraud' block.pk %}">Выгрузить материалы</a></p>{% endfor %}
+</div></section>
+{% endif %}
 <!-- Подключаем Yandex Maps API для карты на странице админа -->
 {% if company and company.latitude and company.longitude %}
 <script src="https://api-maps.yandex.ru/2.1/?apikey={{ yandex_api_key }}&lang=ru_RU" type="text/javascript"></script>
