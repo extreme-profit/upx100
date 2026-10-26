@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from .scheduling import service_for_user, schedule_employees, employee_for_request
 from accounts.security import enforce_service_restriction, record_event, BLOCK_MESSAGE
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -332,20 +333,15 @@ def service_delete_view(request, pk):
 @login_required
 def service_detail_view(request, pk):
     """Детальный просмотр услуги"""
-    company = request.user.get_company()
-    if not company:
-        messages.error(request, 'Компания не найдена')
-        return redirect('business:service_list')
-    
-    # Для сотрудников проверяем, что услуга привязана к их компании
-    try:
-        service = company.services.get(pk=pk)
-    except Service.DoesNotExist:
-        messages.error(request, 'Услуга не найдена')
-        return redirect('business:service_list')
+    service = service_for_user(request.user, pk)
+    company = service.company
     
     time_slots = service.time_slots.filter(date__gte=timezone.localdate(timezone=service.company.tzinfo)).order_by('date', 'start_time')
     bookings = service.bookings.all().order_by('-created_at')
+    if request.user.role == 'employee':
+        employee = request.user.get_employee_profile()
+        time_slots = time_slots.filter(employee=employee)
+        bookings = bookings.filter(Q(employee=employee) | Q(time_slots__employee=employee)).distinct()
     
     return render(request, 'business/service_detail.html', {
         'service': service,
@@ -357,20 +353,11 @@ def service_detail_view(request, pk):
 @login_required
 def slot_manage_view(request, service_id):
     """Управление временными слотами в виде календарной сетки"""
-    company = request.user.get_company()
-    if not company:
-        messages.error(request, 'Компания не найдена')
-        return redirect('business:service_list')
-    
-    # Для сотрудников проверяем, что услуга привязана к их компании
-    try:
-        service = company.services.get(pk=service_id)
-    except Service.DoesNotExist:
-        messages.error(request, 'Услуга не найдена')
-        return redirect('business:service_list')
+    service = service_for_user(request.user, service_id)
+    company = service.company
     
     # Получаем сотрудников услуги
-    employees = service.employees.filter(is_active=True)
+    employees = schedule_employees(request.user, service)
     
     # Дни недели (ПН-ВС)
     weekdays = [
@@ -420,16 +407,10 @@ def slot_manage_view(request, service_id):
 @login_required
 def slot_get_grid_view(request, service_id):
     """API для получения сетки слотов"""
-    company = request.user.get_company()
-    if not company:
-        return JsonResponse({'error': 'Компания не найдена'}, status=404)
+    service = service_for_user(request.user, service_id)
+    company = service.company
     
-    try:
-        service = company.services.get(pk=service_id)
-    except Service.DoesNotExist:
-        return JsonResponse({'error': 'Услуга не найдена'}, status=404)
-    
-    employee_id = request.GET.get('employee')
+    employee_id = employee_for_request(request.user, service, request.GET.get('employee'))
     week_offset = int(request.GET.get('week_offset', 0))
     
     # Получаем интервал из сессии (по умолчанию duration услуги)
@@ -485,14 +466,8 @@ def slot_update_grid_view(request, service_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Метод не разрешён'}, status=405)
     
-    company = request.user.get_company()
-    if not company:
-        return JsonResponse({'error': 'Компания не найдена'}, status=404)
-    
-    try:
-        service = company.services.get(pk=service_id)
-    except Service.DoesNotExist:
-        return JsonResponse({'error': 'Услуга не найдена'}, status=404)
+    service = service_for_user(request.user, service_id)
+    company = service.company
     
     import json
     data = json.loads(request.body)
@@ -500,7 +475,7 @@ def slot_update_grid_view(request, service_id):
     hour = data.get('hour')
     minute = data.get('minute', 0)  # Получаем минуты (по умолчанию 0)
     action = data.get('action')  # 'toggle', 'set_free', 'set_busy'
-    employee_id = data.get('employee')
+    employee_id = employee_for_request(request.user, service, data.get('employee'))
     week_offset = data.get('week_offset', 0)  # Смещение недели
     
     # Получаем интервал из сессии
@@ -532,6 +507,9 @@ def slot_update_grid_view(request, service_id):
     
     slot = ServiceTimeSlot.objects.filter(**slot_filter).first()
     
+    if slot is not None and slot.booking_id:
+        return JsonResponse({'error':'Слот с заявкой нельзя изменять вручную'}, status=409)
+
     if slot is None:
         # Создаём новый слот
         slot = ServiceTimeSlot.objects.create(
@@ -551,9 +529,8 @@ def slot_update_grid_view(request, service_id):
         elif action == 'set_busy':
             slot.is_booked = True
         
-        if slot.is_booked:
-            slot.booking = None
-        slot.save()
+        if not ServiceTimeSlot.objects.filter(pk=slot.pk, booking__isnull=True).update(is_booked=slot.is_booked):
+            return JsonResponse({'error':'Слот уже занят заявкой'}, status=409)
     
     return JsonResponse({
         'success': True,
@@ -568,11 +545,8 @@ def slot_bulk_update_view(request, service_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Метод не разрешён'}, status=405)
     
-    try:
-        company = request.user.company
-        service = company.services.get(pk=service_id)
-    except (Company.DoesNotExist, Service.DoesNotExist):
-        return JsonResponse({'error': 'Услуга не найдена'}, status=404)
+    service = service_for_user(request.user, service_id)
+    company = service.company
     
     import json
     data = json.loads(request.body)
@@ -583,6 +557,11 @@ def slot_bulk_update_view(request, service_id):
     end_hour = int(data.get('end_hour', 18))
     action = data.get('action')  # 'set_free', 'set_busy'
     employee_ids = data.get('employees', [])  # Список ID сотрудников
+    allowed_employees = schedule_employees(request.user, service)
+    if employee_ids:
+        employee_ids = [employee_for_request(request.user, service, value) for value in employee_ids]
+    else:
+        employee_ids = list(allowed_employees.values_list('pk', flat=True))
     set_others_busy = data.get('set_others_busy', False)  # Делать ли остальные слоты недоступными
     period_start_str = data.get('period_start')
     period_end_str = data.get('period_end')
@@ -632,7 +611,7 @@ def slot_bulk_update_view(request, service_id):
         
         # Если employee_ids пустой, берем всех активных сотрудников услуги
         if not employee_ids:
-            employees_to_process = list(service.employees.filter(is_active=True).values_list('pk', flat=True))
+            employees_to_process = list(allowed_employees.values_list('pk', flat=True))
         else:
             employees_to_process = [int(eid) for eid in employee_ids]
         
@@ -665,6 +644,9 @@ def slot_bulk_update_view(request, service_id):
                 # Определяем нужный статус
                 should_be_booked = (action == 'set_busy')
                 
+                if slot is not None and slot.booking_id:
+                    current_time = current_time + timedelta(minutes=interval)
+                    continue
                 if slot is None:
                     # Создаём новый слот
                     ServiceTimeSlot.objects.create(
@@ -680,10 +662,7 @@ def slot_bulk_update_view(request, service_id):
                     # Обновляем существующий слот
                     if slot.is_booked != should_be_booked:
                         slot.is_booked = should_be_booked
-                        if slot.is_booked:
-                            slot.booking = None
-                        slot.save()
-                        slots_updated += 1
+                        slots_updated += ServiceTimeSlot.objects.filter(pk=slot.pk, booking__isnull=True).update(is_booked=slot.is_booked)
                 
                 # Переходим к следующему слоту с шагом interval
                 current_time = current_time + timedelta(minutes=interval)
@@ -714,6 +693,9 @@ def slot_bulk_update_view(request, service_id):
                         
                         slot = ServiceTimeSlot.objects.filter(**slot_filter).first()
                         
+                        if slot is not None and slot.booking_id:
+                            current_time = current_time + timedelta(minutes=interval)
+                            continue
                         if slot is None:
                             ServiceTimeSlot.objects.create(
                                 service=service,
@@ -726,9 +708,7 @@ def slot_bulk_update_view(request, service_id):
                             slots_created += 1
                         elif not slot.is_booked:
                             slot.is_booked = True
-                            slot.booking = None
-                            slot.save()
-                            slots_updated += 1
+                            slots_updated += ServiceTimeSlot.objects.filter(pk=slot.pk, booking__isnull=True).update(is_booked=True)
                     
                     current_time = current_time + timedelta(minutes=interval)
         
@@ -744,15 +724,11 @@ def slot_bulk_update_view(request, service_id):
 @login_required
 def slot_generate_view(request, service_id):
     """Генерация временных слотов для каждого сотрудника"""
-    try:
-        company = request.user.company
-        service = company.services.get(pk=service_id)
-    except (Company.DoesNotExist, Service.DoesNotExist):
-        messages.error(request, 'Услуга не найдена')
-        return redirect('business:service_list')
+    service = service_for_user(request.user, service_id)
+    company = service.company
     
     # Получаем сотрудников, привязанных к услуге
-    employees = service.employees.filter(is_active=True)
+    employees = schedule_employees(request.user, service)
     if not employees.exists():
         messages.error(request, 'К услуге не привязано ни одного сотрудника')
         return redirect('business:slot_manage', service_id=service_id)
@@ -764,7 +740,7 @@ def slot_generate_view(request, service_id):
         if session_duration:
             initial_data['duration'] = session_duration
         
-        form = ServiceTimeSlotGenerateForm(request.POST, service=service, initial=initial_data)
+        form = ServiceTimeSlotGenerateForm(request.POST, service=service, initial=initial_data, employee_queryset=employees)
         if form.is_valid():
             schedule_type = form.cleaned_data['schedule_type']
             start_date = form.cleaned_data['start_date']
@@ -821,14 +797,14 @@ def slot_generate_view(request, service_id):
                         
                         # Создаем слот для каждого выбранного сотрудника
                         for employee in employees_to_use:
-                            ServiceTimeSlot.objects.get_or_create(
+                            _, created = ServiceTimeSlot.objects.get_or_create(
                                 service=service,
                                 employee=employee,
                                 date=current_date,
                                 start_time=slot_start_time,
                                 defaults={'end_time': slot_end_time}
                             )
-                            slots_created += 1
+                            slots_created += int(created)
                         
                         # Переходим к следующему слоту с шагом duration (интервал = длительности)
                         current_minutes += duration
@@ -847,7 +823,7 @@ def slot_generate_view(request, service_id):
         if session_duration:
             initial_data['duration'] = session_duration
         
-        form = ServiceTimeSlotGenerateForm(service=service, initial=initial_data)
+        form = ServiceTimeSlotGenerateForm(service=service, initial=initial_data, employee_queryset=employees)
     
     context = {
         'service': service,
@@ -858,19 +834,19 @@ def slot_generate_view(request, service_id):
 
 
 @login_required
+@require_POST
 def slot_toggle_view(request, pk):
     """Переключение статуса слота (занят/свободен)"""
-    try:
-        company = request.user.company
-        slot = ServiceTimeSlot.objects.get(pk=pk, service__company=company)
-    except (Company.DoesNotExist, ServiceTimeSlot.DoesNotExist):
-        messages.error(request, 'Слот не найден')
-        return redirect('business:service_list')
-    
+    slot = get_object_or_404(ServiceTimeSlot, pk=pk)
+    service = service_for_user(request.user, slot.service_id)
+    if request.user.role == 'employee':
+        employee_for_request(request.user, service, slot.employee_id or -1)
+    if slot.booking_id:
+        return JsonResponse({'error':'Слот с заявкой нельзя изменять вручную'}, status=409)
+
     slot.is_booked = not slot.is_booked
-    if slot.is_booked:
-        slot.booking = None  # Сбрасываем бронирование при ручной блокировке
-    slot.save()
+    if not ServiceTimeSlot.objects.filter(pk=slot.pk, booking__isnull=True).update(is_booked=slot.is_booked):
+        return JsonResponse({'error':'Слот уже занят заявкой'}, status=409)
     
     return redirect('business:slot_manage', service_id=slot.service.pk)
 
