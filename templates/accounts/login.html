@@ -95,8 +95,9 @@
             border: 1px solid #bbf7d0;
         }
     </style>
+    <link rel="stylesheet" href="{% static 'css/panel-theme.css' %}">
 </head>
-<body>
+<body class="auth-site">
     <div class="login-container">
         <div class="logo">
             <h1><img src="{% static 'img/logo.png' %}" alt="" style="max-width:64px;max-height:44px;vertical-align:middle;object-fit:contain;margin-right:8px;" onerror="this.hidden=true">42master.ru</h1>
@@ -125,7 +126,7 @@
         </form>
 
         <div style="text-align: center; margin-top: 20px; color: #64748b; font-size: 14px;">
-            Нет аккаунта? <a href="{% url 'accounts:register' %}" style="color: #667eea; text-decoration: none; font-weight: 500;">Зарегистрировать компанию</a>
+            Нет аккаунта? <a href="{% url 'accounts:register' %}" style="text-decoration: none; font-weight: 500;">Зарегистрировать компанию</a>
         </div>
     </div>
 </body>
