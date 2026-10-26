@@ -50,10 +50,10 @@
                         <td><span class="badge badge-info">{{ category.subcategories_count }}</span></td>
                         <td><span class="badge badge-success">{{ category.services_count }}</span></td>
                         <td>{{ category.created_at|date:"d.m.Y" }}</td>
-                        <td class="actions-cell">
+                        <td class="actions-cell"><div class="admin-actions">
                             <a href="{% url 'dashboard:category_edit' category.pk %}" class="action-btn edit" aria-label="Редактировать">{% include 'includes/icon.html' with name='edit' %}</a>
                             <a href="{% url 'dashboard:category_delete' category.pk %}" class="action-btn delete" aria-label="Удалить">{% include 'includes/icon.html' with name='trash' %}</a>
-                        </td>
+                        </div></td>
                     </tr>
                     {% empty %}
                     <tr>

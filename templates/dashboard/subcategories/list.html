@@ -49,10 +49,10 @@
                         <td><span class="badge badge-info">{{ subcategory.category.name }}</span></td>
                         <td><code>{{ subcategory.slug }}</code></td>
                         <td>{{ subcategory.created_at|date:"d.m.Y" }}</td>
-                        <td class="actions-cell">
+                        <td class="actions-cell"><div class="admin-actions">
                             <a href="{% url 'dashboard:subcategory_edit' subcategory.pk %}" class="action-btn edit" aria-label="Редактировать">{% include 'includes/icon.html' with name='edit' %}</a>
                             <a href="{% url 'dashboard:subcategory_delete' subcategory.pk %}" class="action-btn delete" aria-label="Удалить">{% include 'includes/icon.html' with name='trash' %}</a>
-                        </td>
+                        </div></td>
                     </tr>
                     {% empty %}
                     <tr>

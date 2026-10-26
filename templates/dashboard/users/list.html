@@ -92,7 +92,7 @@
                             <span class="badge badge-danger">{% include 'includes/icon.html' with name='close' %} Заблокирован</span>
                             {% endif %}
                         </td>
-                        <td class="actions-cell">
+                        <td class="actions-cell"><div class="admin-actions">
                             <a href="{% url 'dashboard:user_detail' user.pk %}" class="action-btn edit" aria-label="Просмотреть пользователя">{% include 'includes/icon.html' with name='eye' %}</a>
                             {% if user.pk != request.user.pk %}
                             <a href="{% url 'dashboard:user_edit' user.pk %}" class="action-btn edit" aria-label="Редактировать">{% include 'includes/icon.html' with name='edit' %}</a>
@@ -103,7 +103,7 @@
                                 </button>
                             </form>
                             {% endif %}
-                        </td>
+                        </div></td>
                     </tr>
                     {% empty %}
                     <tr>
