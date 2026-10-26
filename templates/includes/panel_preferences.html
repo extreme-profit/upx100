@@ -1,0 +1,7 @@
+<script>
+try {
+    document.documentElement.classList.toggle('panel-collapsed',
+        !window.matchMedia('(max-width: 900px)').matches &&
+        localStorage.getItem('panel-collapsed') === 'true');
+} catch (_) {}
+</script>

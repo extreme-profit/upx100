@@ -4,6 +4,7 @@
     {% load static %}
     {% include 'includes/favicons.html' %}
     <meta charset="UTF-8">
+    {% include "includes/panel_preferences.html" %}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }} | Админ-панель 42master.ru</title>
 
@@ -16,52 +17,60 @@
         <!-- Sidebar -->
         <button id="panel-backdrop" class="panel-backdrop" aria-label="Закрыть меню" hidden></button>
         <aside class="sidebar" id="panel-sidebar">
-            <button type="button" class="panel-close" data-panel-close aria-label="Закрыть меню">×</button>
+            <div class="sidebar-controls">
+<button type="button" id="panel-toggle" class="panel-toggle" aria-controls="panel-sidebar" aria-expanded="true" aria-label="Свернуть боковую панель"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Меню</span></button>
+            </div>
             <div class="sidebar-header">
-                <h1><img class="brand-logo" src="{% static 'img/logo.png' %}" alt="" onerror="this.hidden=true">42master.ru</h1>
+                <h1><img class="brand-logo" src="{% static 'img/logo.png' %}" alt="" onerror="this.hidden=true"><span class="brand-name">42master.ru</span></h1>
                 <p>Админ-панель</p>
             </div>
 
             <nav class="sidebar-nav">
-                <a class="nav-link" href="{% url 'dashboard:no_show_reports' %}">Неявки клиентов</a>
-                <a class="nav-link" href="{% url 'dashboard:payment_report' %}">Отчёт по оплатам</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'no_show_reports' %}active{% endif %}" href="{% url 'dashboard:no_show_reports' %}" title="Неявки клиентов" aria-label="Неявки клиентов">
+                        {% include 'includes/icon.html' with name='warning' %}
+                        <span class="nav-label">Неявки клиентов</span>
+                    </a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'payment_report' %}active{% endif %}" href="{% url 'dashboard:payment_report' %}" title="Отчёт по оплатам" aria-label="Отчёт по оплатам">
+                        {% include 'includes/icon.html' with name='card' %}
+                        <span class="nav-label">Отчёт по оплатам</span>
+                    </a>
                 <div class="nav-section">
                     <div class="nav-section-title">Главное</div>
-                    <a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" title="Дашборд" aria-label="Дашборд">
                         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-                        Дашборд
+                        <span class="nav-label">Дашборд</span>
                     </a>
                 </div>
 
                 <div class="nav-section">
                     <div class="nav-section-title">Категории</div>
-                    <a href="{% url 'dashboard:category_list' %}" class="nav-link {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
+                    <a href="{% url 'dashboard:category_list' %}" class="nav-link {% if 'category' in request.resolver_match.url_name %}active{% endif %}" title="Категории" aria-label="Категории">
                         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
-                        Категории
+                        <span class="nav-label">Категории</span>
                     </a>
-                    <a href="{% url 'dashboard:subcategory_list' %}" class="nav-link {% if 'subcategory' in request.resolver_match.url_name %}active{% endif %}">
+                    <a href="{% url 'dashboard:subcategory_list' %}" class="nav-link {% if 'subcategory' in request.resolver_match.url_name %}active{% endif %}" title="Подкатегории" aria-label="Подкатегории">
                         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h10v2H4zm0 5h14v2H4z"/></svg>
-                        Подкатегории
+                        <span class="nav-label">Подкатегории</span>
                     </a>
                 </div>
 
                 <div class="nav-section">
                     <div class="nav-section-title">Пользователи</div>
-                    <a href="{% url 'dashboard:user_list' %}" class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
+                    <a href="{% url 'dashboard:user_list' %}" class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" title="Пользователи" aria-label="Пользователи">
                         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                        Пользователи
+                        <span class="nav-label">Пользователи</span>
                     </a>
                 </div>
 
                 <div class="nav-section">
                     <div class="nav-section-title">Навигация</div>
-                    <a href="/" class="nav-link" target="_blank">
+                    <a href="/" class="nav-link" target="_blank" title="На сайт" aria-label="На сайт">
                         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-                        На сайт
+                        <span class="nav-label">На сайт</span>
                     </a>
-                    <a href="{% url 'accounts:logout' %}" class="nav-link" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <a href="{% url 'accounts:logout' %}" class="nav-link" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);" title="Выйти" aria-label="Выйти">
                         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-                        Выйти
+                        <span class="nav-label">Выйти</span>
                     </a>
                 </div>
             </nav>
@@ -70,7 +79,7 @@
         <!-- Main Content -->
         <main class="main-content">
             <div class="topbar">
-                <button type="button" id="panel-toggle" class="panel-toggle" aria-controls="panel-sidebar" aria-expanded="true" aria-label="Свернуть боковую панель"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Меню</span></button>
+                <button type="button" id="panel-mobile-toggle" class="panel-toggle panel-mobile-toggle" aria-controls="panel-sidebar" aria-expanded="false" aria-label="Открыть боковую панель"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Меню</span></button>
                 <h2 class="topbar-title">{{ title }}</h2>
                 <div class="user-menu">
                     <div class="user-avatar">{{ user.username|first|upper }}</div>

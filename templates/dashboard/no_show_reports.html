@@ -16,5 +16,6 @@
 <form method="post">{% csrf_token %}<input type="hidden" name="report_id" value="{{ report.pk }}"><label>Причина отмены отметки<textarea name="reason" required maxlength="1000"></textarea></label><button class="btn btn-primary" name="action" value="dismiss">Отменить ошибочную неявку</button></form>
 {% endif %}
 </div></article>{% empty %}<p>Сообщений о неявках нет.</p>{% endfor %}
-{% if reports.has_previous %}<a href="?page={{ reports.previous_page_number }}">Назад</a>{% endif %}{% if reports.has_next %}<a href="?page={{ reports.next_page_number }}">Далее</a>{% endif %}
+<nav class="admin-pagination" aria-label="Страницы неявок">{% if reports.has_previous %}<a href="?page={{ reports.previous_page_number }}">Назад</a>{% endif %}{% if reports.has_next %}<a href="?page={{ reports.next_page_number }}">Далее</a>{% endif %}
+</nav>
 {% endblock %}
