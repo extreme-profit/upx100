@@ -253,6 +253,8 @@ class Payment(models.Model):
 
 
 class MonthlyInvoice(models.Model):
+    payment_review_required = models.BooleanField(default=False)
+    paid_payment = models.ForeignKey('AcquiringPayment', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name='invoices')
     period = models.DateField(verbose_name='Расчётный месяц')
     due_date = models.DateField(verbose_name='Оплатить до (включительно)')
@@ -349,3 +351,23 @@ class BillingNotification(models.Model):
         indexes = [models.Index(fields=['recipient', 'read_at'])]
         verbose_name = 'Уведомление о комиссии'
         verbose_name_plural = 'Уведомления о комиссии'
+
+
+class AcquiringPayment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    invoice = models.ForeignKey(MonthlyInvoice, on_delete=models.PROTECT, related_name='acquiring_payments')
+    environment = models.CharField(max_length=10)
+    customer_code = models.CharField(max_length=32)
+    merchant_id = models.CharField(max_length=32)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    operation_id = models.CharField(max_length=100, blank=True, db_index=True)
+    payment_url = models.URLField(max_length=2083, blank=True)
+    state = models.CharField(max_length=16, default='queued')
+    bank_status = models.CharField(max_length=32, blank=True)
+    last_error = models.CharField(max_length=80, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    checked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [models.UniqueConstraint(fields=['environment','operation_id'], condition=models.Q(environment='live') & ~models.Q(operation_id=''), name='unique_live_tochka_operation')]

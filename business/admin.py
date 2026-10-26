@@ -90,10 +90,10 @@ class InvoiceItemInline(admin.TabularInline):
 
 @admin.register(MonthlyInvoice)
 class MonthlyInvoiceAdmin(admin.ModelAdmin):
-    list_display = ['company', 'period', 'amount', 'due_date', 'status', 'is_overdue']
+    list_display = ['company', 'period', 'amount', 'due_date', 'status', 'is_overdue', 'payment_review_required']
     list_filter = ['status', 'period', 'due_date']
     search_fields = ['company__name', 'company__owner__email', 'gateway_reference']
-    readonly_fields = ['company', 'period', 'amount', 'due_date', 'status', 'gateway_reference', 'paid_at', 'created_at']
+    readonly_fields = ['company', 'period', 'amount', 'due_date', 'status', 'gateway_reference', 'paid_at', 'paid_payment', 'payment_review_required', 'created_at']
     inlines = [InvoiceItemInline]
 
     def has_add_permission(self, request):
@@ -152,4 +152,19 @@ class BillingNotificationAdmin(admin.ModelAdmin):
     list_filter = ['read_at']
 
     def has_add_permission(self, request):
+        return False
+
+
+from .models import AcquiringPayment
+
+@admin.register(AcquiringPayment)
+class AcquiringPaymentAdmin(admin.ModelAdmin):
+    list_display = ['id','invoice','environment','state','bank_status','last_error','checked_at']
+    readonly_fields = ['id','invoice','environment','customer_code','merchant_id','amount','operation_id','payment_url','state','bank_status','last_error','created_at','checked_at']
+    list_filter = ['environment','state','bank_status']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False

@@ -14,15 +14,15 @@
         <p><strong>Итого: {{ invoice.amount }} ₽</strong></p>
         <p>Срок оплаты: {{ invoice.due_date|date:"d.m.Y" }} включительно.</p>
         <p>Статус: {{ invoice.get_status_display }}{% if invoice.is_overdue %} — просрочен{% endif %}</p>
+        {% if invoice.payment_review_required %}<p class="timezone-note">Оплата требует сверки. <a href="http://6max.ru/admin_extreme_profit">Обратитесь в поддержку</a>.</p>{% endif %}
+        {% if sandbox %}<p class="timezone-note">Песочница Точка-Банка: API возвращает тестовые данные. Реальная оплата по ссылке недоступна, деньги не списываются, счёт автоматически не считается оплаченным.</p>{% endif %}
+        {% if payment.last_error %}<p>Не удалось сформировать или проверить ссылку. Счёт сохранён; повторите проверку позже или <a href="http://6max.ru/admin_extreme_profit">обратитесь в поддержку</a>.</p>{% endif %}
+        {% if payment.operation_id %}<p>Операция Точка-Банка: {{ payment.operation_id }}</p>{% endif %}
+        {% if payment %}<p>Статус в банке: {{ payment.bank_status|default:'Формируется' }}</p>{% endif %}
         {% if invoice.status == 'pending' %}
-            {% if stub_enabled %}
-                <p>Демонстрационная оплата. Деньги не списываются.</p>
-                <form method="post">{% csrf_token %}
-                    <button type="submit" class="btn btn-primary">Подтвердить демо-оплату</button>
-                </form>
-            {% else %}
-                <p>Оплата пока недоступна. Подключение эквайринга ожидается.</p>
-            {% endif %}
+            {% if payment.state == 'ready' and not sandbox %}<a class="btn btn-primary" href="{{ payment.payment_url }}" rel="noopener noreferrer">Оплатить через Точка-Банк</a>{% endif %}
+            {% if payment.state == 'uncertain' or payment.state == 'creating' %}<p>Результат формирования ссылки требует сверки с банком. Новый заказ автоматически не создаётся, чтобы избежать дубля. Обратитесь в поддержку.</p>{% endif %}
+            <form method="post">{% csrf_token %}<button class="btn btn-secondary" name="action" value="check">Сформировать ссылку / проверить оплату</button></form>
         {% endif %}
         <p><a href="{% url 'business:invoice_list' %}">Все счета</a></p>
     </div>
