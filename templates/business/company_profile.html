@@ -105,7 +105,7 @@
                 </div>
                 {% else %}
                 <div class="empty-state">
-                    <div class="empty-state-icon">📅</div>
+                    <div class="empty-state-icon">{% include 'includes/icon.html' with name='calendar' %}</div>
                     <h3>Пока нет бронирований</h3>
                 </div>
                 {% endif %}
@@ -146,8 +146,8 @@
                                 </td>
                                 <td>
                                     <div class="actions-cell">
-                                        <a href="{% url 'business:service_detail' service.pk %}" class="action-btn edit" title="Просмотр">👁</a>
-                                        <a href="{% url 'business:service_edit' service.pk %}" class="action-btn edit" title="Редактировать">✏</a>
+                                        <a href="{% url 'business:service_detail' service.pk %}" class="action-btn edit" title="Просмотр">{% include 'includes/icon.html' with name='eye' %}</a>
+                                        <a href="{% url 'business:service_edit' service.pk %}" class="action-btn edit" title="Редактировать">{% include 'includes/icon.html' with name='edit' %}</a>
 
                                     </div>
                                 </td>
@@ -158,7 +158,7 @@
                 </div>
                 {% else %}
                 <div class="empty-state">
-                    <div class="empty-state-icon">🛠</div>
+                    <div class="empty-state-icon">{% include 'includes/icon.html' with name='tools' %}</div>
                     <h3>Услуги еще не созданы</h3>
                     <p><a href="{% url 'business:service_create' %}">Добавить первую услугу</a></p>
                 </div>

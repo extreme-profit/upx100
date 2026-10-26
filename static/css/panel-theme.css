@@ -87,3 +87,18 @@
 :is(.panel-theme,.auth-site) .message.info { color:#1e40af; background:#dbeafe; border:1px solid #2563eb; }
 .panel-theme .stat-change.positive { color:#166534; }
 .panel-theme .stat-change.negative { color:#b91c1c; }
+
+/* Teal and plum surfaces add color alongside the graphite navigation. */
+.panel-theme .topbar { background:#edf8f5; border-bottom-color:#9bc8be; }
+.panel-theme .topbar-title,.panel-theme .card-title { color:#134e4a; }
+.panel-theme .card-header { background:#e3f3ee; border-bottom-color:#9bc8be; }
+.panel-theme .stat-card:nth-child(3n+1) { background:linear-gradient(135deg,#e4f4ef,#f6fbf9); border-color:#87bfb0; }
+.panel-theme .stat-card:nth-child(3n+2) { background:linear-gradient(135deg,#eee8fa,#faf8ff); border-color:#b7a3d8; }
+.panel-theme .stat-card:nth-child(3n) { background:linear-gradient(135deg,#e5eefb,#f8faff); border-color:#9bb7df; }
+.panel-theme .stat-card:nth-child(3n+1) .stat-value { color:#115e59; }
+.panel-theme .stat-card:nth-child(3n+2) .stat-value { color:#6b21a8; }
+.panel-theme .stat-card:nth-child(3n) .stat-value { color:#1e40af; }
+.panel-theme .btn-secondary { background:#0f766e; color:#fff; border-color:#0f766e; }
+.panel-theme .btn-secondary:hover { background:#115e59; color:#fff; border-color:#115e59; }
+.auth-site .login-container,.auth-site .register-container { background:#f3faf7; border-top-color:#14b8a6; }
+.auth-site .logo h1 { color:#134e4a; }

@@ -87,19 +87,19 @@
                         <td>{{ user.date_joined|date:"d.m.Y H:i" }}</td>
                         <td>
                             {% if user.is_active %}
-                            <span class="badge badge-success">✓ Активен</span>
+                            <span class="badge badge-success">{% include 'includes/icon.html' with name='check' %} Активен</span>
                             {% else %}
-                            <span class="badge badge-danger">✗ Заблокирован</span>
+                            <span class="badge badge-danger">{% include 'includes/icon.html' with name='close' %} Заблокирован</span>
                             {% endif %}
                         </td>
                         <td class="actions-cell">
-                            <a href="{% url 'dashboard:user_detail' user.pk %}" class="action-btn edit">👁️</a>
+                            <a href="{% url 'dashboard:user_detail' user.pk %}" class="action-btn edit" aria-label="Просмотреть пользователя">{% include 'includes/icon.html' with name='eye' %}</a>
                             {% if user.pk != request.user.pk %}
-                            <a href="{% url 'dashboard:user_edit' user.pk %}" class="action-btn edit">✏️</a>
+                            <a href="{% url 'dashboard:user_edit' user.pk %}" class="action-btn edit" aria-label="Редактировать">{% include 'includes/icon.html' with name='edit' %}</a>
                             <form method="post" action="{% url 'dashboard:user_toggle_active' user.pk %}" style="display: inline;" onsubmit="return confirm('Вы уверены?');">
                                 {% csrf_token %}
-                                <button type="submit" class="action-btn toggle">
-                                    {% if user.is_active %}🚫{% else %}✅{% endif %}
+                                <button type="submit" class="action-btn toggle" aria-label="{% if user.is_active %}Заблокировать пользователя{% else %}Разблокировать пользователя{% endif %}">
+                                    {% if user.is_active %}{% include 'includes/icon.html' with name='ban' %}{% else %}{% include 'includes/icon.html' with name='check' %}{% endif %}
                                 </button>
                             </form>
                             {% endif %}

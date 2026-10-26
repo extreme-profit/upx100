@@ -22,7 +22,7 @@
         <div class="stat-label">Всего пользователей</div>
         <div class="stat-value">{{ users_count }}</div>
         <div class="stat-change positive">
-            <span>👥 {{ entrepreneurs_count }} предпринимателей, {{ admins_count }} администраторов</span>
+            <span>{% include 'includes/icon.html' with name='users' %} {{ entrepreneurs_count }} предпринимателей, {{ admins_count }} администраторов</span>
         </div>
     </div>
 
@@ -30,7 +30,7 @@
         <div class="stat-label">Категории услуг</div>
         <div class="stat-value">{{ categories_count }}</div>
         <div class="stat-change">
-            <span>📁 {{ subcategories_count }} подкатегорий</span>
+            <span>{% include 'includes/icon.html' with name='folder' %} {{ subcategories_count }} подкатегорий</span>
         </div>
     </div>
 
@@ -44,7 +44,7 @@
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Последние пользователи</h3>
-        <a href="{% url 'dashboard:user_list' %}" class="btn btn-secondary btn-sm">Все пользователи →</a>
+        <a href="{% url 'dashboard:user_list' %}" class="btn btn-secondary btn-sm">Все пользователи {% include 'includes/icon.html' with name='arrow-right' %}</a>
     </div>
     <div class="card-body" style="padding: 0;">
         <div class="table-responsive">

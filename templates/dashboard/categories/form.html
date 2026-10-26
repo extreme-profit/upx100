@@ -4,7 +4,7 @@
 <div class="card" style="max-width: 600px;">
     <div class="card-header">
         <h3 class="card-title">{{ title }}</h3>
-        <a href="{% url 'dashboard:category_list' %}" class="btn btn-secondary">← Назад</a>
+        <a href="{% url 'dashboard:category_list' %}" class="btn btn-secondary">{% include 'includes/icon.html' with name='arrow-left' %} Назад</a>
     </div>
     
     <div class="card-body">

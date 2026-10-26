@@ -41,7 +41,7 @@
                             <p class="company-card__description">{{ company.description|truncatewords:15 }}</p>
                         {% endif %}
                         {% if company.address %}
-                            <p class="company-card__address">📍 {{ company.address }}</p>
+                            <p class="company-card__address">{% include 'includes/icon.html' with name='pin' %} {{ company.address }}</p>
                         {% endif %}
                     </div>
                     <a href="{% url 'client:company_detail' company.pk %}" class="company-card__btn">Посмотреть услуги</a>

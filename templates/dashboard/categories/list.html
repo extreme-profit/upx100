@@ -51,14 +51,14 @@
                         <td><span class="badge badge-success">{{ category.services_count }}</span></td>
                         <td>{{ category.created_at|date:"d.m.Y" }}</td>
                         <td class="actions-cell">
-                            <a href="{% url 'dashboard:category_edit' category.pk %}" class="action-btn edit">✏️</a>
-                            <a href="{% url 'dashboard:category_delete' category.pk %}" class="action-btn delete">🗑️</a>
+                            <a href="{% url 'dashboard:category_edit' category.pk %}" class="action-btn edit" aria-label="Редактировать">{% include 'includes/icon.html' with name='edit' %}</a>
+                            <a href="{% url 'dashboard:category_delete' category.pk %}" class="action-btn delete" aria-label="Удалить">{% include 'includes/icon.html' with name='trash' %}</a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
                         <td colspan="8" class="empty-state">
-                            <div class="empty-state-icon">📁</div>
+                            <div class="empty-state-icon">{% include 'includes/icon.html' with name='folder' %}</div>
                             <h3>Нет категорий</h3>
                             <p>Создайте первую категорию услуг</p>
                             <a href="{% url 'dashboard:category_create' %}" class="btn btn-primary" style="margin-top: 16px;">+ Создать категорию</a>

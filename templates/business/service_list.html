@@ -86,7 +86,7 @@
             </div>
             {% else %}
             <div class="empty-state">
-                <div class="empty-state-icon">🛠</div>
+                <div class="empty-state-icon">{% include 'includes/icon.html' with name='tools' %}</div>
                 <h3>Услуг пока нет</h3>
                 {% if user.role != 'employee' %}
                 <p>Создайте первую услугу для вашей компании</p>
