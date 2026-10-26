@@ -203,7 +203,7 @@ class BusinessWorkflowTests(TestCase):
 
     def test_success_page_does_not_expose_other_clients(self):
         booking = self.submit()
-        url = reverse('client:booking_success', args=[booking.pk])
+        url = reverse('client:booking_success', args=[booking.public_id])
         self.assertEqual(self.client.get(url).status_code, 200)
         self.assertEqual(Client().get(url).status_code, 404)
 

@@ -170,6 +170,7 @@ class ServiceTimeSlot(models.Model):
 
 
 class Booking(models.Model):
+    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     client_ip = models.GenericIPAddressField(null=True, blank=True, editable=False)
     normalized_email = models.CharField(max_length=254, blank=True, db_index=True, editable=False)
     normalized_phone = models.CharField(max_length=32, blank=True, db_index=True, editable=False)

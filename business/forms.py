@@ -77,11 +77,12 @@ class ServiceTimeSlotGenerateForm(forms.Form):
         label='Сотрудники',
         required=False,
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
-        help_text='Выберите сотрудников для создания слотов. Если не выбрано ни одного, слоты будут созданы для всех сотрудников услуги.'
+        help_text='Выберите сотрудников для создания слотов. Если не выбрано ни одного, слоты будут созданы для всех доступных вам сотрудников услуги.'
     )
     
     def __init__(self, *args, **kwargs):
         self.service = kwargs.pop('service', None)
+        employee_queryset = kwargs.pop('employee_queryset', None)
         super().__init__(*args, **kwargs)
         
         # Устанавливаем начальные значения дат
@@ -97,7 +98,7 @@ class ServiceTimeSlotGenerateForm(forms.Form):
                 self.fields['duration'].initial = session_duration
             
             # Устанавливаем queryset для сотрудников - только привязанных к услуге
-            self.fields['employees'].queryset = self.service.employees.filter(is_active=True)
+            self.fields['employees'].queryset = employee_queryset if employee_queryset is not None else self.service.employees.filter(is_active=True)
     
     def clean(self):
         cleaned_data = super().clean()

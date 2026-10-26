@@ -170,7 +170,7 @@ def booking_create_view(request, service_id):
                 messages.error(request, 'Выбранное время недоступно. Выберите другое.')
                 return redirect('client:service_detail', service_id=service.pk)
             request.session['last_booking_id'] = booking.pk
-            return redirect('client:booking_success', booking_id=booking.pk)
+            return redirect('client:booking_success', booking_id=booking.public_id)
     else:
         form = BookingForm()
     
@@ -197,9 +197,7 @@ def booking_create_view(request, service_id):
 def booking_success_view(request, booking_id):
     """Страница успешного бронирования"""
     from django.http import Http404
-    if request.session.get('last_booking_id') != booking_id:
-        raise Http404
-    booking = get_object_or_404(Booking, pk=booking_id)
+    booking = get_object_or_404(Booking, public_id=booking_id, pk=request.session.get('last_booking_id'))
     from business.reliability import WARNING
     context = {'booking': booking, 'reliability_warning': WARNING if booking.no_show_count >= 3 else ''}
     return render(request, 'client/booking_success.html', context)
