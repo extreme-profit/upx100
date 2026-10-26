@@ -1,7 +1,7 @@
 {% extends 'dashboard/base.html' %}
 
 {% block content %}
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+<div class="user-detail-grid">
     <!-- User Info -->
     <div class="card">
         <div class="card-header">
@@ -10,25 +10,25 @@
         </div>
         <div class="card-body">
             <div style="margin-bottom: 24px;">
-                <p style="color: #64748b; font-size: 14px;">ID: {{ user_obj.pk }}</p>
+                <p style="color: #737373; font-size: 14px;">ID: {{ user_obj.pk }}</p>
             </div>
             
             <table style="width: 100%;">
                 <tr>
-                    <td style="padding: 12px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;"><strong>Email:</strong></td>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">{{ user_obj.email }}</td>
+                    <td style="padding: 12px 0; color: #737373; border-bottom: 1px solid #f5f5f5;"><strong>Email:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #f5f5f5;">{{ user_obj.email }}</td>
                 </tr>
                 <tr>
-                    <td style="padding: 12px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;"><strong>Имя:</strong></td>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">{{ user_obj.first_name|default:"—" }} {{ user_obj.last_name|default:"" }}</td>
+                    <td style="padding: 12px 0; color: #737373; border-bottom: 1px solid #f5f5f5;"><strong>Имя:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #f5f5f5;">{{ user_obj.first_name|default:"—" }} {{ user_obj.last_name|default:"" }}</td>
                 </tr>
                 <tr>
-                    <td style="padding: 12px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;"><strong>Телефон:</strong></td>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">{{ user_obj.phone|default:"—" }}</td>
+                    <td style="padding: 12px 0; color: #737373; border-bottom: 1px solid #f5f5f5;"><strong>Телефон:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #f5f5f5;">{{ user_obj.phone|default:"—" }}</td>
                 </tr>
                 <tr>
-                    <td style="padding: 12px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;"><strong>Роль:</strong></td>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 12px 0; color: #737373; border-bottom: 1px solid #f5f5f5;"><strong>Роль:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #f5f5f5;">
                         {% if user_obj.role == 'admin' %}
                         <span class="badge badge-info">Администратор</span>
                         {% elif user_obj.role == 'entrepreneur' %}
@@ -39,8 +39,8 @@
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding: 12px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;"><strong>Статус:</strong></td>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 12px 0; color: #737373; border-bottom: 1px solid #f5f5f5;"><strong>Статус:</strong></td>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #f5f5f5;">
                         {% if user_obj.is_active %}
                         <span class="badge badge-success">✓ Активен</span>
                         {% else %}
@@ -49,7 +49,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding: 12px 0; color: #64748b;"><strong>Дата регистрации:</strong></td>
+                    <td style="padding: 12px 0; color: #737373;"><strong>Дата регистрации:</strong></td>
                     <td style="padding: 12px 0;">{{ user_obj.date_joined|date:"d.m.Y H:i" }}</td>
                 </tr>
             </table>
@@ -91,7 +91,7 @@
                 <img src="{{ company.logo.url }}" alt="{{ company.name }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; margin-bottom: 16px;">
                 {% endif %}
                 <h4 style="margin-bottom: 8px;">{{ company.name }}</h4>
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">{{ company.address }}</p>
+                <p style="color: #737373; font-size: 14px; margin-bottom: 16px;">{{ company.address }}</p>
                 
                 <!-- Статус верификации между описанием и картой -->
                 <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 20px;">
@@ -105,7 +105,7 @@
                 <div style="margin-top: 16px;">
                     <h5 style="margin-bottom: 12px; text-align: left;">📍 Расположение на карте</h5>
                     <div id="map" style="height: 300px; width: 100%; border-radius: 8px; border: 1px solid #dee2e6;"></div>
-                    <p style="font-size: 13px; color: #64748b; margin-top: 8px; text-align: left;">
+                    <p style="font-size: 13px; color: #737373; margin-top: 8px; text-align: left;">
                         Координаты: {{ company.latitude }}, {{ company.longitude }}
                     </p>
                 </div>

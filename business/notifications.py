@@ -1,14 +1,16 @@
 import logging
 
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+from django.contrib.staticfiles import finders
+from django.contrib.staticfiles.storage import staticfiles_storage
+from email.mime.image import MIMEImage
+from pathlib import Path
 from django.db import transaction
 from django.utils import timezone
 from django.core import signing
 from django.urls import reverse
 from django.template.loader import render_to_string
-from django.templatetags.static import static
-from urllib.parse import urljoin
 
 from .models import EmailNotification
 
@@ -32,6 +34,37 @@ def queue_email(key, recipient, subject, body):
     return notification
 
 
+def build_notification_message(notification):
+    # Embed the local PNG so localhost/private SITE_URL does not break the logo.
+    logo = None
+    try:
+        path = finders.find('img/logo.png')
+        if path:
+            data = Path(path).read_bytes()
+        else:
+            with staticfiles_storage.open('img/logo.png', 'rb') as source:
+                data = source.read()
+        logo = MIMEImage(data, _subtype='png')
+        logo.add_header('Content-ID', '<42master-logo>')
+        logo.add_header('Content-Disposition', 'inline', filename='logo.png')
+    except (OSError, ValueError):
+        # A deployment without the optional logo still sends readable emails.
+        pass
+    message = EmailMultiAlternatives(
+        notification.subject, notification.body, settings.DEFAULT_FROM_EMAIL,
+        [notification.recipient],
+    )
+    message.attach_alternative(render_to_string('emails/notification.html', {
+        'subject': notification.subject, 'body': notification.body,
+        'site_url': settings.SITE_URL.rstrip('/'),
+        'logo_url': 'cid:42master-logo' if logo else '',
+    }), 'text/html')
+    if logo:
+        message.mixed_subtype = 'related'
+        message.attach(logo)
+    return message
+
+
 def deliver_email(pk):
     with transaction.atomic():
         notification = EmailNotification.objects.select_for_update().get(pk=pk)
@@ -46,15 +79,8 @@ def deliver_email(pk):
                 return True
         notification.attempts += 1
         try:
-            delivered = send_mail(
-                notification.subject, notification.body, settings.DEFAULT_FROM_EMAIL,
-                [notification.recipient], fail_silently=False,
-                html_message=render_to_string('emails/notification.html', {
-                    'subject': notification.subject, 'body': notification.body,
-                    'site_url': settings.SITE_URL.rstrip('/'),
-                    'logo_url': urljoin(settings.SITE_URL.rstrip('/')+'/', static('img/logo.png')),
-                }),
-            )
+            message = build_notification_message(notification)
+            delivered = message.send(fail_silently=False)
             if delivered != 1:
                 raise RuntimeError('Почтовый сервер не принял письмо')
         except Exception as exc:

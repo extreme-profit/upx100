@@ -191,7 +191,7 @@ class BusinessWorkflowTests(TestCase):
             self.service.delete()
 
     def test_failed_mail_is_persisted_and_retried(self):
-        with patch('business.notifications.send_mail', side_effect=OSError('SMTP unavailable')):
+        with patch('business.notifications.EmailMultiAlternatives.send', side_effect=OSError('SMTP unavailable')):
             booking = self.submit()
         notification = EmailNotification.objects.get(key=f'booking:{booking.pk}:new')
         self.assertIsNone(notification.sent_at)

@@ -55,7 +55,7 @@
                         <td>
                             <strong>{{ user.email }}</strong>
                             {% if user.first_name or user.last_name %}
-                            <br><small style="color: #64748b;">{{ user.first_name }} {{ user.last_name }}</small>
+                            <br><small style="color: #737373;">{{ user.first_name }} {{ user.last_name }}</small>
                             {% endif %}
                         </td>
                         <td>
@@ -64,14 +64,14 @@
                             {% endif %}
                             {% with company=user.company %}
                                 {% if company %}
-                                    <span style="color: #475569;">{{ company.name }}</span>
+                                    <span style="color: #525252;">{{ company.name }}</span>
                                     {% if company.is_verified %}
                                         <span style="color: #16a34a; font-size: 12px;">(Проверена)</span>
                                     {% else %}
                                         <span style="color: #ca8a04; font-size: 12px;">(Не проверена)</span>
                                     {% endif %}
                                 {% else %}
-                                    <span style="color: #94a3b8;">—</span>
+                                    <span style="color: #a3a3a3;">—</span>
                                 {% endif %}
                             {% endwith %}
                         </td>
@@ -107,7 +107,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px; color: #64748b;">
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #737373;">
                             Пользователи не найдены
                         </td>
                     </tr>
