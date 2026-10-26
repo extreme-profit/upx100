@@ -1,0 +1,14 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<div class="card"><div class="card-header"><h2>Подтвердить нарушение: {{ company.name }}</h2></div><div class="card-body">
+<p>{{ company.owner.get_full_name }} · {{ company.owner.email }} · {{ company.owner.phone }} · {{ company.phone }} · {{ company.address }}</p>
+<p>Решение бессрочно скрывает текущие услуги и запрещает новые. Повторные регистрации по совпавшим телефонам или включённым в блокировку IP сохраняются с запретом публикации. Администратор получает письмо; исполнителю отдельное письмо не отправляется.</p>
+<p class="message warning">Одна жалоба, общий IP или отсутствие сотрудников не доказывают мошенничество. Подтвердите проверку материалов. IP может принадлежать нескольким людям. Внутренние и локальные IP не используются для автоматической блокировки.</p>
+<form method="post">{% csrf_token %}{{ form.non_field_errors }}
+{% for field in form %}<div class="form-group">{% if field.field.widget.input_type == 'checkbox' %}<label>{{ field }} {{ field.label }}</label>{% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}{{ field.errors }}</div>{% endfor %}
+<div class="admin-actions"><button class="btn btn-danger" type="submit">Подтвердить и заблокировать публикацию</button><a class="btn btn-secondary" href="{% url 'dashboard:user_detail' company.owner_id %}">Отмена</a></div>
+</form>
+<h3>Последние сохранённые сведения</h3><div class="table-responsive"><table><thead><tr><th>Дата</th><th>Телефоны</th><th>IP</th><th>Событие</th></tr></thead><tbody>
+{% for event in identity_events %}<tr><td>{{ event.created_at|date:'d.m.Y H:i' }}</td><td>{{ event.phone }} {{ event.company_phone }}</td><td>{{ event.ip|default:'Нет' }}</td><td>{{ event.get_action_display }}</td></tr>{% empty %}<tr><td colspan="4">История ещё не накоплена. Можно добавить проверенные телефоны/IP вручную.</td></tr>{% endfor %}
+</tbody></table></div></div></div>
+{% endblock %}

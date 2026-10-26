@@ -25,7 +25,7 @@ def companies_list_view(request):
     subcategory_slug = request.GET.get('subcategory')
 
     # Показываем только проверенные компании
-    companies = Company.objects.filter(is_verified=True, is_blocked=False, owner__is_active=True)
+    companies = Company.objects.filter(is_verified=True, is_blocked=False, fraud_blocked=False, owner__is_active=True)
     categories = Category.objects.all()
 
     if category_slug:
@@ -59,7 +59,7 @@ def companies_list_view(request):
 def company_detail_view(request, company_id):
     """Страница компании с услугами для клиентов"""
     # Проверяем что компания проверена
-    company = get_object_or_404(Company, pk=company_id, is_verified=True, is_blocked=False, owner__is_active=True)
+    company = get_object_or_404(Company, pk=company_id, is_verified=True, is_blocked=False, fraud_blocked=False, owner__is_active=True)
     # Показываем только активные услуги
     services = company.services.visible().filter(
         company__is_verified=True  # Компания проверена

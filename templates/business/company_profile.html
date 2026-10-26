@@ -11,7 +11,7 @@
             <a href="{% url 'business:company_edit' %}" class="btn btn-primary">Создать профиль компании</a>
         </div>
     {% else %}
-        {% if company.is_blocked %}
+        {% if company.is_blocked or company.fraud_blocked %}
             <div class="message warning">Ваши услуги скрыты администратором. Доступ к заявкам и счетам сохранён.</div>
         {% endif %}
         <!-- Карточка компании -->

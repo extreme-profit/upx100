@@ -86,3 +86,52 @@ class User(AbstractBaseUser, PermissionsMixin):
             if employee_profile:
                 return employee_profile.company
         return None
+
+
+class FraudBlock(models.Model):
+    company = models.ForeignKey('business.Company', on_delete=models.PROTECT, related_name='fraud_blocks')
+    confirmed_by = models.ForeignKey('accounts.User', on_delete=models.PROTECT, related_name='confirmed_fraud_blocks')
+    reason = models.TextField(max_length=4000)
+    evidence = models.TextField(max_length=10000, blank=True)
+    snapshot = models.JSONField(default=dict)
+    block_ips = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    lifted_at = models.DateTimeField(null=True, blank=True)
+    lifted_by = models.ForeignKey('accounts.User', on_delete=models.PROTECT, null=True, blank=True, related_name='lifted_fraud_blocks')
+    lift_reason = models.TextField(max_length=4000, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [models.UniqueConstraint(fields=['company'], condition=models.Q(lifted_at__isnull=True), name='unique_active_company_fraud_block')]
+        verbose_name = 'Подтверждённая антифрод-блокировка'
+        verbose_name_plural = 'Подтверждённые антифрод-блокировки'
+
+
+class FraudIdentifier(models.Model):
+    block = models.ForeignKey(FraudBlock, on_delete=models.PROTECT, related_name='identifiers')
+    kind = models.CharField(max_length=8, choices=[('phone', 'Телефон'), ('ip', 'IP')])
+    value = models.CharField(max_length=64, db_index=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['block', 'kind', 'value'], name='unique_fraud_block_identifier')]
+
+
+class SecurityEvent(models.Model):
+    ACTIONS = [('registered', 'Регистрация'), ('registration_blocked', 'Повторная регистрация заблокирована'),
+               ('login', 'Вход'), ('service_saved', 'Услуга сохранена'), ('service_blocked', 'Создание услуги запрещено'),
+               ('profile_saved', 'Профиль сохранён')]
+    user = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='security_events')
+    company = models.ForeignKey('business.Company', on_delete=models.SET_NULL, null=True, blank=True, related_name='security_events')
+    matched_block = models.ForeignKey(FraudBlock, on_delete=models.PROTECT, null=True, blank=True, related_name='events')
+    action = models.CharField(max_length=24, choices=ACTIONS, db_index=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=32, blank=True, db_index=True)
+    company_phone = models.CharField(max_length=32, blank=True, db_index=True)
+    ip = models.GenericIPAddressField(null=True, blank=True, db_index=True)
+    snapshot = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        verbose_name = 'Событие безопасности предпринимателя'
+        verbose_name_plural = 'События безопасности предпринимателей'

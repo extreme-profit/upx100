@@ -22,6 +22,7 @@ class Company(models.Model):
     email = models.EmailField(blank=True, verbose_name="Email")
     is_verified = models.BooleanField(default=False, verbose_name="Проверена модератором")
     is_blocked = models.BooleanField(default=False, verbose_name="Услуги предпринимателя заблокированы")
+    fraud_blocked = models.BooleanField(default=False, db_index=True, verbose_name="Запрет публикации по антифрод-реестру")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -40,7 +41,7 @@ class Company(models.Model):
 class ServiceQuerySet(models.QuerySet):
     def visible(self):
         return self.filter(
-            is_archived=False, company__is_verified=True, company__is_blocked=False,
+            is_archived=False, company__is_verified=True, company__is_blocked=False, company__fraud_blocked=False,
             company__owner__is_active=True,
         )
 
@@ -123,7 +124,7 @@ class Service(models.Model):
 
     @property
     def status(self):
-        if self.is_archived or self.company.is_blocked or not self.company.owner.is_active:
+        if self.is_archived or self.company.is_blocked or self.company.fraud_blocked or not self.company.owner.is_active:
             return 'inactive'
         return 'active' if self.company.is_verified else 'pending_verification'
 

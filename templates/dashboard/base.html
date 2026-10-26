@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{% static 'css/refresh.css' %}">
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
     <link rel="stylesheet" href="{% static 'css/panel-theme.css' %}">
+    {% block extra_css %}{% endblock %}
 </head>
 <body class="dashboard-site admin-site panel-theme">
     <div class="dashboard-container">
@@ -26,6 +27,7 @@
             </div>
 
             <nav class="sidebar-nav">
+                <a class="nav-link {% if request.resolver_match.url_name == 'blocked_users' or request.resolver_match.url_name == 'confirm_user_fraud' %}active{% endif %}" href="{% url 'dashboard:blocked_users' %}" title="Блокировки предпринимателей" aria-label="Блокировки предпринимателей">{% include 'includes/icon.html' with name='ban' %}<span class="nav-label">Блокировки предпринимателей</span></a>
                 <a class="nav-link {% if request.resolver_match.url_name == 'no_show_reports' %}active{% endif %}" href="{% url 'dashboard:no_show_reports' %}" title="Неявки клиентов" aria-label="Неявки клиентов">
                         {% include 'includes/icon.html' with name='warning' %}
                         <span class="nav-label">Неявки клиентов</span>

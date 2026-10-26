@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from accounts.security import enforce_service_restriction, record_event, BLOCK_MESSAGE
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -32,7 +33,7 @@ def subcategories_api_view(request):
 
 def company_public_profile_view(request, company_id):
     """Публичный профиль компании (для клиентов)"""
-    company = get_object_or_404(Company, pk=company_id, is_verified=True, is_blocked=False, owner__is_active=True)
+    company = get_object_or_404(Company, pk=company_id, is_verified=True, is_blocked=False, fraud_blocked=False, owner__is_active=True)
     services = company.services.visible().select_related('category', 'subcategory')
     employees = company.employees.filter(is_active=True)
 
@@ -95,6 +96,7 @@ def company_edit_view(request):
             if is_create:
                 company.owner = request.user
             company.save()
+            record_event(request, request.user, company, 'profile_saved')
             messages.success(request, 'Профиль компании успешно сохранен!')
             return redirect('business:company_profile')
     else:
@@ -219,12 +221,16 @@ def service_create_view(request):
         messages.error(request, 'Сначала создайте профиль компании')
         return redirect('business:company_edit')
     
+    if enforce_service_restriction(request, company):
+        return HttpResponseForbidden(BLOCK_MESSAGE)
+
     if request.method == 'POST':
         form = ServiceForm(request.POST, request.FILES, company=company)
         if form.is_valid():
             service = form.save(commit=False)
             service.company = company
             service.save()
+            record_event(request, request.user, company, 'service_saved')
             # Сохраняем сотрудников
             employees = form.cleaned_data.get('employees')
             if employees:
@@ -260,11 +266,15 @@ def service_edit_view(request, pk):
         messages.error(request, 'Услуга не найдена')
         return redirect('business:service_list')
     
+    if enforce_service_restriction(request, company):
+        return HttpResponseForbidden(BLOCK_MESSAGE)
+
     if request.method == 'POST':
         form = ServiceForm(request.POST, request.FILES, instance=service, company=company)
         if form.is_valid():
             service = form.save(commit=False)
             service.save()
+            record_event(request, request.user, company, 'service_saved')
             # Сохраняем сотрудников
             employees = form.cleaned_data.get('employees')
             if employees is not None:
@@ -878,8 +888,13 @@ def invoice_list_view(request):
     company = request.user.get_company()
     if not company:
         return redirect('business:company_edit')
+    invoices = company.invoices.prefetch_related('items')
     return render(request, 'business/invoice_list.html', {
-        'invoices': company.invoices.prefetch_related('items'),
+        'title': 'Ежемесячные счета',
+        'invoices': invoices,
+        'unpaid_invoices': invoices.filter(status='pending'),
+        'paid_invoices': invoices.filter(status='paid'),
+        'void_invoices': invoices.filter(status='void'),
     })
 
 

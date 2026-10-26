@@ -5,10 +5,10 @@ from .models import MonthlyInvoice, InvoiceItem, EmailNotification
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ['name', 'owner', 'address', 'is_verified', 'is_blocked', 'created_at']
+    list_display = ['name', 'owner', 'address', 'is_verified', 'is_blocked', 'fraud_blocked', 'created_at']
     search_fields = ['name', 'owner__email', 'address']
-    readonly_fields = ['created_at', 'updated_at']
-    list_filter = ['is_verified', 'is_blocked', 'city']
+    readonly_fields = ['created_at', 'updated_at', 'fraud_blocked']
+    list_filter = ['is_verified', 'is_blocked', 'fraud_blocked', 'city']
     actions = ['block_services', 'unblock_services']
 
     @admin.action(description='Скрыть все текущие и будущие услуги предпринимателей')
@@ -18,7 +18,7 @@ class CompanyAdmin(admin.ModelAdmin):
 
     @admin.action(description='Разблокировать услуги предпринимателей')
     def unblock_services(self, request, queryset):
-        count = queryset.update(is_blocked=False)
+        count = queryset.filter(fraud_blocked=False).update(is_blocked=False)
         self.message_user(request, f'Услуги разблокированы у {count} компаний.')
 
 
