@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 from accounts.models import User
 from .models import Company, Service, Employee, Booking, BillingNotification
-from .billing import generate_invoice, process_billing, mark_stub_paid
+from .billing import generate_invoice, process_billing
 from .reliability import report_no_show
 
 
@@ -35,7 +35,7 @@ class BillingBellTests(TestCase):
         generate_invoice(self.company,date(2026,9,1))
         self.assertEqual(BillingNotification.objects.count(),1)
 
-    def test_reminders_paid_and_read_state_are_not_duplicated(self):
+    def test_reminders_and_read_state_are_not_duplicated(self):
         process_billing(date(2026,10,1))
         notification=BillingNotification.objects.get()
         notification.read_at=timezone.now()
@@ -49,12 +49,7 @@ class BillingBellTests(TestCase):
         process_billing(date(2026,10,6))
         self.assertEqual(BillingNotification.objects.count(),3)
         invoice=notification.invoice
-        mark_stub_paid(invoice)
-        mark_stub_paid(invoice)
-        self.assertEqual(BillingNotification.objects.count(),4)
-        process_billing(date(2026,10,7))
-        self.assertEqual(BillingNotification.objects.count(),4)
-        self.assertTrue(BillingNotification.objects.filter(title='Комиссия за услуги оплачена').exists())
+        self.assertEqual(BillingNotification.objects.count(),3)
 
     def test_bell_and_ownership_read_actions_with_csrf(self):
         invoice=generate_invoice(self.company,date(2026,9,1))

@@ -162,4 +162,14 @@ EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 EMAIL_TIMEOUT = 10
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@42master.ru')
 SITE_URL = config('SITE_URL', default='https://42master.ru')
-PAYMENT_STUB_ENABLED = config('PAYMENT_STUB_ENABLED', default=DEBUG, cast=bool)
+
+# Tochka acquiring: public bank sandbox credentials are selected by the client.
+TOCHKA_ENVIRONMENT = config('TOCHKA_ENVIRONMENT', default='sandbox')
+TOCHKA_LIVE_ENABLED = config('TOCHKA_LIVE_ENABLED', default=False, cast=bool)
+TOCHKA_JWT_TOKEN = config('TOCHKA_JWT_TOKEN', default='')
+TOCHKA_CUSTOMER_CODE = config('TOCHKA_CUSTOMER_CODE', default='')
+TOCHKA_MERCHANT_ID = config('TOCHKA_MERCHANT_ID', default='')
+TOCHKA_RECEIPT_MODE = config('TOCHKA_RECEIPT_MODE', default='')
+TOCHKA_TAX_SYSTEM = config('TOCHKA_TAX_SYSTEM', default='')
+TOCHKA_VAT_TYPE = config('TOCHKA_VAT_TYPE', default='')
+TOCHKA_CA_BUNDLE = config('TOCHKA_CA_BUNDLE', default='')

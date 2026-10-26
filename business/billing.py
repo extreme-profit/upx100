@@ -8,6 +8,7 @@ from django.utils import timezone
 from .models import Booking, Company, InvoiceItem, MonthlyInvoice
 from .notifications import queue_email
 from .billing_notifications import notify_invoice
+from .tochka import TochkaError
 
 SERVICE_FEE = Decimal('100.00')
 
@@ -24,6 +25,11 @@ def generate_invoice(company, period):
     if existing:
         if existing.status == 'pending':
             notify_invoice(existing, 'created', 'Пора оплачивать комиссию за услуги')
+            from .acquiring import queue_invoice_payment
+            try:
+                queue_invoice_payment(existing)
+            except TochkaError:
+                pass
         return existing
     start = timezone.make_aware(datetime.combine(period, time.min))
     end = timezone.make_aware(datetime.combine(next_month(period), time.min))
@@ -35,13 +41,18 @@ def generate_invoice(company, period):
     invoice = MonthlyInvoice.objects.create(
         company=company, period=period, due_date=next_month(period).replace(day=5),
         amount=SERVICE_FEE * len(services),
-        gateway_reference=f'stub-{company.pk}-{period:%Y%m}',
+        gateway_reference=f'tochka-{company.pk}-{period:%Y%m}',
     )
     InvoiceItem.objects.bulk_create([
         InvoiceItem(invoice=invoice, service=service, service_name=service.name, amount=SERVICE_FEE)
         for service in services
     ])
     notify_invoice(invoice, 'created', 'Пора оплачивать комиссию за услуги')
+    from .acquiring import queue_invoice_payment
+    try:
+        queue_invoice_payment(invoice)
+    except TochkaError:
+        pass
     return invoice
 
 
@@ -85,18 +96,6 @@ def process_billing(today=None):
             f'Оплатите до {invoice.due_date:%d.%m.%Y} включительно.{warning}\n'
             f'Счёт доступен в личном кабинете.',
         )
-
-
-@transaction.atomic
-def mark_stub_paid(invoice):
-    """Заглушка эквайринга; доступ к ней контролирует HTTP-представление."""
-    updated = MonthlyInvoice.objects.filter(pk=invoice.pk, status='pending').update(
-        status='paid', paid_at=timezone.now(),
-    )
-    if updated:
-        invoice.refresh_from_db()
-        notify_invoice(invoice, 'paid', 'Комиссия за услуги оплачена', 'Демонстрационная оплата подтверждена. Деньги не списывались.')
-    return updated
 
 
 @transaction.atomic

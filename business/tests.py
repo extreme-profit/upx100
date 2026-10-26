@@ -16,7 +16,7 @@ from .models import Booking, Company, EmailNotification, Employee, MonthlyInvoic
 from .notifications import deliver_email
 
 
-@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend', PAYMENT_STUB_ENABLED=True)
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
 class BusinessWorkflowTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user('owner@example.com', 'password', role='entrepreneur')
@@ -311,7 +311,7 @@ class BusinessWorkflowTests(TestCase):
                 model.assert_not_called()
 
 
-@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend', PAYMENT_STUB_ENABLED=True)
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
 class MonthlyBillingTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user('owner@example.com', role='entrepreneur')
@@ -345,7 +345,7 @@ class MonthlyBillingTests(TestCase):
         self.assertEqual(invoice.items.count(), 2)
         self.assertEqual(invoice.period, date(2026, 9, 1))
         self.assertEqual(invoice.due_date, date(2026, 10, 5))
-        self.assertTrue(invoice.gateway_reference.startswith('stub-'))
+        self.assertTrue(invoice.gateway_reference.startswith('tochka-'))
         self.process(date(2026, 10, 1))
         self.assertEqual(MonthlyInvoice.objects.count(), 1)
         self.assertEqual(EmailNotification.objects.count(), 1)
@@ -367,11 +367,13 @@ class MonthlyBillingTests(TestCase):
         self.assertTrue(self.owner.is_active)  # Автоматических санкций пока нет.
         invoice = MonthlyInvoice.objects.get()
         self.client.force_login(self.owner)
-        self.assertEqual(self.client.post(reverse('business:invoice_detail', args=[invoice.pk])).status_code, 302)
+        invoice.status = 'paid'
+        invoice.paid_at = timezone.now()
+        invoice.save(update_fields=['status','paid_at'])
         invoice.refresh_from_db()
         self.assertEqual(invoice.status, 'paid')
         paid_at = invoice.paid_at
-        self.client.post(reverse('business:invoice_detail', args=[invoice.pk]))
+        self.client.get(reverse('business:invoice_detail', args=[invoice.pk]))
         invoice.refresh_from_db()
         self.assertEqual(invoice.paid_at, paid_at)
         self.process(date(2026, 10, 7))
@@ -381,7 +383,7 @@ class MonthlyBillingTests(TestCase):
         self.booking(self.first, self.at(2026, 9, 15))
         self.process(date(2026, 10, 1))
         self.client.force_login(self.owner)
-        self.client.post(reverse('business:invoice_detail', args=[MonthlyInvoice.objects.get().pk]))
+        MonthlyInvoice.objects.update(status='paid', paid_at=timezone.now())
         self.process(date(2026, 10, 3))
         self.assertEqual(len(mail.outbox), 1)
 
@@ -410,7 +412,7 @@ class MonthlyBillingTests(TestCase):
         self.assertEqual(MonthlyInvoice.objects.count(), 0)
         self.assertEqual(EmailNotification.objects.count(), 0)
 
-    def test_invoice_access_and_disabled_stub(self):
+    def test_invoice_access_and_removed_stub(self):
         self.booking(self.first, self.at(2026, 9, 15))
         invoice = generate_invoice(self.company, date(2026, 9, 1))
         url = reverse('business:invoice_detail', args=[invoice.pk])
@@ -419,9 +421,8 @@ class MonthlyBillingTests(TestCase):
         self.client.force_login(stranger)
         self.assertEqual(self.client.post(url).status_code, 404)
         self.client.force_login(self.owner)
-        self.assertContains(self.client.get(url), 'Демонстрационная оплата')
-        with override_settings(PAYMENT_STUB_ENABLED=False):
-            self.assertEqual(self.client.post(url).status_code, 403)
+        self.assertContains(self.client.get(url), 'Песочница Точка-Банка')
+        self.assertEqual(self.client.post(url).status_code, 400)
         invoice.refresh_from_db()
         self.assertEqual(invoice.status, 'pending')
 
@@ -438,7 +439,8 @@ class MonthlyBillingTests(TestCase):
         self.booking(self.second, self.at(2026, 9, 15))
         with patch('business.billing.timezone.localdate', return_value=date(2026, 10, 3)):
             with self.captureOnCommitCallbacks(execute=True):
-                call_command('process_monthly_billing')
+                with patch('business.management.commands.process_monthly_billing.sync_payments'):
+                    call_command('process_monthly_billing')
         self.assertEqual(MonthlyInvoice.objects.count(), 2)
         self.assertEqual(EmailNotification.objects.count(), 2)
 

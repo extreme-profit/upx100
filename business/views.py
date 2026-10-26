@@ -16,7 +16,8 @@ from .forms import CompanyForm, EmployeeForm, ServiceForm, ServiceTimeSlotGenera
 from companies.models import Category, Subcategory
 from .models import MonthlyInvoice
 from .booking_workflow import decide_booking
-from .billing import mark_stub_paid
+from .acquiring import process_invoice_payment
+from .tochka import TochkaError
 
 
 @login_required
@@ -890,13 +891,17 @@ def invoice_detail_view(request, pk):
         MonthlyInvoice.objects.prefetch_related('items'), pk=pk, company__owner=request.user,
     )
     if request.method == 'POST':
-        if not settings.PAYMENT_STUB_ENABLED:
-            return HttpResponseForbidden('Демонстрационная оплата отключена')
-        mark_stub_paid(invoice)
-        messages.success(request, 'Демонстрационная оплата подтверждена. Деньги не списывались.')
+        if request.POST.get('action') != 'check':
+            from django.http import HttpResponseBadRequest
+            return HttpResponseBadRequest('Неверное действие')
+        try:
+            process_invoice_payment(invoice)
+        except TochkaError:
+            messages.error(request, 'Не удалось связаться с банком. Повторите проверку позже.')
         return redirect('business:invoice_detail', pk=pk)
+    payment = invoice.acquiring_payments.filter(environment=settings.TOCHKA_ENVIRONMENT, amount=invoice.amount).exclude(state='expired').first()
     return render(request, 'business/payment_process.html', {
-        'invoice': invoice, 'stub_enabled': settings.PAYMENT_STUB_ENABLED,
+        'invoice': invoice, 'payment': payment, 'sandbox': settings.TOCHKA_ENVIRONMENT == 'sandbox',
     })
 
 
