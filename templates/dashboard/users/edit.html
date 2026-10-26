@@ -11,11 +11,11 @@
         <form method="post">
             {% csrf_token %}
 
-            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding: 16px; background: #f8fafc; border-radius: 8px;">
-                <div class="user-avatar" style="width: 56px; height: 56px; font-size: 20px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">{{ user_obj.email|first|upper }}</div>
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding: 16px; background: #fafafa; border-radius: 8px;">
+                <div class="user-avatar" style="width: 56px; height: 56px; font-size: 20px; background: #303030; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">{{ user_obj.email|first|upper }}</div>
                 <div>
                     <h4 style="margin-bottom: 4px;">{{ user_obj.email }}</h4>
-                    <p style="color: #64748b; font-size: 13px;">
+                    <p style="color: #737373; font-size: 13px;">
                         {% if user_obj.role == 'entrepreneur' and company %}
                             {{ company.name }}
                         {% else %}
@@ -32,7 +32,7 @@
                     <option value="{{ value }}" {% if user_obj.role == value %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
-                <small style="color: #64748b; margin-top: 4px; display: block;">Изменение роли может повлиять на доступ пользователя к функциям системы</small>
+                <small style="color: #737373; margin-top: 4px; display: block;">Изменение роли может повлиять на доступ пользователя к функциям системы</small>
             </div>
 
             <div class="form-group">
@@ -40,7 +40,7 @@
                     <input type="checkbox" name="is_active" {% if user_obj.is_active %}checked{% endif %} style="width: auto;">
                     Активный аккаунт
                 </label>
-                <small style="color: #64748b; margin-top: 4px; display: block; margin-left: 24px;">
+                <small style="color: #737373; margin-top: 4px; display: block; margin-left: 24px;">
                     Если снять галочку, пользователь не сможет войти в систему (заблокирован)
                 </small>
             </div>
