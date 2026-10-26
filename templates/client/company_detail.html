@@ -63,7 +63,7 @@
     {% endif %}
 
     <div style="margin-top: 40px;">
-        <a href="{% url 'client:companies_list' %}" class="btn btn--outline">← Вернуться к списку компаний</a>
+        <a href="{% url 'client:companies_list' %}" class="btn btn--outline">{% include 'includes/icon.html' with name='arrow-left' %} Вернуться к списку компаний</a>
     </div>
 </div>
 {% endblock %}

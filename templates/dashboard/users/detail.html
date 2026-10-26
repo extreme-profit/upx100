@@ -6,7 +6,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Информация о пользователе</h3>
-            <a href="{% url 'dashboard:user_list' %}" class="btn btn-secondary">← Назад</a>
+            <a href="{% url 'dashboard:user_list' %}" class="btn btn-secondary">{% include 'includes/icon.html' with name='arrow-left' %} Назад</a>
         </div>
         <div class="card-body">
             <div style="margin-bottom: 24px;">
@@ -42,9 +42,9 @@
                     <td style="padding: 12px 0; color: #737373; border-bottom: 1px solid #f5f5f5;"><strong>Статус:</strong></td>
                     <td style="padding: 12px 0; border-bottom: 1px solid #f5f5f5;">
                         {% if user_obj.is_active %}
-                        <span class="badge badge-success">✓ Активен</span>
+                        <span class="badge badge-success">{% include 'includes/icon.html' with name='check' %} Активен</span>
                         {% else %}
-                        <span class="badge badge-danger">✗ Заблокирован</span>
+                        <span class="badge badge-danger">{% include 'includes/icon.html' with name='close' %} Заблокирован</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -55,11 +55,11 @@
             </table>
             
             <div style="margin-top: 24px; display: flex; gap: 12px;">
-                <a href="{% url 'dashboard:user_edit' user_obj.pk %}" class="btn btn-primary">✏️ Редактировать</a>
+                <a href="{% url 'dashboard:user_edit' user_obj.pk %}" class="btn btn-primary">{% include 'includes/icon.html' with name='edit' %} Редактировать</a>
                 <form method="post" action="{% url 'dashboard:user_toggle_active' user_obj.pk %}" style="display: inline;" onsubmit="return confirm('Вы уверены?');">
                     {% csrf_token %}
                     <button type="submit" class="btn {% if user_obj.is_active %}btn-danger{% else %}btn-success{% endif %}">
-                        {% if user_obj.is_active %}🚫 Заблокировать{% else %}✅ Разблокировать{% endif %}
+                        {% if user_obj.is_active %}{% include 'includes/icon.html' with name='ban' %} Заблокировать{% else %}{% include 'includes/icon.html' with name='check' %} Разблокировать{% endif %}
                     </button>
                 </form>
             </div>
@@ -73,7 +73,7 @@
             {% if user_obj.role == 'entrepreneur' and company and not company.is_verified %}
             <form method="post" action="{% url 'dashboard:user_verify' user_obj.pk %}" style="display: inline;">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-success btn-sm">✓ Подтвердить</button>
+                <button type="submit" class="btn btn-success btn-sm">{% include 'includes/icon.html' with name='check' %} Подтвердить</button>
             </form>
             {% endif %}
         </div>
@@ -96,14 +96,14 @@
                 <!-- Статус верификации между описанием и картой -->
                 <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 20px;">
                     <span class="badge {% if company.is_verified %}badge-success{% else %}badge-warning{% endif %}">
-                        {% if company.is_verified %}✓ Проверена{% else %}⏳ Не проверена{% endif %}
+                        {% if company.is_verified %}{% include 'includes/icon.html' with name='check' %} Проверена{% else %}{% include 'includes/icon.html' with name='clock' %} Не проверена{% endif %}
                     </span>
                 </div>
                 
                 <!-- Карта с расположением компании -->
                 {% if company.latitude and company.longitude %}
                 <div style="margin-top: 16px;">
-                    <h5 style="margin-bottom: 12px; text-align: left;">📍 Расположение на карте</h5>
+                    <h5 style="margin-bottom: 12px; text-align: left;">{% include 'includes/icon.html' with name='pin' %} Расположение на карте</h5>
                     <div id="map" style="height: 300px; width: 100%; border-radius: 8px; border: 1px solid #dee2e6;"></div>
                     <p style="font-size: 13px; color: #737373; margin-top: 8px; text-align: left;">
                         Координаты: {{ company.latitude }}, {{ company.longitude }}
@@ -113,7 +113,7 @@
             </div>
             {% else %}
             <div class="empty-state">
-                <div class="empty-state-icon">🏢</div>
+                <div class="empty-state-icon">{% include 'includes/icon.html' with name='building' %}</div>
                 <h3>Нет компании</h3>
                 <p>Пользователь не владеет компанией</p>
             </div>

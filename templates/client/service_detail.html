@@ -59,11 +59,11 @@
     </h2>
     <nav aria-label="Недели записи" style="display: flex; flex-wrap: wrap; align-items: center; gap: 15px; margin-bottom: 20px;">
         {% if week_page.has_previous %}
-            <a class="btn btn--outline" href="?week={{ week_page.previous_page_number }}{% if selected_employee %}&amp;employee_id={{ selected_employee.pk }}{% endif %}">← Предыдущая неделя</a>
+            <a class="btn btn--outline" href="?week={{ week_page.previous_page_number }}{% if selected_employee %}&amp;employee_id={{ selected_employee.pk }}{% endif %}">{% include 'includes/icon.html' with name='arrow-left' %} Предыдущая неделя</a>
         {% endif %}
         <span aria-current="page">{{ week_start|date:"d.m.Y" }} — {{ week_end|date:"d.m.Y" }}</span>
         {% if week_page.has_next %}
-            <a class="btn btn--outline" href="?week={{ week_page.next_page_number }}{% if selected_employee %}&amp;employee_id={{ selected_employee.pk }}{% endif %}">Следующая неделя →</a>
+            <a class="btn btn--outline" href="?week={{ week_page.next_page_number }}{% if selected_employee %}&amp;employee_id={{ selected_employee.pk }}{% endif %}">Следующая неделя {% include 'includes/icon.html' with name='arrow-right' %}</a>
         {% endif %}
     </nav>
 
@@ -112,7 +112,7 @@
         {% for review in master_reviews %}<article class="availability-day"><h3>{{ review.employee.name }} · {{ review.rating }} / 5</h3><small>{{ review.created_at|date:"d.m.Y" }} · Подтверждённая запись</small><p>{{ review.comment|linebreaksbr|default:'Клиент оставил оценку без комментария.' }}</p></article>{% empty %}<p>Отзывы появятся после первых выполненных записей.</p>{% endfor %}
     </section>
     <div style="margin-top: 40px;">
-        <a href="{% url 'client:company_detail' service.company.pk %}" class="btn btn--outline">← Вернуться к компании</a>
+        <a href="{% url 'client:company_detail' service.company.pk %}" class="btn btn--outline">{% include 'includes/icon.html' with name='arrow-left' %} Вернуться к компании</a>
     </div>
 </div>
 

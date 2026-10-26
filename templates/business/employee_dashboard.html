@@ -72,9 +72,9 @@
                                         {% if user.role == 'entrepreneur' or user.role == 'employee' %}<form method="post" action="{% url 'business:booking_cancel' booking.pk %}" style="display:inline;">{% csrf_token %}<label>Причина отказа<textarea name="rejection_reason" required maxlength="1000" rows="2" placeholder="Клиент увидит эту причину"></textarea></label><button type="submit" class="btn btn-sm btn-danger" title="Отменить">Отклонить</button></form>{% endif %}
                                     </div>
                                 {% elif booking.status == 'confirmed' %}
-                                    <span class="text-muted"><small>✓ Подтверждено</small></span>
+                                    <span class="text-muted"><small>{% include 'includes/icon.html' with name='check' %} Подтверждено</small></span>
                                 {% elif booking.status == 'cancelled' %}
-                                    <span class="text-muted"><small>✗ Отменено</small></span>
+                                    <span class="text-muted"><small>{% include 'includes/icon.html' with name='close' %} Отменено</small></span>
                                 {% else %}
                                     <span class="text-muted"><small>Завершено</small></span>
                                 {% endif %}
@@ -86,7 +86,7 @@
             </div>
             {% else %}
             <div class="empty-state">
-                <div class="empty-state-icon">📅</div>
+                <div class="empty-state-icon">{% include 'includes/icon.html' with name='calendar' %}</div>
                 <h3>Пока нет бронирований</h3>
             </div>
             {% endif %}
@@ -124,7 +124,7 @@
                             </td>
                             <td>
                                 <div class="actions-cell">
-                                    <a href="{% url 'business:service_detail' service.pk %}" class="action-btn edit" title="Просмотр">👁</a>
+                                    <a href="{% url 'business:service_detail' service.pk %}" class="action-btn edit" title="Просмотр">{% include 'includes/icon.html' with name='eye' %}</a>
                                 </div>
                             </td>
                         </tr>
@@ -134,7 +134,7 @@
             </div>
             {% else %}
             <div class="empty-state">
-                <div class="empty-state-icon">🛠</div>
+                <div class="empty-state-icon">{% include 'includes/icon.html' with name='tools' %}</div>
                 <h3>Услуги еще не назначены</h3>
                 <p>Обратитесь к администратору для добавления услуг</p>
             </div>

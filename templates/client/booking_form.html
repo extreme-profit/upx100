@@ -10,7 +10,7 @@
     <!-- Информация об услуге и времени -->
     <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
         <h3 style="margin-bottom: 15px;">{{ service.name }}</h3>
-        <p style="color: #666;">🏢 {{ service.company.name }}</p>
+        <p style="color: #666;">{% include 'includes/icon.html' with name='building' %} {{ service.company.name }}</p>
         <p style="font-size: 20px; font-weight: bold; color: #28a745;">{{ service.price }} ₽</p>
         
         {% if slot %}
